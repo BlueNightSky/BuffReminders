@@ -504,7 +504,7 @@ local function GetCategorySettings(category)
     result.subIconSide = (catSettings and catSettings.subIconSide) or defaultCatSettings.subIconSide
 
     -- Appearance: inherit from defaults unless useCustomAppearance is true
-    local useCustomAppearance = catSettings and catSettings.useCustomAppearance
+    local useCustomAppearance = catSettings and catSettings.useCustomAppearance and catSettings.split
     if useCustomAppearance then
         -- Custom appearance: use category values, fall back to code defaults (NOT user's global defaults)
         -- This ensures custom-appearance categories are fully independent from Global Defaults changes.
