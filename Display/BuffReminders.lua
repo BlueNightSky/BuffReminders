@@ -414,7 +414,7 @@ end
 
 -- Track combat state via events (InCombatLockdown() can lag behind PLAYER_REGEN_DISABLED)
 local inCombat = false
-local inEncounter = false -- boss encounter active (aura API unreliable for other units)
+local inEncounter = false -- luacheck: ignore 231 (preserved for easy revert)
 local isResting = false
 
 -- Category frame system
@@ -1883,11 +1883,8 @@ UpdateDisplay = function()
         -- Test mode: generate fake state entries through the normal pipeline
         GenerateTestEntries()
     else
-        -- Early exit: can't check buffs when dead, in combat, M+, instanced PvP, or player housing
+        -- Early exit: dead, instanced PvP, or player housing
         local _, instanceType = IsInInstance()
-        local inMythicPlus = C_ChallengeMode
-            and C_ChallengeMode.IsChallengeModeActive
-            and C_ChallengeMode.IsChallengeModeActive()
         local inHousing = C_Housing
             and (
                 (C_Housing.IsInsideHouseOrPlot and C_Housing.IsInsideHouseOrPlot())
@@ -1895,11 +1892,6 @@ UpdateDisplay = function()
             )
 
         local isDead = UnitIsDeadOrGhost("player")
-        -- Use both our event-tracked flag AND the API (event fires before API updates)
-        -- Include encounter state: aura API returns stale data for units in combat
-        -- when the player hasn't personally entered combat yet
-        local combatCheck = inCombat or inEncounter or InCombatLockdown()
-
         -- Absolute exit: nothing should show when dead or in housing
         if isDead or inHousing then
             HideAllDisplayFrames()
@@ -1924,23 +1916,14 @@ UpdateDisplay = function()
             return
         end
 
-        -- Restricted contexts: hide secure frames, but glow + pet reminders can still show
-        if inMythicPlus or instanceType == "pvp" or instanceType == "arena" then
+        -- PvP/Arena: still use fallback (not affected by Blizzard's non-secret change)
+        if instanceType == "pvp" or instanceType == "arena" then
             HideAllDisplayFrames()
             UpdateFallbackDisplay()
             BR.SecureButtons.ScheduleSecureSync()
             return
         end
-
-        -- Combat: glow fallback + pet reminders (both handled by UpdateFallbackDisplay)
-        if combatCheck then
-            for _, frame in pairs(buffFrames) do
-                HideFrame(frame)
-            end
-            UpdateFallbackDisplay()
-            BR.SecureButtons.ScheduleSecureSync()
-            return
-        end
+        -- M+ and combat: fall through to normal display path (most tracked buffs are now non-secret)
 
         -- Refresh buff state
         BR.BuffState.Refresh()
@@ -2099,14 +2082,13 @@ local function StartUpdates()
     UpdateDisplay()
 end
 
--- Stop update ticker (keeps OnUpdate dirty-flag handler active for combat-safe updates)
-local function StopTicker()
+-- Stop update ticker (preserved for easy revert when Blizzard re-protects spells)
+local function StopTicker() -- luacheck: ignore 211
     if updateTicker then
         updateTicker:Cancel()
         updateTicker = nil
     end
     -- OnUpdate handler stays active so SetDirty() works during combat
-    -- (UpdateDisplay routes to UpdateFallbackDisplay when in combat)
 end
 
 -- Forward declaration for ReparentBuffFrames (defined after InitializeFrames)
@@ -3107,8 +3089,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         StartUpdates()
     elseif event == "PLAYER_REGEN_DISABLED" then
         inCombat = true
-        StopTicker()
-        UpdateDisplay() -- last update before combat lockdown
+        SetDirty() -- trigger refresh with new combat state
     elseif event == "ENCOUNTER_START" then
         inEncounter = true
         SetDirty()
@@ -3120,13 +3101,10 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "PLAYER_UNGHOST" then
         SetDirty()
     elseif event == "UNIT_AURA" then
-        -- Skip in combat (auras change frequently, and we can't recheck buffs in combat)
-        if not InCombatLockdown() then
-            if arg1 == "player" then
-                BR.StateHelpers.UpdateEatingState(arg2)
-            end
-            SetDirty()
+        if arg1 == "player" then
+            BR.StateHelpers.UpdateEatingState(arg2)
         end
+        SetDirty()
     elseif event == "UNIT_PET" then
         if arg1 == "player" then
             SetDirty()

@@ -481,6 +481,9 @@ end
 ---@param clickable boolean? Whether buttons should accept mouse input
 ---@param startIndex? number First index in actionItems to show (default 1)
 local function UpdateConsumableButtons(frame, actionItems, clickable, startIndex)
+    if InCombatLockdown() then
+        return
+    end
     startIndex = startIndex or 1
     if not actionItems or #actionItems < startIndex + 1 then
         if frame.actionButtons then

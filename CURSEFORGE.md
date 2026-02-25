@@ -12,7 +12,6 @@ From the author of [Raid Buffs Tracker](https://wago.io/iWkZ4Eq-i), one of the m
 ## Features
 
 - **Click to cast** - Click missing buff icons to cast the spell directly (out of combat, spells your character can cast)
-- **M+ support** - Detects missing buffs via action bar glow even when Blizzard's buff API is restricted
 - Class reminder when your buff is missing
 - Visual buff tracking with count overlay (e.g., "17/20" = 17 buffed out of 20)
 - Split into movable category frames
@@ -40,7 +39,6 @@ Configure when and how the addon displays. Control visibility (group only, insta
 
 ## Limitations
 
-- **Combat/M+/PvP** - Blizzard restricts buff API access during combat, M+ keystones, and instanced PvP. Full group tracking is only available out of combat. In M+, the addon automatically detects when your own raid buff is missing by monitoring action bar spell glows (requires the spell to be on your action bars).
 - **Buff counting restrictions** - Both buff counts and buff providers (who can cast buffs) are tracked only for group members who are alive, connected, visible (not phased), and allied. This means:
   - Dead, offline, or phased players are excluded from totals
   - Raid buff providers (e.g., mages for Arcane Intellect) are only detected if they meet these conditions
