@@ -19,7 +19,7 @@ Run `make` before committing.
 
 ## Commit Messages
 
-We use [Conventional Commits](https://www.conventionalcommits.org/) with [gitmoji](https://gitmoji.dev/). A body and footer are usually not needed, but add them if the change warrants extra context.
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) with [gitmoji](https://gitmoji.dev/). A body and footer are usually not needed, but add them if the change warrants extra context.
 
 ```
 type: <gitmoji> short description
