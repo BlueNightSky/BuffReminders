@@ -79,6 +79,7 @@ local addonName, BR = ...
 ---@alias SplitCategories table<CategoryName, boolean>
 
 ---@class BuffFrame: Button
+---@field GetFrameLevel fun(self: BuffFrame): number
 ---@field key string
 ---@field spellIDs SpellID
 ---@field displayName string
@@ -1649,10 +1650,72 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
     end
 
     if displayMode == "sub_icons" then
-        local cs = BuffRemindersDB.categorySettings and BuffRemindersDB.categorySettings.consumable
-        local clickable = cs and cs.clickable == true
-        -- Skip first item (already shown as main icon)
-        BR.SecureButtons.UpdateConsumableButtons(frame, items, clickable, 2)
+        if testMode and items and #items > 1 then
+            -- Test mode: render visual-only sub-icon frames (no secure buttons)
+            local effectiveCat = GetEffectiveCategory(frame)
+            local catSettings = GetCategorySettings(effectiveCat)
+            local consumableSettings = GetCategorySettings("consumable")
+            local iconSize = catSettings.iconSize or 64
+            local size = math.max(18, math.floor(iconSize * 0.45))
+            local btnSpacing = math.max(2, math.floor(size * 0.2))
+            local subIconSide = consumableSettings.subIconSide or "BOTTOM"
+            local subIconOffset = -6
+            local itemCount = #items - 1
+            local isSideways = subIconSide == "LEFT" or subIconSide == "RIGHT"
+
+            for i = 2, #items do
+                local idx = i - 2
+                local extra = GetOrCreateExtraFrame(frame, i - 1)
+                extra:SetParent(frame)
+                extra:SetSize(size, size)
+                extra.icon:SetTexture(items[i].icon)
+                if extra.qualityOverlay then
+                    BR.SecureButtons.SetQualityOverlay(extra.qualityOverlay, items[i].craftedQuality, size)
+                end
+                extra.stackCount:SetFont(fontPath, math.max(10, math.floor(size * 0.45)), "OUTLINE")
+                extra.stackCount:SetText(items[i].count > 1 and tostring(items[i].count) or "")
+                extra.stackCount:Show()
+                extra.count:Hide()
+                SetExpirationGlow(extra, false)
+                extra:SetFrameLevel(frame:GetFrameLevel() + 4)
+
+                extra:ClearAllPoints()
+                if isSideways then
+                    local maxPerCol = math.max(1, math.floor((iconSize + btnSpacing) / (size + btnSpacing)))
+                    local row = idx % maxPerCol
+                    local col = math.floor(idx / maxPerCol)
+                    local thisColCount = math.min(maxPerCol, itemCount - col * maxPerCol)
+                    local thisColHeight = thisColCount * size + (thisColCount - 1) * btnSpacing
+                    local startY = (iconSize - thisColHeight) / 2
+                    local yOff = -(startY + row * (size + btnSpacing))
+                    if subIconSide == "LEFT" then
+                        extra:SetPoint("TOPRIGHT", frame, "TOPLEFT", subIconOffset - col * (size + btnSpacing), yOff)
+                    else
+                        extra:SetPoint("TOPLEFT", frame, "TOPRIGHT", -subIconOffset + col * (size + btnSpacing), yOff)
+                    end
+                else
+                    local maxPerRow = math.max(1, math.floor((iconSize + btnSpacing) / (size + btnSpacing)))
+                    local col = idx % maxPerRow
+                    local row = math.floor(idx / maxPerRow)
+                    local thisRowCount = math.min(maxPerRow, itemCount - row * maxPerRow)
+                    local thisRowWidth = thisRowCount * size + (thisRowCount - 1) * btnSpacing
+                    local startX = (iconSize - thisRowWidth) / 2
+                    local xOff = startX + col * (size + btnSpacing)
+                    if subIconSide == "TOP" then
+                        extra:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", xOff, -subIconOffset + row * (size + btnSpacing))
+                    else
+                        extra:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", xOff, subIconOffset - row * (size + btnSpacing))
+                    end
+                end
+
+                extra:Show()
+            end
+        elseif not testMode then
+            local cs = BuffRemindersDB.categorySettings and BuffRemindersDB.categorySettings.consumable
+            local clickable = cs and cs.clickable == true
+            -- Skip first item (already shown as main icon)
+            BR.SecureButtons.UpdateConsumableButtons(frame, items, clickable, 2)
+        end
     else
         -- Not sub_icons: hide any leftover sub-icon buttons
         BR.SecureButtons.UpdateConsumableButtons(frame, nil)
