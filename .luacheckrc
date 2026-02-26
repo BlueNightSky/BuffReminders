@@ -74,6 +74,7 @@ read_globals = {
 	"UnitExists",
 	"UnitGroupRolesAssigned",
 	"UnitIsConnected",
+	"UnitIsDead",
 	"UnitIsDeadOrGhost",
 	"UnitIsPlayer",
 	"UnitGUID",

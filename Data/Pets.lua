@@ -207,6 +207,7 @@ end
 
 -- Export
 BR.PetHelpers = {
+    REVIVE_PET_ID = REVIVE_PET,
     GetPetActions = GetPetActions,
     InvalidatePetActions = InvalidatePetActions,
 }

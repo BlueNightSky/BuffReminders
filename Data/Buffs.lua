@@ -525,7 +525,7 @@ BR.BUFF_TABLES = {
                 if BR.StateHelpers.GetPlayerSpecId() == 254 and not IsPlayerSpell(1223323) then
                     return nil
                 end
-                return not UnitExists("pet")
+                return not UnitExists("pet") or UnitIsDead("pet") or nil
             end,
         },
         {

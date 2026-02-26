@@ -1884,6 +1884,9 @@ local function ApplyPetDisplayMode(frame, entry, frameList)
         ExpandPetActions(frame, entry, frameList)
     else
         -- Generic mode: restore original icon, use preferred action for click-to-cast
+        local gi = entry.petActions.genericIndex or 1
+        local preferredAction = entry.petActions[gi]
+
         local displayIcon = frame.buffDef and frame.buffDef.displayIcon
         if type(displayIcon) == "table" then
             displayIcon = displayIcon[1]
@@ -1892,16 +1895,43 @@ local function ApplyPetDisplayMode(frame, entry, frameList)
         if texture then
             frame.icon:SetTexture(texture)
         end
-        local gi = entry.petActions.genericIndex or 1
-        local preferredAction = entry.petActions[gi]
         frame._br_pet_spell = preferredAction and preferredAction.spellName
         frame._br_pet_spec_icon = preferredAction and preferredAction.petSpecIcon
         UpdatePetLabels(frame, preferredAction)
         BR.SecureButtons.ReapplyPetSpecIconIfHovered(frame)
+
+        -- Hide all extras first
         if frame.extraFrames then
             for _, extra in ipairs(frame.extraFrames) do
                 extra:Hide()
                 UpdatePetLabels(extra, nil)
+            end
+        end
+
+        -- Show Revive Pet as a second icon alongside the generic summon icon
+        local reviveAction
+        for _, action in ipairs(entry.petActions) do
+            if action.spellID == BR.PetHelpers.REVIVE_PET_ID then
+                reviveAction = action
+                break
+            end
+        end
+        if reviveAction then
+            local extra = GetOrCreateExtraFrame(frame, 1)
+            extra:SetParent(frame:GetParent())
+            extra:SetSize(frame:GetWidth(), frame:GetHeight())
+            extra.icon:SetTexture(reviveAction.icon)
+            extra.count:Hide()
+            extra.stackCount:Hide()
+            extra._br_pet_spell = reviveAction.spellName
+            extra._br_pet_spec_icon = nil
+            UpdatePetLabels(extra, reviveAction)
+            BR.SecureButtons.ReapplyPetSpecIconIfHovered(extra)
+            extra:Show()
+            local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
+            SetExpirationGlow(extra, entry.shouldGlow, entry.category, cachedGlow)
+            if frameList then
+                frameList[#frameList + 1] = extra
             end
         end
     end
