@@ -115,6 +115,10 @@ local currentValidUnits = {}
 -- True in follower dungeons and delves where NPC companions can receive buffs.
 local includeNPCsInCounting = false
 
+-- True when the player is in combat lockdown. Set once per Refresh() cycle in BuildValidUnitCache.
+-- Used by CountMissingBuff to skip NPCs during combat (NPC buff spell IDs aren't combat-whitelisted).
+local refreshInCombat = false
+
 -- Last target cache: runtime-only map of buffKey -> {name, class} for targeted buffs.
 -- When a targeted buff is found on someone, we remember their name so the click macro
 -- can re-target them automatically. Not persisted to SavedVariables.
@@ -249,10 +253,9 @@ local function BuildValidUnitCache()
     do
         -- Default: exclude NPCs from buff counting.
         -- Only whitelist specific content where NPC companions can receive player buffs.
-        -- During combat, always exclude NPCs: many buff spell IDs aren't on Blizzard's
-        -- combat whitelist, so UnitHasBuff returns nil for NPCs causing false missing counts.
         local difficultyID, difficultyName = select(3, GetInstanceInfo())
-        includeNPCsInCounting = not InCombatLockdown() and (difficultyID == 205 or difficultyName == "Delves") -- Follower dungeon / Delves
+        includeNPCsInCounting = difficultyID == 205 or difficultyName == "Delves" -- Follower dungeon / Delves
+        refreshInCombat = InCombatLockdown()
     end
 
     local inRaid = IsInRaid()
@@ -530,8 +533,12 @@ local function CountMissingBuff(spellIDs, buffKey, playerOnly)
     end
 
     for _, data in ipairs(currentValidUnits) do
-        -- Skip NPCs in content where they can't receive player buffs (e.g., Legion artifact quests)
-        if data.isPlayer or includeNPCsInCounting then
+        -- Skip NPCs unless in whitelisted content. During combat, also skip NPCs here:
+        -- NPC-cast raid buff spell IDs (e.g., 432661) aren't combat-whitelisted, so
+        -- UnitHasBuff returns nil causing false missing counts. Targeted buffs (HasPresenceBuff,
+        -- IsPlayerBuffActive) use player-cast spell IDs that ARE whitelisted, so they
+        -- still include NPCs via the unchanged includeNPCsInCounting check.
+        if data.isPlayer or (includeNPCsInCounting and not refreshInCombat) then
             -- Check if unit's class benefits from this buff
             if not beneficiaries or beneficiaries[data.class] then
                 total = total + 1
