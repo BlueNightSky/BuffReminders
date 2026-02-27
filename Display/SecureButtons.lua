@@ -224,9 +224,6 @@ local function CreateClickOverlay(frame)
     overlay:HookScript("OnLeave", function()
         HideLastTargetTooltip()
     end)
-    overlay:HookScript("OnHide", function()
-        HideLastTargetTooltip()
-    end)
     frame.clickOverlay = overlay
 end
 
