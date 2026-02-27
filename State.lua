@@ -249,9 +249,10 @@ local function BuildValidUnitCache()
     do
         -- Default: exclude NPCs from buff counting.
         -- Only whitelist specific content where NPC companions can receive player buffs.
+        -- During combat, always exclude NPCs: many buff spell IDs aren't on Blizzard's
+        -- combat whitelist, so UnitHasBuff returns nil for NPCs causing false missing counts.
         local difficultyID, difficultyName = select(3, GetInstanceInfo())
-        includeNPCsInCounting = difficultyID == 205 -- Follower dungeon
-            or difficultyName == "Delves"
+        includeNPCsInCounting = not InCombatLockdown() and (difficultyID == 205 or difficultyName == "Delves") -- Follower dungeon / Delves
     end
 
     local inRaid = IsInRaid()
@@ -625,7 +626,7 @@ end
 ---@param buffKey? string Used for last target cache
 ---@return boolean? shouldShow Returns nil if player can't provide this buff
 ---@return number? remainingTime
-local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, requireSpecId, buffKey)
+local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, requireSpecId, buffKey, casterBuffId)
     if playerClass ~= requiredClass then
         return nil
     end
@@ -641,6 +642,44 @@ local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, 
     -- Targeted buffs require a group (you cast them on others)
     if GetNumGroupMembers() == 0 then
         return nil
+    end
+
+    if casterBuffId then
+        -- Shortcut: check if the caster has this buff on themselves (combat-safe spell ID)
+        local hasBuff, remaining = UnitHasBuff("player", casterBuffId)
+        -- Update last target cache by scanning group for the original buff.
+        -- Only out of combat: the target-side spell may not be on the combat whitelist,
+        -- so UnitHasBuff would return nil and incorrectly clear the cache.
+        if buffKey and not InCombatLockdown() then
+            if hasBuff then
+                local foundTarget = false
+                for _, data in ipairs(currentValidUnits) do
+                    if not UnitIsUnit(data.unit, "player") then
+                        local targetHas = UnitHasBuff(data.unit, spellIDs)
+                        if targetHas then
+                            local name = GetUnitName(data.unit, true)
+                            if name then
+                                local _, class = UnitClass(data.unit)
+                                local existing = lastTargets[buffKey]
+                                if existing then
+                                    existing.name = name
+                                    existing.class = class
+                                else
+                                    lastTargets[buffKey] = { name = name, class = class }
+                                end
+                                foundTarget = true
+                                break
+                            end
+                        end
+                    end
+                end
+                if not foundTarget then
+                    lastTargets[buffKey] = nil
+                end
+            end
+            -- If not active, keep old last target so macro still targets them after it falls off
+        end
+        return not hasBuff, remaining
     end
 
     local isActive, remaining, targetUnit = IsPlayerBuffActive(spellID, beneficiaryRole)
@@ -1055,6 +1094,7 @@ function BuffState.Refresh()
     currentWeaponEnchants.offHandExpiration = offExp
 
     local trackingMode = db.buffTrackingMode
+    local inCombat = InCombatLockdown()
 
     -- Per-category glow settings (inherits from defaults via GetCategorySetting)
     local function GetCategoryGlow(cat)
@@ -1109,7 +1149,8 @@ function BuffState.Refresh()
             readyCheckOk = overrides and overrides[overrideKey] == false
         end
         local showBuff = presenceVisible and readyCheckOk and scope.show
-        if IsBuffEnabled(buff.key) and showBuff then
+        local combatBlocked = buff.combatUntrackable and inCombat
+        if not combatBlocked and IsBuffEnabled(buff.key) and showBuff then
             local hasBuff, minRemaining = HasPresenceBuff(buff.spellID, scope.playerOnly)
 
             if not hasBuff then
@@ -1128,8 +1169,14 @@ function BuffState.Refresh()
         local settingKey = GetBuffSettingKey(buff)
 
         if IsBuffEnabled(settingKey) and targetedVisible and PassesPreChecks(buff, nil, db) then
-            local shouldShow, remaining =
-                ShouldShowTargetedBuff(buff.spellID, buff.class, buff.beneficiaryRole, buff.requireSpecId, buff.key)
+            local shouldShow, remaining = ShouldShowTargetedBuff(
+                buff.spellID,
+                buff.class,
+                buff.beneficiaryRole,
+                buff.requireSpecId,
+                buff.key,
+                buff.casterBuffId
+            )
 
             if shouldShow then
                 SetEntryMissing(entry, buff.missingText, targGlowMissing)
@@ -1146,7 +1193,8 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "self", i)
         local settingKey = buff.groupId or buff.key
 
-        if IsBuffEnabled(settingKey) and selfVisible then
+        local combatBlocked = buff.combatUntrackable and inCombat
+        if not combatBlocked and IsBuffEnabled(settingKey) and selfVisible then
             local shouldShow = ShouldShowSelfBuff(
                 buff.spellID,
                 buff.class,
