@@ -27,6 +27,7 @@ Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.lua
 
 Core.lua
 Data\Buffs.lua
+Data\CombatSafeSpells.lua
 Data\ConsumableItems.lua
 Data\Pets.lua
 State.lua

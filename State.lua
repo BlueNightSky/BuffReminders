@@ -119,6 +119,53 @@ local includeNPCsInCounting = false
 -- Used by CountMissingBuff to skip NPCs during combat (NPC buff spell IDs aren't combat-whitelisted).
 local refreshInCombat = false
 
+-- Combat-safe spell whitelist loaded from Data/CombatSafeSpells.lua
+local COMBAT_SAFE_SPELLS = BR.COMBAT_SAFE_SPELLS
+
+---Determine if a buff's detection method works during combat.
+---Non-aura detection (weapon enchants, inventory checks) is always safe.
+---Aura-based detection requires all queried spell IDs to be in the Blizzard whitelist.
+---@param buff table Any buff table entry (RaidBuff, SelfBuff, ConsumableBuff, etc.)
+---@return boolean
+local function IsCombatTrackable(buff)
+    -- Non-aura detection is always combat-safe
+    if buff.checkWeaponEnchant or buff.checkWeaponEnchantOH then
+        return true
+    end
+    if buff.itemID and not buff.spellID and not buff.buffIconID then
+        return true
+    end
+
+    -- Enchant-only detection (no aura check needed)
+    if buff.enchantID and not buff.requiresBuffWithEnchant then
+        return true
+    end
+
+    -- buffIconID (GetAuraDataByIndex iteration) is not combat-safe
+    if buff.buffIconID then
+        return false
+    end
+
+    -- Determine which spell IDs actually get queried via UnitHasBuff
+    local idsToCheck = buff.casterBuffId or buff.buffIdOverride or buff.spellID
+
+    -- No aura spell IDs (e.g., pure customCheck pet buffs)
+    if not idsToCheck then
+        return true
+    end
+
+    -- All queried spell IDs must be in the whitelist
+    if type(idsToCheck) == "number" then
+        return COMBAT_SAFE_SPELLS[idsToCheck] ~= nil
+    end
+    for _, id in ipairs(idsToCheck) do
+        if not COMBAT_SAFE_SPELLS[id] then
+            return false
+        end
+    end
+    return true
+end
+
 -- Last target cache: runtime-only map of buffKey -> {name, class} for targeted buffs.
 -- When a targeted buff is found on someone, we remember their name so the click macro
 -- can re-target them automatically. Not persisted to SavedVariables.
@@ -1156,8 +1203,7 @@ function BuffState.Refresh()
             readyCheckOk = overrides and overrides[overrideKey] == false
         end
         local showBuff = presenceVisible and readyCheckOk and scope.show
-        local combatBlocked = buff.combatUntrackable and inCombat
-        if not combatBlocked and IsBuffEnabled(buff.key) and showBuff then
+        if not (inCombat and not IsCombatTrackable(buff)) and IsBuffEnabled(buff.key) and showBuff then
             local hasBuff, minRemaining = HasPresenceBuff(buff.spellID, scope.playerOnly)
 
             if not hasBuff then
@@ -1175,7 +1221,12 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "targeted", i)
         local settingKey = GetBuffSettingKey(buff)
 
-        if IsBuffEnabled(settingKey) and targetedVisible and PassesPreChecks(buff, nil, db) then
+        if
+            not (inCombat and not IsCombatTrackable(buff))
+            and IsBuffEnabled(settingKey)
+            and targetedVisible
+            and PassesPreChecks(buff, nil, db)
+        then
             local shouldShow, remaining = ShouldShowTargetedBuff(
                 buff.spellID,
                 buff.class,
@@ -1200,8 +1251,7 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "self", i)
         local settingKey = buff.groupId or buff.key
 
-        local combatBlocked = buff.combatUntrackable and inCombat
-        if not combatBlocked and IsBuffEnabled(settingKey) and selfVisible then
+        if not (inCombat and not IsCombatTrackable(buff)) and IsBuffEnabled(settingKey) and selfVisible then
             local shouldShow = ShouldShowSelfBuff(
                 buff.spellID,
                 buff.class,
@@ -1271,7 +1321,13 @@ function BuffState.Refresh()
         local settingKey = buff.groupId or buff.key
 
         local hasCaster = not buff.class or HasCasterForBuff(buff.class, buff.levelRequired)
-        if IsBuffEnabled(settingKey) and consumableVisible and hasCaster and PassesPreChecks(buff, nil, db) then
+        if
+            not (inCombat and not IsCombatTrackable(buff))
+            and IsBuffEnabled(settingKey)
+            and consumableVisible
+            and hasCaster
+            and PassesPreChecks(buff, nil, db)
+        then
             local shouldShow, remainingTime = ShouldShowConsumableBuff(
                 buff.spellID,
                 buff.buffIconID,
@@ -1302,7 +1358,9 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "custom", i)
         local settingKey = buff.groupId or buff.key
 
-        local shouldProcess = IsBuffEnabled(settingKey) and customVisible
+        local shouldProcess = not (inCombat and not IsCombatTrackable(buff))
+            and IsBuffEnabled(settingKey)
+            and customVisible
 
         -- If requireSpellKnown is true, check if player knows at least one spell
         if shouldProcess and buff.requireSpellKnown then

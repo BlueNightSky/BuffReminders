@@ -32,7 +32,6 @@ local _, BR = ...
 ---@field noExpirationGlow? boolean
 ---@field readyCheckOnly? boolean Only show during ready checks
 ---@field castOnOthers? boolean Buff exists on the target, not the caster (e.g., Soulstone)
----@field combatUntrackable? boolean Spell not on Blizzard's combat whitelist; skip during combat
 
 ---@class TargetedBuff
 ---@field spellID SpellID
@@ -69,7 +68,6 @@ local _, BR = ...
 ---@field iconByRole? table<RoleType, number>
 ---@field infoTooltip? string
 ---@field customCheck? fun(): boolean?
----@field combatUntrackable? boolean Spell not on Blizzard's combat whitelist; skip during combat
 
 ---@class ConsumableBuff
 ---@field spellID? SpellID
@@ -191,7 +189,6 @@ BR.BUFF_TABLES = {
             class = "PALADIN",
             levelRequired = 10,
             missingText = "NO\nAURA",
-            combatUntrackable = true,
         },
         {
             spellID = 20707,
@@ -203,7 +200,6 @@ BR.BUFF_TABLES = {
             readyCheckOnly = true,
             castOnOthers = true,
             noExpirationGlow = true,
-            combatUntrackable = true,
         },
     },
     ---@type TargetedBuff[]
@@ -281,7 +277,6 @@ BR.BUFF_TABLES = {
             name = "Arcane Familiar",
             class = "MAGE",
             missingText = "NO\nFAMILIAR",
-            combatUntrackable = true,
         },
         -- Warlock Grimoire of Sacrifice
         {
@@ -291,7 +286,6 @@ BR.BUFF_TABLES = {
             name = "Grimoire of Sacrifice",
             class = "WARLOCK",
             missingText = "NO\nGRIM",
-            combatUntrackable = true,
         },
         -- Paladin weapon rites (alphabetical: Adjuration, Sanctification)
         -- NOTE: Due to a Blizzard bug, when changing talents the buff drops but enchant remains.
@@ -309,7 +303,6 @@ BR.BUFF_TABLES = {
                 return "/cast " .. C_Spell.GetSpellName(spellID) .. "\n/use 16"
             end,
             groupId = "paladinRites",
-            combatUntrackable = true,
         },
         {
             spellID = 433568,
@@ -324,7 +317,6 @@ BR.BUFF_TABLES = {
                 return "/cast " .. C_Spell.GetSpellName(spellID) .. "\n/use 16"
             end,
             groupId = "paladinRites",
-            combatUntrackable = true,
         },
         -- Rogue poisons: lethal (Instant, Wound, Deadly, Amplifying) and non-lethal (Numbing, Atrophic, Crippling)
         -- With Dragon-Tempered Blades (381801): need 2 lethal + 2 non-lethal
@@ -434,7 +426,6 @@ BR.BUFF_TABLES = {
             class = "PRIEST",
             missingText = "NO\nFORM",
             buffIdOverride = { 232698, 194249 },
-            combatUntrackable = true,
         },
         -- Shaman weapon imbues (alphabetical: Earthliving, Flametongue, Windfury)
         {
@@ -494,7 +485,6 @@ BR.BUFF_TABLES = {
             groupId = "shamanShields",
             displaySpells = 192106, -- Lightning Shield icon for group checkbox
             iconByRole = { HEALER = 52127, DAMAGER = 192106, TANK = 192106 },
-            combatUntrackable = true,
         },
         -- Without Elemental Orbit: need either Earth Shield, Lightning Shield, or Water Shield on self
         {
@@ -507,7 +497,6 @@ BR.BUFF_TABLES = {
             groupId = "shamanShields",
             displaySpells = 52127, -- Water Shield icon for group checkbox
             iconByRole = { HEALER = 52127, DAMAGER = 192106, TANK = 192106 },
-            combatUntrackable = true,
         },
     },
     ---@type SelfBuff[]
