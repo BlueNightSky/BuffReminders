@@ -2233,6 +2233,17 @@ local function CreateOptionsPanel()
     local setX = COL_PADDING
     local setLayout = Components.VerticalLayout(settingsContent, { x = setX, y = -10 })
 
+    local loginMsgHolder = Components.Checkbox(settingsContent, {
+        label = "Show login messages",
+        get = function()
+            return BuffRemindersDB.showLoginMessages ~= false
+        end,
+        onChange = function(checked)
+            BuffRemindersDB.showLoginMessages = checked
+        end,
+    })
+    setLayout:Add(loginMsgHolder, nil, COMPONENT_GAP)
+
     -- General Settings section
     LayoutSectionHeader(setLayout, settingsContent, "Visibility")
 
@@ -2311,17 +2322,6 @@ local function CreateOptionsPanel()
         end,
     })
     setLayout:Add(trackingModeHolder, nil, COMPONENT_GAP)
-
-    local loginMsgHolder = Components.Checkbox(settingsContent, {
-        label = "Show login messages",
-        get = function()
-            return BuffRemindersDB.showLoginMessages ~= false
-        end,
-        onChange = function(checked)
-            BuffRemindersDB.showLoginMessages = checked
-        end,
-    })
-    setLayout:Add(loginMsgHolder, nil, COMPONENT_GAP)
 
     LayoutSectionHeader(setLayout, settingsContent, "Danger zone")
 
