@@ -58,6 +58,7 @@ local addonName, BR = ...
 ---@field clickable? boolean
 ---@field clickableHighlight? boolean
 ---@field subIconSide? string
+---@field showOnlyOnReadyCheck? boolean
 ---@field priority? number
 
 --- All category settings must be defined here. When adding a new category:
@@ -1848,14 +1849,21 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                     BR.SecureButtons.SetQualityOverlay(extra.qualityOverlay, items[i].craftedQuality, frame:GetWidth())
                 end
                 extra.stackCount:SetText(items[i].count)
-                extra.stackCount:Show()
                 extra.count:Hide()
+                local showText = ShouldShowText(frame.buffCategory)
+                if showText then
+                    extra.stackCount:Show()
+                else
+                    extra.stackCount:Hide()
+                end
                 extra:Show()
                 SetExpirationGlow(extra, entry.shouldGlow, entry.category, cachedGlow)
                 -- Apply food label to expanded extra frames (clear first to handle toggle-off)
                 if isFood then
                     ClearFoodFrameStyle(extra)
-                    ApplyFoodFrameStyle(extra, items[i].foodLabel, items[i].foodHearty)
+                    if showText then
+                        ApplyFoodFrameStyle(extra, items[i].foodLabel, items[i].foodHearty)
+                    end
                 end
                 frameList[#frameList + 1] = extra
             end
