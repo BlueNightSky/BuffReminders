@@ -505,7 +505,7 @@ local function GetCategorySettings(category)
     result.subIconSide = (catSettings and catSettings.subIconSide) or defaultCatSettings.subIconSide
 
     -- Appearance: inherit from defaults unless useCustomAppearance is true
-    local useCustomAppearance = catSettings and catSettings.useCustomAppearance and catSettings.split
+    local useCustomAppearance = catSettings and catSettings.useCustomAppearance
     if useCustomAppearance then
         -- Custom appearance: use category values, fall back to code defaults (NOT user's global defaults)
         -- This ensures custom-appearance categories are fully independent from Global Defaults changes.
@@ -555,7 +555,10 @@ end
 ---@param frame table
 ---@return string
 local function GetEffectiveCategory(frame)
-    if frame.buffCategory and IsCategorySplit(frame.buffCategory) then
+    if not frame.buffCategory then
+        return "main"
+    end
+    if IsCategorySplit(frame.buffCategory) or BR.Config.HasCustomAppearance(frame.buffCategory) then
         return frame.buffCategory
     end
     return "main"
@@ -842,8 +845,10 @@ local function CreateBuffFrame(buff, category)
     frame.buffDef = buff
 
     local db = BuffRemindersDB
-    -- Use effective category settings (respects split categories)
-    local effectiveCat = (category and IsCategorySplit(category)) and category or "main"
+    -- Use effective category for initial sizing (UpdateVisuals + PositionMainContainer apply final sizes)
+    local effectiveCat = (category and (IsCategorySplit(category) or BR.Config.HasCustomAppearance(category)))
+            and category
+        or "main"
     local catSettings = GetCategorySettings(effectiveCat)
     local iconSize = catSettings.iconSize or 64
     frame:SetSize(iconSize, iconSize)
@@ -1054,6 +1059,49 @@ local function BuildLayoutSignature(frames)
     return table.concat(keys, ",")
 end
 
+---Position frames with variable sizes inside the main container, centering smaller frames on the cross-axis.
+---@param container table
+---@param frames table[]
+---@param sizes number[] per-frame icon sizes
+---@param spacings number[] per-frame absolute spacing values
+---@param direction string grow direction
+local function PositionFramesVariable(container, frames, sizes, spacings, direction)
+    local count = #frames
+    if count == 0 then
+        return
+    end
+
+    -- Anchor points place frames at the center of the cross-axis edge,
+    -- so smaller frames are automatically centered — no manual offset needed.
+    local offset = 0
+    -- Hoist container width for CENTER mode (constant across iterations)
+    local containerWidth = (direction == "CENTER") and container:GetWidth() or 0
+
+    for i, frame in ipairs(frames) do
+        local size = sizes[i]
+
+        frame:ClearAllPoints()
+        if direction == "LEFT" then
+            frame:SetPoint("RIGHT", container, "RIGHT", -offset, 0)
+        elseif direction == "RIGHT" then
+            frame:SetPoint("LEFT", container, "LEFT", offset, 0)
+        elseif direction == "UP" then
+            frame:SetPoint("BOTTOM", container, "BOTTOM", 0, offset)
+        elseif direction == "DOWN" then
+            frame:SetPoint("TOP", container, "TOP", 0, -offset)
+        else -- CENTER (horizontal)
+            local startX = -containerWidth / 2 + offset
+            frame:SetPoint("CENTER", container, "CENTER", startX + size / 2, 0)
+        end
+
+        -- Advance offset for next frame
+        if i < count then
+            local gap = math.max(spacings[i], spacings[i + 1])
+            offset = offset + size + gap
+        end
+    end
+end
+
 -- Position and size the main container frame with the given buff frames
 local function PositionMainContainer(mainFrameBuffs)
     local db = BuffRemindersDB
@@ -1066,23 +1114,44 @@ local function PositionMainContainer(mainFrameBuffs)
         end
         lastMainSignature = sig
 
-        local mainSettings = GetCategorySettings("main")
-        local iconSize = mainSettings.iconSize or 64
-        local spacing = math.floor(iconSize * (mainSettings.spacing or 0.2))
-        local direction = mainSettings.growDirection or "CENTER"
+        local direction = BR.Config.GetCategorySetting("main", "growDirection") or "CENTER"
+        local isVertical = direction == "UP" or direction == "DOWN"
 
-        -- Resize individual buff frames to main icon size
-        for _, frame in ipairs(mainFrameBuffs) do
+        -- Collect per-frame sizes and spacings based on effective category
+        local sizes = {}
+        local spacings = {} -- absolute pixel spacing per frame
+        local maxCross = 0
+        local settingsCache = {} -- avoid redundant GetCategorySettings calls for same category
+        for i, frame in ipairs(mainFrameBuffs) do
+            local effectiveCat = GetEffectiveCategory(frame)
+            local settings = settingsCache[effectiveCat]
+            if not settings then
+                settings = GetCategorySettings(effectiveCat)
+                settingsCache[effectiveCat] = settings
+            end
+            local iconSize = settings.iconSize or 64
+            sizes[i] = iconSize
+            spacings[i] = math.floor(iconSize * (settings.spacing or 0.2))
             frame:SetSize(iconSize, iconSize)
+            if iconSize > maxCross then
+                maxCross = iconSize
+            end
+        end
+
+        -- Compute total main-axis extent
+        local totalMain = 0
+        for i = 1, #sizes do
+            totalMain = totalMain + sizes[i]
+            if i < #sizes then
+                totalMain = totalMain + math.max(spacings[i], spacings[i + 1])
+            end
         end
 
         -- Size mainFrame to fit contents
-        local isVertical = direction == "UP" or direction == "DOWN"
-        local totalSize = #mainFrameBuffs * iconSize + (#mainFrameBuffs - 1) * spacing
         if isVertical then
-            mainFrame:SetSize(iconSize, math.max(totalSize, iconSize))
+            mainFrame:SetSize(maxCross, math.max(totalMain, maxCross))
         else
-            mainFrame:SetSize(math.max(totalSize, iconSize), iconSize)
+            mainFrame:SetSize(math.max(totalMain, maxCross), maxCross)
         end
 
         -- Re-anchor based on growth direction so first icon stays at anchor position
@@ -1093,7 +1162,7 @@ local function PositionMainContainer(mainFrameBuffs)
         mainFrame:ClearAllPoints()
         mainFrame:SetPoint(anchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
 
-        PositionFramesInContainer(mainFrame, mainFrameBuffs, iconSize, spacing, direction)
+        PositionFramesVariable(mainFrame, mainFrameBuffs, sizes, spacings, direction)
         mainFrame:Show()
     else
         lastMainSignature = ""

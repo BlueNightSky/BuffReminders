@@ -523,7 +523,7 @@ function BR.Config.GetCategorySetting(category, key)
 
     -- Check if this key uses inheritance
     if AppearanceKeys[key] then
-        if not catSettings.useCustomAppearance or not catSettings.split then
+        if not catSettings.useCustomAppearance then
             -- No custom appearance: always inherit from defaults
             return db.defaults and db.defaults[key]
         end
@@ -547,7 +547,7 @@ function BR.Config.HasCustomAppearance(category)
     if not db or not db.categorySettings or not db.categorySettings[category] then
         return false
     end
-    return db.categorySettings[category].useCustomAppearance == true and db.categorySettings[category].split == true
+    return db.categorySettings[category].useCustomAppearance == true
 end
 
 -- ============================================================================

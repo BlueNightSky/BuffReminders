@@ -1749,13 +1749,8 @@ local function CreateOptionsPanel()
         end)
 
         -- Shared enabled predicates for this category
-        local function isCategorySplitEnabled()
-            return IsCategorySplit(category)
-        end
-
         local function isCustomAppearanceEnabled()
-            return IsCategorySplit(category)
-                and db.categorySettings
+            return db.categorySettings
                 and db.categorySettings[category]
                 and db.categorySettings[category].useCustomAppearance == true
         end
@@ -1769,12 +1764,10 @@ local function CreateOptionsPanel()
                     and db.categorySettings[category]
                     and db.categorySettings[category].useCustomAppearance == true
             end,
-            enabled = isCategorySplitEnabled,
             tooltip = {
                 title = "Use custom appearance",
-                desc = "When disabled, this category inherits appearance settings from Global Defaults",
+                desc = "When disabled, this category inherits appearance settings from Global Defaults. Grow direction requires splitting into a separate frame.",
             },
-            infoTooltip = "Custom appearance requires splitting|This category must be split into a separate frame to customize its appearance independently. Check 'Split into separate frame' above to enable this option.",
             onChange = function(checked)
                 if not db.categorySettings then
                     db.categorySettings = {}
@@ -1828,7 +1821,9 @@ local function CreateOptionsPanel()
                 end
                 return db.defaults and db.defaults.growDirection or "CENTER"
             end,
-            enabled = isCustomAppearanceEnabled,
+            enabled = function()
+                return isCustomAppearanceEnabled() and IsCategorySplit(category)
+            end,
             onChange = function(dir)
                 BR.Config.Set("categorySettings." .. category .. ".growDirection", dir)
             end,
