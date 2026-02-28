@@ -47,8 +47,8 @@ local function GetActionSpellID(buff)
     if buff.requiresSpellID and not IsPlayerSpell(buff.requiresSpellID) then
         return nil
     end
-    local spec = GetSpecialization()
     if buff.requireSpecId then
+        local spec = GetSpecialization()
         if spec then
             local specId = GetSpecializationInfo(spec)
             if specId ~= buff.requireSpecId then
@@ -58,8 +58,8 @@ local function GetActionSpellID(buff)
     end
     -- When iconByRole is present, prefer the role-appropriate spell so the cast
     -- matches the displayed icon (e.g., Water Shield for healers, not Lightning Shield).
-    if not buff.castSpellID and buff.iconByRole and spec then
-        local role = GetSpecializationRole(spec)
+    if not buff.castSpellID and buff.iconByRole then
+        local role = BR.BuffState.GetPlayerRole()
         local roleSpell = role and buff.iconByRole[role]
         if roleSpell and IsPlayerSpell(roleSpell) then
             return roleSpell

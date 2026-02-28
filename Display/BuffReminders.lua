@@ -401,7 +401,6 @@ local eventFrame -- forward declaration; created later in file, referenced by St
 ---@type TestModeData?
 local testModeData = nil -- Stores seeded fake values for consistent test display
 local playerClass = nil -- Cached player class, set once on init
-local playerRole = nil -- Cached player role, invalidated on spec change
 local glowingSpells = {} -- Track which spell IDs are currently glowing (for action bar glow fallback)
 
 -- Dirty flag system: events set dirty=true, OnUpdate checks flag with throttle
@@ -597,24 +596,7 @@ end
 -- Use functions from State.lua
 local FormatRemainingTime = BR.StateHelpers.FormatRemainingTime
 
----Get player's current role (cached, invalidated on spec change)
----@return RoleType?
-local function GetPlayerRole()
-    if playerRole then
-        return playerRole
-    end
-    local spec = GetSpecialization()
-    if spec then
-        playerRole = GetSpecializationRole(spec)
-        return playerRole
-    end
-    return nil
-end
-
----Invalidate player role cache (call on PLAYER_SPECIALIZATION_CHANGED)
-local function InvalidatePlayerRoleCache()
-    playerRole = nil
-end
+local GetPlayerRole = BR.BuffState.GetPlayerRole
 
 ---Get spell texture (handles table of spellIDs and role-based icons)
 ---@param spellIDs SpellID
@@ -3242,7 +3224,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
             return
         end
         -- Invalidate caches when player changes spec
-        InvalidatePlayerRoleCache()
         BR.BuffState.InvalidateSpellCache()
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.RefreshOverlaySpells()

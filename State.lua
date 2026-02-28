@@ -89,6 +89,9 @@ local cachedSpellKnowledge = {}
 -- Spec ID cache (invalidated on PLAYER_SPECIALIZATION_CHANGED)
 local cachedSpecId = nil
 
+-- Player role cache (invalidated on PLAYER_SPECIALIZATION_CHANGED)
+local cachedPlayerRole = nil
+
 -- Off-hand weapon cache (invalidated on equipment/spec change)
 local cachedHasOffHandWeapon = nil
 
@@ -233,6 +236,19 @@ local function GetPlayerSpecId()
         cachedSpecId = GetSpecializationInfo(specIndex)
     end
     return cachedSpecId
+end
+
+---Get the player's current role (cached)
+---@return RoleType?
+local function GetPlayerRole()
+    if cachedPlayerRole then
+        return cachedPlayerRole
+    end
+    local specIndex = GetSpecialization()
+    if specIndex then
+        cachedPlayerRole = GetSpecializationRole(specIndex)
+    end
+    return cachedPlayerRole
 end
 
 ---Check if player knows a spell (cached version of IsPlayerSpell)
@@ -1473,12 +1489,18 @@ end
 ---Invalidate spec ID cache (call on PLAYER_ENTERING_WORLD, PLAYER_SPECIALIZATION_CHANGED)
 function BuffState.InvalidateSpecCache()
     cachedSpecId = nil
+    cachedPlayerRole = nil
 end
+
+---Get the player's current role (cached, invalidated on spec change)
+---@return RoleType?
+BuffState.GetPlayerRole = GetPlayerRole
 
 ---Invalidate spell knowledge cache (call on PLAYER_SPECIALIZATION_CHANGED)
 function BuffState.InvalidateSpellCache()
     cachedSpellKnowledge = {}
     cachedSpecId = nil
+    cachedPlayerRole = nil
 end
 
 ---Check if off-hand slot has a weapon (cached)
