@@ -242,6 +242,7 @@ local defaults = {
     },
     showOnlyInGroup = false,
     hideWhileResting = false,
+    hideInCombat = false,
     buffTrackingMode = "all",
     showOnlyOnReadyCheck = false,
     hidePetWhileMounted = true,
@@ -413,8 +414,9 @@ local function SetDirty()
 end
 
 -- Track combat state via events (InCombatLockdown() can lag behind PLAYER_REGEN_DISABLED)
+-- inCombat reflects both player regen AND boss encounter state for early detection
 local inCombat = false
-local inEncounter = false -- luacheck: ignore 231 (preserved for easy revert)
+local inEncounter = false
 local isResting = false
 
 -- Category frame system
@@ -1991,6 +1993,11 @@ UpdateDisplay = function()
             return
         end
 
+        if db.hideInCombat and inCombat then
+            HideAllDisplayFrames()
+            return
+        end
+
         -- PvP/Arena: still use fallback (not affected by Blizzard's non-secret change)
         if instanceType == "pvp" or instanceType == "arena" then
             HideAllDisplayFrames()
@@ -3158,18 +3165,20 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "GROUP_ROSTER_UPDATE" then
         SetDirty()
     elseif event == "PLAYER_REGEN_ENABLED" then
-        inCombat = false
+        inCombat = inEncounter
         BR.StateHelpers.ScanEatingState()
         BR.SecureButtons.RefreshOverlaySpells()
         StartUpdates()
     elseif event == "PLAYER_REGEN_DISABLED" then
         inCombat = true
-        SetDirty() -- trigger refresh with new combat state
+        SetDirty()
     elseif event == "ENCOUNTER_START" then
         inEncounter = true
+        inCombat = true
         SetDirty()
     elseif event == "ENCOUNTER_END" then
         inEncounter = false
+        inCombat = inCombat and InCombatLockdown()
         SetDirty()
     elseif event == "PLAYER_DEAD" then
         HideAllDisplayFrames()

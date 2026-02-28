@@ -2232,6 +2232,18 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(restingHolder, nil, COMPONENT_GAP)
 
+    local combatHolder = Components.Checkbox(settingsContent, {
+        label = "Hide in combat",
+        get = function()
+            return BuffRemindersDB.hideInCombat == true
+        end,
+        onChange = function(checked)
+            BuffRemindersDB.hideInCombat = checked
+            UpdateDisplay()
+        end,
+    })
+    setLayout:Add(combatHolder, nil, COMPONENT_GAP)
+
     local readyCheckHolder = Components.Checkbox(settingsContent, {
         label = "Show only on ready check",
         get = function()
