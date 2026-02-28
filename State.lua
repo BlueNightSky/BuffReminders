@@ -1170,6 +1170,7 @@ function BuffState.Refresh()
 
     local trackingMode = db.buffTrackingMode
     local inCombat = InCombatLockdown()
+    local hideExpiring = inCombat and db.hideExpiringInCombat ~= false
 
     -- Per-category glow settings (inherits from defaults via GetCategorySetting)
     local function GetCategoryGlow(cat)
@@ -1199,7 +1200,7 @@ function BuffState.Refresh()
                 if minRemaining and minRemaining < raidGlowThreshold then
                     entry.expiringTime = minRemaining
                 end
-            elseif raidGlow then
+            elseif raidGlow and not hideExpiring then
                 TrySetEntryExpiring(entry, minRemaining, raidGlowThreshold)
             end
         end
@@ -1229,7 +1230,7 @@ function BuffState.Refresh()
 
             if not hasBuff then
                 SetEntryMissing(entry, buff.missingText, presGlowMissing)
-            elseif presGlow and not buff.noExpirationGlow then
+            elseif presGlow and not buff.noExpirationGlow and not hideExpiring then
                 TrySetEntryExpiring(entry, minRemaining, presGlowThreshold)
             end
         end
@@ -1259,7 +1260,7 @@ function BuffState.Refresh()
 
             if shouldShow then
                 SetEntryMissing(entry, buff.missingText, targGlowMissing)
-            elseif shouldShow == false and targGlow then
+            elseif shouldShow == false and targGlow and not hideExpiring then
                 TrySetEntryExpiring(entry, remaining, targGlowThreshold)
             end
         end
@@ -1288,7 +1289,7 @@ function BuffState.Refresh()
             if shouldShow then
                 SetEntryMissing(entry, buff.missingText, selfGlowMissing)
                 entry.iconByRole = buff.iconByRole
-            elseif shouldShow == false and selfGlow and not buff.enchantID then
+            elseif shouldShow == false and selfGlow and not buff.enchantID and not hideExpiring then
                 -- Buff present but maybe expiring (enchants don't track expiration here)
                 local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
                 TrySetEntryExpiring(entry, remaining, selfGlowThreshold)
@@ -1358,7 +1359,7 @@ function BuffState.Refresh()
             )
             if shouldShow then
                 SetEntryMissing(entry, buff.missingText, consGlowMissing)
-            elseif consGlow and not buff.noExpirationGlow then
+            elseif consGlow and not buff.noExpirationGlow and not hideExpiring then
                 TrySetEntryExpiring(entry, remainingTime, consGlowThreshold)
             end
             -- Eating state for food entries (display uses this for icon override + countdown)
@@ -1422,7 +1423,7 @@ function BuffState.Refresh()
             local show = (wantPresent and shouldShow == false) or (not wantPresent and shouldShow)
             if show then
                 SetEntryMissing(entry, buff.missingText, customGlowMissing)
-            elseif not show and shouldShow ~= nil and customGlow and not buff.enchantID then
+            elseif not show and shouldShow ~= nil and customGlow and not buff.enchantID and not hideExpiring then
                 -- Buff is present (not missing), check if expiring
                 local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
                 TrySetEntryExpiring(entry, remaining, customGlowThreshold)

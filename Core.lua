@@ -103,6 +103,7 @@ local RootSettings = {
     splitCategories = "FramesReparent",
     frameLocked = nil, -- No refresh needed
     hideInCombat = nil,
+    hideExpiringInCombat = nil,
     showOnlyInGroup = nil,
     position = nil, -- Table with x, y
     buffTrackingMode = nil, -- No auto-refresh, manually calls UpdateDisplay
@@ -209,6 +210,7 @@ local function ValidatePath(segments)
     -- Check root-level settings (explicit key check since some have nil refresh type)
     local isRootSetting = root == "frameLocked"
         or root == "hideInCombat"
+        or root == "hideExpiringInCombat"
         or root == "showOnlyInGroup"
         or root == "position"
         or root == "buffTrackingMode"

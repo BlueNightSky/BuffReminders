@@ -2284,6 +2284,22 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(combatHolder, nil, COMPONENT_GAP)
 
+    local combatExpiringHolder = Components.Checkbox(settingsContent, {
+        label = "Hide expiring in combat",
+        tooltip = "Reduces clutter during combat by only showing buffs that are completely missing, not ones that are still active but expiring soon.",
+        get = function()
+            return BuffRemindersDB.hideExpiringInCombat ~= false
+        end,
+        enabled = function()
+            return BuffRemindersDB.hideInCombat ~= true
+        end,
+        onChange = function(checked)
+            BuffRemindersDB.hideExpiringInCombat = checked
+            UpdateDisplay()
+        end,
+    })
+    setLayout:Add(combatExpiringHolder, nil, COMPONENT_GAP)
+
     local trackingModeHolder = Components.Dropdown(settingsContent, {
         label = "Buff tracking",
         width = 200,

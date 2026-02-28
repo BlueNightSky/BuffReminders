@@ -245,6 +245,7 @@ local defaults = {
     showOnlyInGroup = false,
     hideWhileResting = false,
     hideInCombat = false,
+    hideExpiringInCombat = true,
     buffTrackingMode = "all",
     hidePetWhileMounted = true,
     petPassiveOnlyInCombat = false,
