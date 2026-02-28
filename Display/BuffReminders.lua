@@ -89,6 +89,7 @@ local addonName, BR = ...
 ---@field count FontString
 ---@field stackCount FontString
 ---@field buffText? FontString
+---@field foodLabel? FontString
 ---@field testText FontString
 ---@field isPlayerBuff? boolean
 ---@field buffCategory? CategoryName
@@ -908,6 +909,16 @@ local function CreateBuffFrame(buff, category)
         end
     end
 
+    -- Food label FontString (top-left inside the icon, shows stat abbreviation + hearty indicator)
+    if buff.key == "food" then
+        frame.foodLabel = frame:CreateFontString(nil, "OVERLAY")
+        frame.foodLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
+        local flSize = math.max(8, (catSettings.iconSize or 64) * 0.22)
+        frame.foodLabel:SetFont(fontPath, flSize, "OUTLINE")
+        frame.foodLabel:SetTextColor(1, 1, 1, 1)
+        frame.foodLabel:Hide()
+    end
+
     -- "TEST" text (shown above icon in test mode)
     frame.testText = frame:CreateFontString(nil, "OVERLAY")
     frame.testText:SetPoint("BOTTOM", frame, "TOP", 0, 25)
@@ -1530,6 +1541,39 @@ end
 -- Eating icon texture ID (from State.lua, matches the eating channel aura icon)
 local EATING_ICON = BR.EATING_AURA_ICON
 
+---Apply food visual styling (stat label + hearty indicator) to a frame.
+---@param frame table
+---@param label string? Food stat label (e.g. "M/V", "Crit")
+---@param hearty boolean? Whether the food is hearty
+local function ApplyFoodFrameStyle(frame, label, hearty)
+    if not label then
+        return
+    end
+    -- Lazy-init foodLabel FontString for extra frames (main frame creates it at init)
+    if not frame.foodLabel then
+        frame.foodLabel = frame:CreateFontString(nil, "OVERLAY")
+        frame.foodLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
+    end
+    local size = frame:GetWidth()
+    local fontSize = math.max(8, size * 0.22)
+    frame.foodLabel:SetFont(fontPath, fontSize, "OUTLINE")
+    frame.foodLabel:SetTextColor(1, 1, 1, 1)
+    if hearty then
+        frame.foodLabel:SetText("|cFFFFD100H|r " .. label)
+    else
+        frame.foodLabel:SetText(label)
+    end
+    frame.foodLabel:Show()
+end
+
+---Clear food visual styling from a frame.
+---@param frame table
+local function ClearFoodFrameStyle(frame)
+    if frame.foodLabel and (frame.key == "food" or frame.isExtraFrame) then
+        frame.foodLabel:Hide()
+    end
+end
+
 -- Resolve a consumable frame's icon from bag items.
 -- Returns "items" if bag items found (sets icon, quality overlay, stack count),
 -- "missing" if no items but showConsumablesWithoutItems is on,
@@ -1550,9 +1594,14 @@ local function ResolveConsumableFrame(frame)
         frame.count:Hide()
         frame.stackCount:SetText(items[1].count)
         frame.stackCount:Show()
+        -- Apply food stat label
+        if frame.key == "food" then
+            ApplyFoodFrameStyle(frame, items[1].foodLabel, items[1].foodHearty)
+        end
         return "items"
     end
     -- No items: fall back icon to buff definition
+    ClearFoodFrameStyle(frame)
     local def = frame.buffDef
     local fallback = def and (def.displayIcon or def.buffIconID)
     if fallback then
@@ -1571,6 +1620,9 @@ end
 -- Returns true if the frame was shown, false if it was skipped (e.g. consumable
 -- with no bag items and showConsumablesWithoutItems off).
 local function RenderVisibleEntry(frame, entry)
+    -- Clear food styling at the start of each render (re-applied by relevant paths below)
+    ClearFoodFrameStyle(frame)
+
     -- Hide stack count and quality overlay by default; only the consumable-with-items path shows them
     frame.stackCount:Hide()
     if frame.qualityOverlay then
@@ -1638,6 +1690,17 @@ local function RenderVisibleEntry(frame, entry)
         frame.count:Show()
         frame:Show()
         SetExpirationGlow(frame, true, entry.category, cachedGlow)
+        -- Show food stat label for expiring food (resolve from cached items)
+        if frame.key == "food" then
+            local items = frame._cachedItems
+            if items == nil then
+                items = BR.SecureButtons.GetConsumableActionItems(frame.buffDef) or false
+                frame._cachedItems = items
+            end
+            if items and items[1] then
+                ApplyFoodFrameStyle(frame, items[1].foodLabel, items[1].foodHearty)
+            end
+        end
     else -- "missing"
         -- Consumables with bag scan support: show actual item from bags
         if BUFF_KEY_TO_CATEGORY[frame.key] then
@@ -1669,6 +1732,9 @@ local function RenderVisibleEntry(frame, entry)
     if not ShouldShowText(frame.buffCategory) then
         frame.count:Hide()
         frame.stackCount:Hide()
+        if frame.foodLabel then
+            frame.foodLabel:Hide()
+        end
     end
     return true
 end
@@ -1686,7 +1752,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         end
     end
 
-    if entry.displayType ~= "missing" or entry.isEating then
+    if (entry.displayType ~= "missing" and entry.displayType ~= "expiring") or entry.isEating then
         return
     end
     if not BUFF_KEY_TO_CATEGORY[frame.key] or not frame:IsShown() then
@@ -1772,6 +1838,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         BR.SecureButtons.UpdateConsumableButtons(frame, nil)
         if displayMode == "expanded" and items and #items > 1 then
             local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
+            local isFood = frame.key == "food"
             for i = 2, #items do
                 local extra = GetOrCreateExtraFrame(frame, i - 1)
                 extra:SetParent(parentFrame)
@@ -1785,6 +1852,11 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra.count:Hide()
                 extra:Show()
                 SetExpirationGlow(extra, entry.shouldGlow, entry.category, cachedGlow)
+                -- Apply food label to expanded extra frames (clear first to handle toggle-off)
+                if isFood then
+                    ClearFoodFrameStyle(extra)
+                    ApplyFoodFrameStyle(extra, items[i].foodLabel, items[i].foodHearty)
+                end
                 frameList[#frameList + 1] = extra
             end
         end
@@ -2417,7 +2489,13 @@ local function UpdateVisuals()
         -- Frame alpha
         frame:SetAlpha(catSettings.iconAlpha or 1)
 
+        -- Food label font update
+        if frame.foodLabel then
+            local flSize = math.max(8, size * 0.22)
+            frame.foodLabel:SetFont(fontPath, flSize, "OUTLINE")
+        end
         if frame.buffText then
+            -- Raid BUFF! text
             local raidBts = BuffRemindersDB.categorySettings
                 and BuffRemindersDB.categorySettings.raid
                 and BuffRemindersDB.categorySettings.raid.buffTextSize
@@ -2437,6 +2515,9 @@ local function UpdateVisuals()
         -- Per-category text visibility
         if not ShouldShowText(frame.buffCategory) then
             frame.count:Hide()
+            if frame.foodLabel then
+                frame.foodLabel:Hide()
+            end
         end
 
         -- Update extra frames (expanded consumable display mode)

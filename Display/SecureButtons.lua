@@ -417,12 +417,21 @@ local function RefreshConsumableCache()
                                     cq = tonumber(tier)
                                 end
                             end
-                            buckets[category][itemID] = {
+                            local bucket = {
                                 itemID = itemID,
                                 count = count,
                                 icon = icon,
                                 craftedQuality = cq,
                             }
+                            -- Read food stat label and hearty flag from item table
+                            if category == "food" then
+                                local entry = allowedSet[itemID]
+                                if type(entry) == "table" then
+                                    bucket.foodLabel = entry.label
+                                    bucket.foodHearty = entry.hearty
+                                end
+                            end
+                            buckets[category][itemID] = bucket
                         end
                     end
                 end
