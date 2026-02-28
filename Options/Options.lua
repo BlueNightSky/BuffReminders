@@ -2321,7 +2321,18 @@ local function CreateOptionsPanel()
             BuffRemindersDB.showLoginMessages = checked
         end,
     })
-    setLayout:Add(loginMsgHolder)
+    setLayout:Add(loginMsgHolder, nil, COMPONENT_GAP)
+
+    LayoutSectionHeader(setLayout, settingsContent, "Danger zone")
+
+    local resetBtn = CreateButton(settingsContent, "Reset to Defaults", function()
+        StaticPopup_Show("BUFFREMINDERS_RESET_DEFAULTS")
+    end, {
+        title = "Reset to Defaults",
+        desc = "Wipe all settings and restore defaults. This will reload the UI.",
+    })
+    resetBtn:SetSize(130, 22)
+    setLayout:Add(resetBtn)
 
     -- ========== IMPORT/EXPORT TAB ==========
     -- Use simple frame (not scrollable) to avoid nested scroll frame issues with edit boxes
@@ -2548,6 +2559,21 @@ StaticPopupDialogs["BUFFREMINDERS_DELETE_CUSTOM"] = {
             UpdateDisplay()
         end
     end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+StaticPopupDialogs["BUFFREMINDERS_RESET_DEFAULTS"] = {
+    text = "Reset BuffReminders to defaults?\n\nThis will erase all customizations\nand reload the UI.",
+    button1 = "Reset",
+    button2 = "Cancel",
+    OnAccept = function()
+        wipe(BuffRemindersDB)
+        ReloadUI()
+    end,
+    showAlert = true,
     timeout = 0,
     whileDead = true,
     hideOnEscape = true,
