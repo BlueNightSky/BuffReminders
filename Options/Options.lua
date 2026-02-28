@@ -120,7 +120,7 @@ local function CreateOptionsPanel()
 
     -- Forward declarations for banner system
     local UpdateBannerLayout
-    local housingBanner, masqueBanner
+    local housingBanner, masqueBanner, readyCheckBanner
 
     -- Track all EditBoxes so we can clear focus when panel hides
     local panelEditBoxes = {}
@@ -278,6 +278,7 @@ local function CreateOptionsPanel()
         end
         if masqueBanner then
             masqueBanner:Refresh()
+            readyCheckBanner:Refresh()
             UpdateBannerLayout()
         end
     end
@@ -351,6 +352,14 @@ local function CreateOptionsPanel()
         end,
     })
 
+    readyCheckBanner = Components.Banner(panel, {
+        text = '"Show only on ready check" moved to per-category settings',
+        color = "orange",
+        visible = function()
+            return activeTabName == "settings"
+        end,
+    })
+
     UpdateBannerLayout = function()
         local bannerY = -30 - TAB_HEIGHT - BANNER_TOP_GAP
         local bannerOffset = 0
@@ -367,6 +376,14 @@ local function CreateOptionsPanel()
             masqueBanner:ClearAllPoints()
             masqueBanner:SetPoint("TOPLEFT", panel, "TOPLEFT", COL_PADDING, bannerY)
             masqueBanner:SetPoint("RIGHT", panel, "RIGHT", -COL_PADDING, 0)
+            bannerY = bannerY - BANNER_HEIGHT - BANNER_BETWEEN_GAP
+            bannerOffset = bannerOffset + BANNER_HEIGHT + BANNER_BETWEEN_GAP
+        end
+
+        if readyCheckBanner:IsShown() then
+            readyCheckBanner:ClearAllPoints()
+            readyCheckBanner:SetPoint("TOPLEFT", panel, "TOPLEFT", COL_PADDING, bannerY)
+            readyCheckBanner:SetPoint("RIGHT", panel, "RIGHT", -COL_PADDING, 0)
             bannerOffset = bannerOffset + BANNER_HEIGHT + BANNER_BOTTOM_GAP
         elseif bannerOffset > 0 then
             -- Replace the between-gap with a bottom-gap after the last visible banner
@@ -1088,6 +1105,23 @@ local function CreateOptionsPanel()
             onChange = OnCategoryVisibilityChange,
         })
         catLayout:Add(visToggles, nil, SECTION_GAP)
+
+        -- Show only on ready check (per-category)
+        local readyCheckHolder = Components.Checkbox(catContent, {
+            label = "Show only on ready check",
+            get = function()
+                local cs = db.categorySettings and db.categorySettings[category]
+                return cs and cs.showOnlyOnReadyCheck == true
+            end,
+            tooltip = {
+                title = "Show only on ready check",
+                desc = "Only show this category's buffs for 15 seconds after a ready check starts",
+            },
+            onChange = function(checked)
+                BR.Config.Set("categorySettings." .. category .. ".showOnlyOnReadyCheck", checked)
+            end,
+        })
+        catLayout:Add(readyCheckHolder, nil, COMPONENT_GAP)
 
         -- Icons sub-header (all categories except custom)
         if category ~= "custom" then
@@ -2238,40 +2272,6 @@ local function CreateOptionsPanel()
         end,
     })
     setLayout:Add(combatHolder, nil, COMPONENT_GAP)
-
-    local readyCheckHolder = Components.Checkbox(settingsContent, {
-        label = "Show only on ready check",
-        get = function()
-            return BuffRemindersDB.showOnlyOnReadyCheck == true
-        end,
-        onChange = function(checked)
-            BuffRemindersDB.showOnlyOnReadyCheck = checked
-            UpdateDisplay()
-            Components.RefreshAll()
-        end,
-    })
-    setLayout:Add(readyCheckHolder, nil, COMPONENT_GAP)
-
-    local readyDurationHolder = Components.Slider(settingsContent, {
-        label = "Duration",
-        min = 10,
-        max = 30,
-        get = function()
-            return BuffRemindersDB.readyCheckDuration or 15
-        end,
-        enabled = function()
-            return BuffRemindersDB.showOnlyOnReadyCheck == true
-        end,
-        suffix = "s",
-        labelWidth = 55,
-        sliderWidth = 70,
-        onChange = function(val)
-            BuffRemindersDB.readyCheckDuration = val
-        end,
-    })
-    setLayout:SetX(setX + 20)
-    setLayout:Add(readyDurationHolder, nil, COMPONENT_GAP)
-    setLayout:SetX(setX)
 
     local trackingModeHolder = Components.Dropdown(settingsContent, {
         label = "Buff tracking",

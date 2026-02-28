@@ -139,6 +139,7 @@ local CategorySettingKeys = {
     split = "FramesReparent",
     clickable = nil, -- No auto-refresh, handled manually via UpdateClickOverlays
     clickableHighlight = nil, -- No auto-refresh, handled manually via UpdateClickOverlays
+    showOnlyOnReadyCheck = "DisplayRefresh",
 }
 
 -- Defaults settings (path = defaults.{key})
@@ -282,6 +283,7 @@ local function ValidatePath(segments)
                 "clickable",
                 "clickableHighlight",
                 "subIconSide",
+                "showOnlyOnReadyCheck",
             }
             for _, key in ipairs(knownKeys) do
                 if setting == key then

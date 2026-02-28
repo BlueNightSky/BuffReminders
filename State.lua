@@ -514,6 +514,11 @@ local function IsCategoryVisibleForContent(category)
             return visibility.raidDifficulty[diffKey] ~= false
         end
     end
+    -- Per-category ready check filter
+    local catSettings = db.categorySettings and db.categorySettings[category]
+    if catSettings and catSettings.showOnlyOnReadyCheck and not inReadyCheck then
+        return false
+    end
     return true
 end
 

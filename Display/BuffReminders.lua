@@ -244,10 +244,8 @@ local defaults = {
     hideWhileResting = false,
     hideInCombat = false,
     buffTrackingMode = "all",
-    showOnlyOnReadyCheck = false,
     hidePetWhileMounted = true,
     petPassiveOnlyInCombat = false,
-    readyCheckDuration = 15, -- seconds
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
 
@@ -2046,12 +2044,6 @@ UpdateDisplay = function()
 
         local db = BuffRemindersDB
 
-        -- Hide based on visibility settings (checked before combat/instance overrides)
-        if db.showOnlyOnReadyCheck and not BR.BuffState.GetReadyCheckState() then
-            HideAllDisplayFrames()
-            return
-        end
-
         if db.showOnlyInGroup and GetNumGroupMembers() == 0 then
             HideAllDisplayFrames()
             return
@@ -2673,7 +2665,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 16
+        local DB_VERSION = 17
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3089,6 +3081,23 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                     end
                 end
             end,
+
+            -- [17] Migrate showOnlyOnReadyCheck from global to per-category
+            [17] = function()
+                if db.showOnlyOnReadyCheck then
+                    if not db.categorySettings then
+                        db.categorySettings = {}
+                    end
+                    for _, cat in ipairs({ "raid", "presence", "targeted", "self", "pet", "consumable", "custom" }) do
+                        if not db.categorySettings[cat] then
+                            db.categorySettings[cat] = {}
+                        end
+                        db.categorySettings[cat].showOnlyOnReadyCheck = true
+                    end
+                end
+                db.showOnlyOnReadyCheck = nil
+                db.readyCheckDuration = nil
+            end,
         }
 
         -- Run pending migrations
@@ -3283,8 +3292,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         BR.BuffState.SetReadyCheckState(true)
         UpdateDisplay() -- user-facing, must be instant
         -- Start timer to reset ready check state
-        local duration = BuffRemindersDB.readyCheckDuration or 15
-        readyCheckTimer = C_Timer.NewTimer(duration, function()
+        readyCheckTimer = C_Timer.NewTimer(15, function()
             BR.BuffState.SetReadyCheckState(false)
             readyCheckTimer = nil
             UpdateDisplay() -- must be instant
