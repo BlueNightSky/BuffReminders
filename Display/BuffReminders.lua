@@ -3198,15 +3198,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         end
         db.dbVersion = DB_VERSION
 
-        -- Login message for click-to-cast
-        C_Timer.After(5, function()
-            if BuffRemindersDB.showLoginMessages ~= false then
-                print(
-                    "|cff00ccffBuffReminders:|r Targeted buffs now support click-to-cast with last-target re-casting! Enable it in |cffffcc00/br|r."
-                )
-            end
-        end)
-
         -- Clean up old one-time notice flags
         db.glowUpdateNoticeShown = nil
         db.selfClickNoticeShown = nil
