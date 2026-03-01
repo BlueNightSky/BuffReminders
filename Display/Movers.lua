@@ -156,6 +156,10 @@ local function FinishMoverDrag(mover, catKey)
     mover:SetPoint(anchor, UIParent, "CENTER", x, y)
     SavePosition(catKey, x, y)
     RestoreContainer(catKey)
+    -- Re-sync sub-icon action buttons at new position
+    if BR.SecureButtons then
+        BR.SecureButtons.ScheduleSecureSync()
+    end
 end
 
 -- Coordinate popup: shared popup for typing exact X/Y positions on mover frames
@@ -333,6 +337,10 @@ local function CreateMoverFrame(catKey, displayName)
             coordPopup:Hide()
         end
         DimContainer(catKey)
+        -- Hide sub-icon action buttons so they don't linger at old positions during drag
+        if BR.SecureButtons then
+            BR.SecureButtons.HideSecureFramesForCatKey(catKey)
+        end
         self.isDragging = true
         self:StartMoving()
     end)

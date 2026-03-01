@@ -567,6 +567,44 @@ local function GetEffectiveCategory(frame)
     return "main"
 end
 
+-- Hide secure frames (action buttons + overlays) for frames belonging to a specific catKey.
+-- Used during mover drag to prevent sub-icons from lingering at old positions.
+local function HideSecureFramesForCatKey(catKey)
+    if InCombatLockdown() then
+        return
+    end
+    for _, frame in pairs(BR.Display.frames) do
+        local effectiveCat = GetEffectiveCategory(frame)
+        if effectiveCat == catKey then
+            if frame.actionButtons then
+                for _, btn in ipairs(frame.actionButtons) do
+                    if btn._br_driver_active then
+                        RegisterStateDriver(btn, "visibility", "hide")
+                        btn._br_driver_active = false
+                        btn._br_x = nil
+                    else
+                        btn:Hide()
+                    end
+                end
+            end
+            if frame.clickOverlay then
+                frame.clickOverlay:EnableMouse(false)
+                frame.clickOverlay:Hide()
+                frame.clickOverlay._br_left = nil
+            end
+            if frame.extraFrames then
+                for _, extra in ipairs(frame.extraFrames) do
+                    if extra.clickOverlay then
+                        extra.clickOverlay:EnableMouse(false)
+                        extra.clickOverlay:Hide()
+                        extra.clickOverlay._br_left = nil
+                    end
+                end
+            end
+        end
+    end
+end
+
 -- Sync all secure button positions/sizes/visibility with their buff frames.
 -- Uses screen coordinates (no anchors) so secure frames never taint the buff hierarchy.
 -- Safe to call at any time; skips if in combat lockdown.
@@ -1118,6 +1156,7 @@ BR.SecureButtons = {
     UpdateConsumableButtons = UpdateConsumableButtons,
     InvalidateConsumableCache = InvalidateConsumableCache,
     HideAllSecureFrames = HideAllSecureFrames,
+    HideSecureFramesForCatKey = HideSecureFramesForCatKey,
     ScheduleSecureSync = ScheduleSecureSync,
     SetQualityOverlay = SetQualityOverlay,
     ReapplyPetSpecIconIfHovered = ReapplyPetSpecIconIfHovered,
