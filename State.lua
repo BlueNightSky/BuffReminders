@@ -122,16 +122,16 @@ local includeNPCsInCounting = false
 -- Used by CountMissingBuff to skip NPCs during combat (NPC buff spell IDs aren't combat-whitelisted).
 local refreshInCombat = false
 
--- Combat-safe spell whitelist loaded from Data/CombatSafeSpells.lua
+-- Aura-safe spell whitelist loaded from Data/CombatSafeSpells.lua
 local COMBAT_SAFE_SPELLS = BR.COMBAT_SAFE_SPELLS
 
----Determine if a buff's detection method works during combat.
+---Determine if a buff's detection method works in aura-restricted contexts (combat + M+ keystones).
 ---Non-aura detection (weapon enchants, inventory checks) is always safe.
 ---Aura-based detection requires all queried spell IDs to be in the Blizzard whitelist.
 ---@param buff table Any buff table entry (RaidBuff, SelfBuff, ConsumableBuff, etc.)
 ---@return boolean
-local function IsCombatTrackable(buff)
-    -- Non-aura detection is always combat-safe
+local function IsAuraTrackable(buff)
+    -- Non-aura detection is always safe in restricted contexts
     if buff.checkWeaponEnchant or buff.checkWeaponEnchantOH then
         return true
     end
@@ -144,7 +144,7 @@ local function IsCombatTrackable(buff)
         return true
     end
 
-    -- buffIconID (GetAuraDataByIndex iteration) is not combat-safe
+    -- buffIconID (GetAuraDataByIndex iteration) is not safe in restricted contexts
     if buff.buffIconID then
         return false
     end
@@ -1170,7 +1170,8 @@ function BuffState.Refresh()
 
     local trackingMode = db.buffTrackingMode
     local inCombat = InCombatLockdown()
-    local hideExpiring = inCombat and db.hideExpiringInCombat ~= false
+    local isAuraRestricted = inCombat or GetCurrentDifficultyKey() == "mythicPlus"
+    local hideExpiring = isAuraRestricted and db.hideExpiringInCombat ~= false
 
     -- Per-category glow settings (inherits from defaults via GetCategorySetting)
     local function GetCategoryGlow(cat)
@@ -1225,7 +1226,7 @@ function BuffState.Refresh()
             readyCheckOk = overrides and overrides[overrideKey] == false
         end
         local showBuff = presenceVisible and readyCheckOk and scope.show
-        if not (inCombat and not IsCombatTrackable(buff)) and IsBuffEnabled(buff.key) and showBuff then
+        if (not isAuraRestricted or IsAuraTrackable(buff)) and IsBuffEnabled(buff.key) and showBuff then
             local hasBuff, minRemaining = HasPresenceBuff(buff.spellID, scope.playerOnly)
 
             if not hasBuff then
@@ -1244,7 +1245,7 @@ function BuffState.Refresh()
         local settingKey = GetBuffSettingKey(buff)
 
         if
-            not (inCombat and not IsCombatTrackable(buff))
+            (not isAuraRestricted or IsAuraTrackable(buff))
             and IsBuffEnabled(settingKey)
             and targetedVisible
             and PassesPreChecks(buff, nil, db)
@@ -1273,7 +1274,7 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "self", i)
         local settingKey = buff.groupId or buff.key
 
-        if not (inCombat and not IsCombatTrackable(buff)) and IsBuffEnabled(settingKey) and selfVisible then
+        if (not isAuraRestricted or IsAuraTrackable(buff)) and IsBuffEnabled(settingKey) and selfVisible then
             local shouldShow = ShouldShowSelfBuff(
                 buff.spellID,
                 buff.class,
@@ -1344,7 +1345,7 @@ function BuffState.Refresh()
 
         local hasCaster = not buff.class or HasCasterForBuff(buff.class, buff.levelRequired)
         if
-            not (inCombat and not IsCombatTrackable(buff))
+            (not isAuraRestricted or IsAuraTrackable(buff))
             and IsBuffEnabled(settingKey)
             and consumableVisible
             and hasCaster
@@ -1380,7 +1381,7 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "custom", i)
         local settingKey = buff.groupId or buff.key
 
-        local shouldProcess = not (inCombat and not IsCombatTrackable(buff))
+        local shouldProcess = (not isAuraRestricted or IsAuraTrackable(buff))
             and IsBuffEnabled(settingKey)
             and customVisible
 
