@@ -1951,13 +1951,29 @@ local function UpdatePetLabels(frame, petAction)
     end
 end
 
--- Expand a pet entry's actions into the main frame + extra frames.
--- The first action overrides the main frame's icon; subsequent actions create extra frames.
--- Returns the extra frames appended to frameList (if provided).
+local function SetupPetExtraFrame(frame, index, action, entry, cachedGlow, frameList)
+    local extra = GetOrCreateExtraFrame(frame, index)
+    extra:SetParent(frame:GetParent())
+    extra:SetSize(frame:GetWidth(), frame:GetHeight())
+    extra.icon:SetTexture(action.icon)
+    extra.count:Hide()
+    extra.stackCount:Hide()
+    extra._br_pet_spell = action.spellName
+    extra._br_pet_spec_icon = action.petSpecIcon
+    UpdatePetLabels(extra, action)
+    BR.SecureButtons.ReapplyPetSpecIconIfHovered(extra)
+    extra:Show()
+    SetExpirationGlow(extra, entry.shouldGlow, entry.category, cachedGlow)
+    if frameList then
+        frameList[#frameList + 1] = extra
+    end
+end
+
+---Apply pet display mode to a frame: expand into extra frames or restore generic icon.
 ---@param frame BuffFrame
 ---@param entry BuffStateEntry
 ---@param frameList? table[] List to append extra frames to (for positioning)
-local function ExpandPetActions(frame, entry, frameList)
+local function ApplyPetDisplayMode(frame, entry, frameList)
     if not entry.petActions or #entry.petActions == 0 or not frame:IsShown() then
         frame._br_pet_spell = nil
         frame._br_pet_spec_icon = nil
@@ -1969,56 +1985,23 @@ local function ExpandPetActions(frame, entry, frameList)
     if frame.extraFrames then
         for _, extra in ipairs(frame.extraFrames) do
             extra:Hide()
+            UpdatePetLabels(extra, nil)
         end
     end
 
-    -- Override main frame with first action
-    local first = entry.petActions[1]
-    frame.icon:SetTexture(first.icon)
-    frame.count:Hide()
-    frame._br_pet_spell = first.spellName
-    frame._br_pet_spec_icon = first.petSpecIcon
-    UpdatePetLabels(frame, first)
-    BR.SecureButtons.ReapplyPetSpecIconIfHovered(frame)
-
-    -- Extra frames for remaining actions
-    local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
-    for i = 2, #entry.petActions do
-        local action = entry.petActions[i]
-        local extra = GetOrCreateExtraFrame(frame, i - 1)
-        extra:SetParent(frame:GetParent())
-        extra:SetSize(frame:GetWidth(), frame:GetHeight())
-        extra.icon:SetTexture(action.icon)
-        extra.count:Hide()
-        extra.stackCount:Hide()
-        extra._br_pet_spell = action.spellName
-        extra._br_pet_spec_icon = action.petSpecIcon
-        UpdatePetLabels(extra, action)
-        BR.SecureButtons.ReapplyPetSpecIconIfHovered(extra)
-        extra:Show()
-        SetExpirationGlow(extra, entry.shouldGlow, entry.category, cachedGlow)
-        if frameList then
-            frameList[#frameList + 1] = extra
-        end
-    end
-end
-
----Apply pet display mode to a frame: expand into extra frames or restore generic icon.
----@param frame BuffFrame
----@param entry BuffStateEntry
----@param frameList? table[] List to append extra frames to (for positioning)
-local function ApplyPetDisplayMode(frame, entry, frameList)
-    if not entry.petActions then
-        return
-    end
     local petMode = (BuffRemindersDB.defaults or {}).petDisplayMode or "generic"
+
+    -- Set up main frame icon and click-to-cast target
     if petMode == "expanded" then
-        ExpandPetActions(frame, entry, frameList)
+        local first = entry.petActions[1]
+        frame.icon:SetTexture(first.icon)
+        frame.count:Hide()
+        frame._br_pet_spell = first.spellName
+        frame._br_pet_spec_icon = first.petSpecIcon
+        UpdatePetLabels(frame, first)
     else
-        -- Generic mode: restore original icon, use preferred action for click-to-cast
         local gi = entry.petActions.genericIndex or 1
         local preferredAction = entry.petActions[gi]
-
         local displayIcon = frame.buffDef and frame.buffDef.displayIcon
         if type(displayIcon) == "table" then
             displayIcon = displayIcon[1]
@@ -2030,41 +2013,18 @@ local function ApplyPetDisplayMode(frame, entry, frameList)
         frame._br_pet_spell = preferredAction and preferredAction.spellName
         frame._br_pet_spec_icon = preferredAction and preferredAction.petSpecIcon
         UpdatePetLabels(frame, preferredAction)
-        BR.SecureButtons.ReapplyPetSpecIconIfHovered(frame)
+    end
+    BR.SecureButtons.ReapplyPetSpecIconIfHovered(frame)
 
-        -- Hide all extras first
-        if frame.extraFrames then
-            for _, extra in ipairs(frame.extraFrames) do
-                extra:Hide()
-                UpdatePetLabels(extra, nil)
-            end
-        end
-
-        -- Show Revive Pet as a second icon alongside the generic summon icon
-        local reviveAction
-        for _, action in ipairs(entry.petActions) do
-            if action.spellID == BR.PetHelpers.REVIVE_PET_ID then
-                reviveAction = action
-                break
-            end
-        end
-        if reviveAction then
-            local extra = GetOrCreateExtraFrame(frame, 1)
-            extra:SetParent(frame:GetParent())
-            extra:SetSize(frame:GetWidth(), frame:GetHeight())
-            extra.icon:SetTexture(reviveAction.icon)
-            extra.count:Hide()
-            extra.stackCount:Hide()
-            extra._br_pet_spell = reviveAction.spellName
-            extra._br_pet_spec_icon = nil
-            UpdatePetLabels(extra, reviveAction)
-            BR.SecureButtons.ReapplyPetSpecIconIfHovered(extra)
-            extra:Show()
-            local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
-            SetExpirationGlow(extra, entry.shouldGlow, entry.category, cachedGlow)
-            if frameList then
-                frameList[#frameList + 1] = extra
-            end
+    -- Show extra frames for additional actions
+    local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
+    local extraIndex = 0
+    for i, action in ipairs(entry.petActions) do
+        local showAsExtra = (petMode == "expanded" and i >= 2)
+            or (petMode ~= "expanded" and action.spellID == BR.PetHelpers.REVIVE_PET_ID)
+        if showAsExtra then
+            extraIndex = extraIndex + 1
+            SetupPetExtraFrame(frame, extraIndex, action, entry, cachedGlow, frameList)
         end
     end
 end
