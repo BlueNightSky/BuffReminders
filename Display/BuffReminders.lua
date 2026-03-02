@@ -248,6 +248,7 @@ local defaults = {
     hideExpiringInCombat = true,
     buffTrackingMode = "all",
     hidePetWhileMounted = true,
+    hideAllInVehicle = false,
     petPassiveOnlyInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
@@ -2100,6 +2101,11 @@ UpdateDisplay = function()
             return
         end
 
+        if db.hideAllInVehicle and BR.BuffState.GetInVehicle() then
+            HideAllDisplayFrames()
+            return
+        end
+
         -- PvP/Arena: still use fallback (not affected by Blizzard's non-secret change)
         if instanceType == "pvp" or instanceType == "arena" then
             HideAllDisplayFrames()
@@ -2667,6 +2673,8 @@ eventFrame:RegisterEvent("PET_BAR_UPDATE")
 eventFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 eventFrame:RegisterEvent("PET_STABLE_UPDATE")
 eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+eventFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
+eventFrame:RegisterEvent("UNIT_EXITED_VEHICLE")
 eventFrame:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
 eventFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
 eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
@@ -3250,6 +3258,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- Sync flags with current state (in case of reload)
         inCombat = InCombatLockdown()
         isResting = IsResting()
+        BR.BuffState.SetInVehicle(UnitInVehicle("player") == true)
         BR.StateHelpers.ScanEatingState()
         ResolveFontPath()
         if not mainFrame then
@@ -3380,5 +3389,10 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         BR.SecureButtons.InvalidateConsumableCache()
         SetDirty()
         BR.SecureButtons.UpdateActionButtons("consumable")
+    elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_EXITED_VEHICLE" then
+        if arg1 == "player" then
+            BR.BuffState.SetInVehicle(event == "UNIT_ENTERED_VEHICLE")
+            UpdateDisplay()
+        end
     end
 end)

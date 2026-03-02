@@ -57,6 +57,9 @@ local playerClass = nil
 -- Ready check state (set via SetReadyCheckState)
 local inReadyCheck = false
 
+-- Vehicle state (set via SetInVehicle)
+local inVehicle = false
+
 -- ============================================================================
 -- CACHED VALUES (invalidated by specific events)
 -- ============================================================================
@@ -493,6 +496,9 @@ end
 ---@param category CategoryName
 ---@return boolean
 local function IsCategoryVisibleForContent(category)
+    if inVehicle and category ~= "raid" and category ~= "presence" then
+        return false
+    end
     local db = BuffRemindersDB
     if not db.categoryVisibility then
         return true
@@ -1481,6 +1487,18 @@ end
 ---@return boolean
 function BuffState.GetReadyCheckState()
     return inReadyCheck
+end
+
+---Set the vehicle state
+---@param state boolean
+function BuffState.SetInVehicle(state)
+    inVehicle = state
+end
+
+---Get the vehicle state
+---@return boolean
+function BuffState.GetInVehicle()
+    return inVehicle
 end
 
 -- ============================================================================

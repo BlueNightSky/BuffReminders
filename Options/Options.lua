@@ -2300,6 +2300,19 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(combatExpiringHolder, nil, COMPONENT_GAP)
 
+    local vehicleHolder = Components.Checkbox(settingsContent, {
+        label = "Hide all in vehicle",
+        tooltip = "Completely hides all buff reminders while piloting a quest vehicle or turret. When disabled, raid and presence buffs still show in vehicles.",
+        get = function()
+            return BuffRemindersDB.hideAllInVehicle == true
+        end,
+        onChange = function(checked)
+            BuffRemindersDB.hideAllInVehicle = checked
+            UpdateDisplay()
+        end,
+    })
+    setLayout:Add(vehicleHolder, nil, COMPONENT_GAP)
+
     local trackingModeHolder = Components.Dropdown(settingsContent, {
         label = "Buff tracking",
         width = 200,
