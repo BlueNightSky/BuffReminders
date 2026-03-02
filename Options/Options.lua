@@ -2285,8 +2285,8 @@ local function CreateOptionsPanel()
     setLayout:Add(combatHolder, nil, COMPONENT_GAP)
 
     local combatExpiringHolder = Components.Checkbox(settingsContent, {
-        label = "Hide expiring in combat",
-        tooltip = "Reduces clutter during combat by only showing buffs that are completely missing, not ones that are still active but expiring soon.",
+        label = "Hide expiring",
+        tooltip = { title = "Hide expiring", desc = "During combat, hide buffs that are expiring soon and only show completely missing ones" },
         get = function()
             return BuffRemindersDB.hideExpiringInCombat ~= false
         end,
@@ -2301,8 +2301,8 @@ local function CreateOptionsPanel()
     setLayout:Add(combatExpiringHolder, nil, COMPONENT_GAP)
 
     local vehicleHolder = Components.Checkbox(settingsContent, {
-        label = "Hide all in vehicle",
-        tooltip = "Completely hides all buff reminders while piloting a quest vehicle or turret. When disabled, raid and presence buffs still show in vehicles.",
+        label = "Hide in vehicle",
+        tooltip = { title = "Hide in vehicle", desc = "Hide all buff reminders while in a quest vehicle. When disabled, raid and presence buffs still show" },
         get = function()
             return BuffRemindersDB.hideAllInVehicle == true
         end,
