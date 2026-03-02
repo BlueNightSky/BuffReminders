@@ -2687,15 +2687,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
             BuffRemindersDB = {}
         end
 
-        -- Notify users about the rename (shows once)
-        if not BuffRemindersDB.renameNotificationShown then
-            BuffRemindersDB.renameNotificationShown = true
-            print("|cff00ccffBuffReminders:|r This addon was renamed from |cffffcc00RaidBuffsTracker|r.")
-            print(
-                "|cff00ccffBuffReminders:|r Your previous settings could not be migrated. Use |cffffcc00/br|r to reconfigure."
-            )
-        end
-
         -- Deep copy default values for missing keys (skips 'defaults' sub-table, served by metatable)
         local function DeepCopyDefault(source, target)
             for k, v in pairs(source) do
@@ -3170,6 +3161,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- Clean up old one-time notice flags
         db.glowUpdateNoticeShown = nil
         db.selfClickNoticeShown = nil
+        db.renameNotificationShown = nil
 
         -- Deep copy defaults for non-defaults tables
         DeepCopyDefault(defaults, db)
