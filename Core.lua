@@ -36,6 +36,7 @@ local _, BR = ...
 ---@field dungeon boolean
 ---@field scenario boolean
 ---@field raid boolean
+---@field housing boolean
 ---@field dungeonDifficulty? DungeonDifficulty
 ---@field raidDifficulty? RaidDifficulty
 

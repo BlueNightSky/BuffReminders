@@ -446,9 +446,21 @@ local function IsBuffEnabled(key)
 end
 
 ---Get the current content type based on instance/zone (cached)
----@return "openWorld"|"dungeon"|"scenario"|"raid"
+---@return "openWorld"|"dungeon"|"scenario"|"raid"|"housing"
 local function GetCurrentContentType()
     if cachedContentType then
+        return cachedContentType
+    end
+
+    -- Check housing before instance type (housing zones may report as instanced)
+    if
+        C_Housing
+        and (
+            (C_Housing.IsInsideHouseOrPlot and C_Housing.IsInsideHouseOrPlot())
+            or (C_Housing.IsOnNeighborhoodMap and C_Housing.IsOnNeighborhoodMap())
+        )
+    then
+        cachedContentType = "housing"
         return cachedContentType
     end
 

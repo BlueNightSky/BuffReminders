@@ -292,16 +292,17 @@ local defaults = {
 
     ---@type CategoryVisibility
     categoryVisibility = { -- Which content types each category shows in
-        raid = { openWorld = true, dungeon = true, scenario = true, raid = true },
-        presence = { openWorld = true, dungeon = true, scenario = true, raid = true },
-        targeted = { openWorld = false, dungeon = true, scenario = true, raid = true },
-        self = { openWorld = true, dungeon = true, scenario = true, raid = true },
-        pet = { openWorld = true, dungeon = true, scenario = true, raid = true },
+        raid = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
+        presence = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
+        targeted = { openWorld = false, dungeon = true, scenario = true, raid = true, housing = false },
+        self = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
+        pet = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
         consumable = {
             openWorld = false,
             dungeon = true,
             scenario = true,
             raid = true,
+            housing = false,
             dungeonDifficulty = {
                 normal = false,
                 heroic = false,
@@ -317,7 +318,7 @@ local defaults = {
                 mythic = true,
             },
         },
-        custom = { openWorld = true, dungeon = true, scenario = true, raid = true },
+        custom = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
     },
 
     ---@type AllCategorySettings
@@ -2099,17 +2100,8 @@ UpdateDisplay = function()
         -- Test mode: generate fake state entries through the normal pipeline
         GenerateTestEntries()
     else
-        -- Early exit: dead, instanced PvP, or player housing
-        local _, instanceType = IsInInstance()
-        local inHousing = C_Housing
-            and (
-                (C_Housing.IsInsideHouseOrPlot and C_Housing.IsInsideHouseOrPlot())
-                or (C_Housing.IsOnNeighborhoodMap and C_Housing.IsOnNeighborhoodMap())
-            )
-
         local isDead = UnitIsDeadOrGhost("player")
-        -- Absolute exit: nothing should show when dead or in housing
-        if isDead or inHousing then
+        if isDead then
             HideAllDisplayFrames()
             return
         end
@@ -2137,6 +2129,7 @@ UpdateDisplay = function()
         end
 
         -- PvP/Arena: still use fallback (not affected by Blizzard's non-secret change)
+        local _, instanceType = IsInInstance()
         if instanceType == "pvp" or instanceType == "arena" then
             HideAllDisplayFrames()
             UpdateFallbackDisplay()
@@ -2745,7 +2738,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 17
+        local DB_VERSION = 18
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3177,6 +3170,18 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                 end
                 db.showOnlyOnReadyCheck = nil
                 db.readyCheckDuration = nil
+            end,
+
+            -- [18] Add housing = false to existing categoryVisibility entries
+            [18] = function()
+                if db.categoryVisibility then
+                    for _, cat in ipairs({ "raid", "presence", "targeted", "self", "pet", "consumable", "custom" }) do
+                        local vis = db.categoryVisibility[cat]
+                        if vis and vis.housing == nil then
+                            vis.housing = false
+                        end
+                    end
+                end
             end,
         }
 

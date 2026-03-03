@@ -119,7 +119,7 @@ local function CreateOptionsPanel()
 
     -- Forward declarations for banner system
     local UpdateBannerLayout
-    local housingBanner, masqueBanner, readyCheckBanner
+    local masqueBanner, readyCheckBanner
 
     -- Track all EditBoxes so we can clear focus when panel hides
     local panelEditBoxes = {}
@@ -331,17 +331,6 @@ local function CreateOptionsPanel()
     local BANNER_BETWEEN_GAP = 4
     local BANNER_BOTTOM_GAP = 0
 
-    housingBanner = Components.Banner(panel, {
-        text = "Buff tracking is disabled in housing zones",
-        visible = function()
-            return C_Housing
-                and (
-                    (C_Housing.IsInsideHouseOrPlot and C_Housing.IsInsideHouseOrPlot())
-                    or (C_Housing.IsOnNeighborhoodMap and C_Housing.IsOnNeighborhoodMap())
-                )
-        end,
-    })
-
     masqueBanner = Components.Banner(panel, {
         text = "Zoom and Border settings are managed by Masque",
         icon = "QuestNormal",
@@ -362,14 +351,6 @@ local function CreateOptionsPanel()
     UpdateBannerLayout = function()
         local bannerY = -30 - TAB_HEIGHT - BANNER_TOP_GAP
         local bannerOffset = 0
-
-        if housingBanner:IsShown() then
-            housingBanner:ClearAllPoints()
-            housingBanner:SetPoint("TOPLEFT", panel, "TOPLEFT", COL_PADDING, bannerY)
-            housingBanner:SetPoint("RIGHT", panel, "RIGHT", -COL_PADDING, 0)
-            bannerY = bannerY - BANNER_HEIGHT - BANNER_BETWEEN_GAP
-            bannerOffset = bannerOffset + BANNER_HEIGHT + BANNER_BETWEEN_GAP
-        end
 
         if masqueBanner:IsShown() then
             masqueBanner:ClearAllPoints()

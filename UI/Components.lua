@@ -1574,6 +1574,7 @@ local CONTENT_TOGGLE_DEFS = {
     { key = "scenario", label = "S", tooltip = "Scenarios (Delves, Torghast, etc.)" },
     { key = "dungeon", label = "D", tooltip = "Dungeons (including M+)" },
     { key = "raid", label = "R", tooltip = "Raids" },
+    { key = "housing", label = "H", tooltip = "Housing" },
 }
 
 local DUNGEON_DIFF_DEFS = {
@@ -1735,7 +1736,8 @@ local function MakeContentBarConfig(category, onChange)
                 db.categoryVisibility = {}
             end
             if not db.categoryVisibility[category] then
-                db.categoryVisibility[category] = { openWorld = true, scenario = true, dungeon = true, raid = true }
+                db.categoryVisibility[category] =
+                    { openWorld = true, scenario = true, dungeon = true, raid = true, housing = false }
             end
             db.categoryVisibility[category][key] = not db.categoryVisibility[category][key]
         end,
