@@ -6,6 +6,7 @@ local addonName, BR = ...
 
 ---@class DefaultSettings
 ---@field iconSize number
+---@field iconWidth? number
 ---@field textSize? number
 ---@field iconAlpha number
 ---@field textAlpha number
@@ -35,6 +36,7 @@ local addonName, BR = ...
 ---@class CategorySetting
 ---@field position CategoryPosition
 ---@field iconSize? number
+---@field iconWidth? number
 ---@field textSize? number
 ---@field iconAlpha? number
 ---@field textAlpha? number
@@ -258,6 +260,7 @@ local defaults = {
     defaults = {
         -- Appearance
         iconSize = 64,
+        -- iconWidth: nil = same as iconSize (square). Set explicitly for non-square icons.
         -- textSize: nil = auto (derived from iconSize * 0.32). Only set when user explicitly overrides.
         iconAlpha = 1,
         textAlpha = 1,
@@ -483,6 +486,7 @@ local function GetCategorySettings(category)
         return {
             position = catSettings and catSettings.position or { point = "CENTER", x = 0, y = 0 },
             iconSize = globalDefaults.iconSize or 64,
+            iconWidth = globalDefaults.iconWidth,
             textSize = globalDefaults.textSize, -- nil = auto (derived from iconSize)
             iconAlpha = globalDefaults.iconAlpha or 1,
             textAlpha = globalDefaults.textAlpha or 1,
@@ -513,6 +517,7 @@ local function GetCategorySettings(category)
         -- This ensures custom-appearance categories are fully independent from Global Defaults changes.
         -- Values are snapshotted from current defaults when useCustomAppearance is first enabled.
         result.iconSize = (catSettings and catSettings.iconSize) or 64
+        result.iconWidth = catSettings and catSettings.iconWidth
         result.textSize = (catSettings and catSettings.textSize) -- nil = auto
         result.iconAlpha = (catSettings and catSettings.iconAlpha) or 1
         result.textAlpha = (catSettings and catSettings.textAlpha) or 1
@@ -528,6 +533,7 @@ local function GetCategorySettings(category)
         result.expirationThreshold = (catSettings and catSettings.expirationThreshold)
     else
         result.iconSize = globalDefaults.iconSize or 64
+        result.iconWidth = globalDefaults.iconWidth
         result.textSize = globalDefaults.textSize -- nil = auto
         result.iconAlpha = globalDefaults.iconAlpha or 1
         result.textAlpha = globalDefaults.textAlpha or 1
@@ -588,6 +594,14 @@ local TEXT_SCALE_RATIO = 0.32
 local function GetFontSize(scale, textSize, iconSize)
     local baseSize = textSize or math.floor((iconSize or 64) * TEXT_SCALE_RATIO)
     return math.max(6, math.floor(baseSize * (scale or 1)))
+end
+
+---Get effective icon width (falls back to iconSize for square icons)
+---@param iconWidth? number Explicit width setting
+---@param iconSize number Icon height (used as fallback)
+---@return number width
+local function GetEffectiveWidth(iconWidth, iconSize)
+    return iconWidth or iconSize
 end
 
 ---Get font size for a specific frame based on its effective category
@@ -853,7 +867,8 @@ local function CreateBuffFrame(buff, category)
         or "main"
     local catSettings = GetCategorySettings(effectiveCat)
     local iconSize = catSettings.iconSize or 64
-    frame:SetSize(iconSize, iconSize)
+    local iconWidth = GetEffectiveWidth(catSettings.iconWidth, iconSize)
+    frame:SetSize(iconWidth, iconSize)
 
     -- Icon + border textures
     local displayIcon = buff.displayIcon
@@ -961,7 +976,8 @@ local function GetOrCreateExtraFrame(frame, index)
     local effectiveCat = GetEffectiveCategory(frame)
     local catSettings = GetCategorySettings(effectiveCat)
     local iconSize = catSettings.iconSize or 64
-    extra:SetSize(iconSize, iconSize)
+    local iconWidth = GetEffectiveWidth(catSettings.iconWidth, iconSize)
+    extra:SetSize(iconWidth, iconSize)
 
     CreateIconTextures(extra, nil)
 
@@ -1000,7 +1016,7 @@ local function GetOrCreateExtraFrame(frame, index)
 end
 
 -- Helper to position frames within a container using specified settings
-local function PositionFramesInContainer(container, frames, iconSize, spacing, direction)
+local function PositionFramesInContainer(container, frames, iconWidth, iconHeight, spacing, direction)
     local count = #frames
     if count == 0 then
         return
@@ -1010,18 +1026,18 @@ local function PositionFramesInContainer(container, frames, iconSize, spacing, d
         frame:ClearAllPoints()
         if direction == "LEFT" then
             -- Grow left: first icon at right edge, subsequent icons to the left
-            frame:SetPoint("RIGHT", container, "RIGHT", -((i - 1) * (iconSize + spacing)), 0)
+            frame:SetPoint("RIGHT", container, "RIGHT", -((i - 1) * (iconWidth + spacing)), 0)
         elseif direction == "RIGHT" then
             -- Grow right: first icon at left edge, subsequent icons to the right
-            frame:SetPoint("LEFT", container, "LEFT", (i - 1) * (iconSize + spacing), 0)
+            frame:SetPoint("LEFT", container, "LEFT", (i - 1) * (iconWidth + spacing), 0)
         elseif direction == "UP" then
-            frame:SetPoint("BOTTOM", container, "BOTTOM", 0, (i - 1) * (iconSize + spacing))
+            frame:SetPoint("BOTTOM", container, "BOTTOM", 0, (i - 1) * (iconHeight + spacing))
         elseif direction == "DOWN" then
-            frame:SetPoint("TOP", container, "TOP", 0, -((i - 1) * (iconSize + spacing)))
+            frame:SetPoint("TOP", container, "TOP", 0, -((i - 1) * (iconHeight + spacing)))
         else -- CENTER (horizontal)
-            local totalWidth = count * iconSize + (count - 1) * spacing
-            local startX = -totalWidth / 2 + iconSize / 2
-            frame:SetPoint("CENTER", container, "CENTER", startX + (i - 1) * (iconSize + spacing), 0)
+            local totalWidth = count * iconWidth + (count - 1) * spacing
+            local startX = -totalWidth / 2 + iconWidth / 2
+            frame:SetPoint("CENTER", container, "CENTER", startX + (i - 1) * (iconWidth + spacing), 0)
         end
     end
 end
@@ -1074,10 +1090,11 @@ end
 ---Position frames with variable sizes inside the main container, centering smaller frames on the cross-axis.
 ---@param container table
 ---@param frames table[]
----@param sizes number[] per-frame icon sizes
+---@param widths number[] per-frame icon widths
+---@param heights number[] per-frame icon heights
 ---@param spacings number[] per-frame absolute spacing values
 ---@param direction string grow direction
-local function PositionFramesVariable(container, frames, sizes, spacings, direction)
+local function PositionFramesVariable(container, frames, widths, heights, spacings, direction)
     local count = #frames
     if count == 0 then
         return
@@ -1086,11 +1103,12 @@ local function PositionFramesVariable(container, frames, sizes, spacings, direct
     -- Anchor points place frames at the center of the cross-axis edge,
     -- so smaller frames are automatically centered — no manual offset needed.
     local offset = 0
+    local isVertical = direction == "UP" or direction == "DOWN"
     -- Hoist container width for CENTER mode (constant across iterations)
     local containerWidth = (direction == "CENTER") and container:GetWidth() or 0
 
     for i, frame in ipairs(frames) do
-        local size = sizes[i]
+        local mainSize = isVertical and heights[i] or widths[i]
 
         frame:ClearAllPoints()
         if direction == "LEFT" then
@@ -1103,13 +1121,13 @@ local function PositionFramesVariable(container, frames, sizes, spacings, direct
             frame:SetPoint("TOP", container, "TOP", 0, -offset)
         else -- CENTER (horizontal)
             local startX = -containerWidth / 2 + offset
-            frame:SetPoint("CENTER", container, "CENTER", startX + size / 2, 0)
+            frame:SetPoint("CENTER", container, "CENTER", startX + widths[i] / 2, 0)
         end
 
         -- Advance offset for next frame
         if i < count then
             local gap = math.max(spacings[i], spacings[i + 1])
-            offset = offset + size + gap
+            offset = offset + mainSize + gap
         end
     end
 end
@@ -1130,9 +1148,11 @@ local function PositionMainContainer(mainFrameBuffs)
         local isVertical = direction == "UP" or direction == "DOWN"
 
         -- Collect per-frame sizes and spacings based on effective category
-        local sizes = {}
+        local widths = {}
+        local heights = {}
         local spacings = {} -- absolute pixel spacing per frame
-        local maxCross = 0
+        local maxWidth = 0
+        local maxHeight = 0
         local settingsCache = {} -- avoid redundant GetCategorySettings calls for same category
         for i, frame in ipairs(mainFrameBuffs) do
             local effectiveCat = GetEffectiveCategory(frame)
@@ -1142,28 +1162,35 @@ local function PositionMainContainer(mainFrameBuffs)
                 settingsCache[effectiveCat] = settings
             end
             local iconSize = settings.iconSize or 64
-            sizes[i] = iconSize
-            spacings[i] = math.floor(iconSize * (settings.spacing or 0.2))
-            frame:SetSize(iconSize, iconSize)
-            if iconSize > maxCross then
-                maxCross = iconSize
+            local iconWidth = GetEffectiveWidth(settings.iconWidth, iconSize)
+            widths[i] = iconWidth
+            heights[i] = iconSize
+            local mainDim = isVertical and iconSize or iconWidth
+            spacings[i] = math.floor(mainDim * (settings.spacing or 0.2))
+            frame:SetSize(iconWidth, iconSize)
+            if iconWidth > maxWidth then
+                maxWidth = iconWidth
+            end
+            if iconSize > maxHeight then
+                maxHeight = iconSize
             end
         end
 
         -- Compute total main-axis extent
         local totalMain = 0
-        for i = 1, #sizes do
-            totalMain = totalMain + sizes[i]
-            if i < #sizes then
+        for i = 1, #widths do
+            local mainSize = isVertical and heights[i] or widths[i]
+            totalMain = totalMain + mainSize
+            if i < #widths then
                 totalMain = totalMain + math.max(spacings[i], spacings[i + 1])
             end
         end
 
         -- Size mainFrame to fit contents
         if isVertical then
-            mainFrame:SetSize(maxCross, math.max(totalMain, maxCross))
+            mainFrame:SetSize(maxWidth, math.max(totalMain, maxHeight))
         else
-            mainFrame:SetSize(math.max(totalMain, maxCross), maxCross)
+            mainFrame:SetSize(math.max(totalMain, maxWidth), maxHeight)
         end
 
         -- Re-anchor based on growth direction so first icon stays at anchor position
@@ -1174,7 +1201,7 @@ local function PositionMainContainer(mainFrameBuffs)
         mainFrame:ClearAllPoints()
         mainFrame:SetPoint(anchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
 
-        PositionFramesVariable(mainFrame, mainFrameBuffs, sizes, spacings, direction)
+        PositionFramesVariable(mainFrame, mainFrameBuffs, widths, heights, spacings, direction)
         mainFrame:Show()
     else
         lastMainSignature = ""
@@ -1202,26 +1229,29 @@ local function PositionSplitCategory(category, frames)
         local anchor = DIRECTION_ANCHORS[direction] or "CENTER"
         local pos = catSettings.position or { point = "CENTER", x = 0, y = 0 }
         local iconSize = catSettings.iconSize or 64
-        local spacing = math.floor(iconSize * (catSettings.spacing or 0.2))
+        local iconWidth = GetEffectiveWidth(catSettings.iconWidth, iconSize)
+        local isVertical = direction == "UP" or direction == "DOWN"
+        local mainSize = isVertical and iconSize or iconWidth
+        local spacing = math.floor(mainSize * (catSettings.spacing or 0.2))
 
         -- Resize individual buff frames to category's icon size
         for _, frame in ipairs(frames) do
-            frame:SetSize(iconSize, iconSize)
+            frame:SetSize(iconWidth, iconSize)
         end
 
         -- Size category frame to fit contents
-        local isVertical = direction == "UP" or direction == "DOWN"
-        local totalSize = #frames * iconSize + (#frames - 1) * spacing
+        local crossSize = isVertical and iconWidth or iconSize
+        local totalSize = #frames * mainSize + (#frames - 1) * spacing
         if isVertical then
-            catFrame:SetSize(iconSize, math.max(totalSize, iconSize))
+            catFrame:SetSize(crossSize, math.max(totalSize, iconSize))
         else
-            catFrame:SetSize(math.max(totalSize, iconSize), iconSize)
+            catFrame:SetSize(math.max(totalSize, iconWidth), crossSize)
         end
 
         catFrame:ClearAllPoints()
         catFrame:SetPoint(anchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
 
-        PositionFramesInContainer(catFrame, frames, iconSize, spacing, direction)
+        PositionFramesInContainer(catFrame, frames, iconWidth, iconSize, spacing, direction)
         catFrame:Show()
     else
         lastSplitSignatures[category] = ""
@@ -2453,7 +2483,8 @@ local function UpdateVisuals()
         local effectiveCat = GetEffectiveCategory(frame)
         local catSettings = GetCategorySettings(effectiveCat)
         local size = catSettings.iconSize or 64
-        frame:SetSize(size, size)
+        local width = GetEffectiveWidth(catSettings.iconWidth, size)
+        frame:SetSize(width, size)
         frame.count:SetFont(fontPath, GetFrameFontSize(frame, 1), "OUTLINE")
 
         -- Text color and alpha
@@ -2498,7 +2529,7 @@ local function UpdateVisuals()
         -- Update extra frames (expanded consumable display mode)
         if frame.extraFrames then
             for _, extra in ipairs(frame.extraFrames) do
-                extra:SetSize(size, size)
+                extra:SetSize(width, size)
                 UpdateIconStyling(extra, catSettings)
                 extra:SetAlpha(catSettings.iconAlpha or 1)
             end

@@ -771,10 +771,38 @@ local function CreateOptionsPanel()
     defNote:SetText("(All categories inherit these unless overridden)")
 
     -- Fixed column layout: all sliders use default labelWidth (70)
-    local DEF_COL2 = 260 -- labelWidth(70) + sliderWidth(100) + value(60) + gap(30)
+    local DEF_LINK_X = 236 -- labelWidth(70) + sliderWidth(100) + value(60) + gap(6)
+    local DEF_COL2 = 260 -- DEF_LINK_X + linkIcon(16) + gap(8)
 
-    local defSizeHolder = Components.Slider(displayBehaviorContent, {
-        label = "Icon Size",
+    local function isDefDimensionsLinked()
+        local db = BuffRemindersDB.defaults
+        return not db or db.iconWidth == nil
+    end
+
+    local defWidthHolder, defHeightHolder -- forward declarations for cross-refresh
+
+    defWidthHolder = Components.Slider(displayBehaviorContent, {
+        label = "Width",
+        min = 16,
+        max = 128,
+        get = function()
+            local db = BuffRemindersDB.defaults
+            return db and db.iconWidth or (db and db.iconSize or 64)
+        end,
+        onChange = function(val)
+            if isDefDimensionsLinked() then
+                BR.Config.Set("defaults.iconSize", val)
+            else
+                BR.Config.Set("defaults.iconWidth", val)
+            end
+            if defHeightHolder then
+                defHeightHolder:Refresh()
+            end
+        end,
+    })
+
+    defHeightHolder = Components.Slider(displayBehaviorContent, {
+        label = "Height",
         min = 16,
         max = 128,
         get = function()
@@ -782,8 +810,32 @@ local function CreateOptionsPanel()
         end,
         onChange = function(val)
             BR.Config.Set("defaults.iconSize", val)
+            if defWidthHolder then
+                defWidthHolder:Refresh()
+            end
         end,
     })
+
+    local defLinkBtn = Components.DimensionLink(displayBehaviorContent, {
+        isLinked = isDefDimensionsLinked,
+        onLink = function()
+            -- Re-link: clear explicit width (reverts to square using iconSize)
+            BR.Config.Set("defaults.iconWidth", nil)
+            Components.RefreshAll()
+        end,
+        onUnlink = function()
+            -- Unlink: snapshot current size as explicit width
+            local db = BuffRemindersDB.defaults
+            local size = db and db.iconSize or 64
+            BR.Config.Set("defaults.iconWidth", size)
+            Components.RefreshAll()
+        end,
+    })
+    displayBehaviorLayout:AddRow({
+        { defWidthHolder, displayBehaviorX },
+        { defLinkBtn, displayBehaviorX + DEF_LINK_X },
+        { defHeightHolder, displayBehaviorX + DEF_COL2 },
+    }, COMPONENT_GAP)
 
     local defZoomHolder = Components.Slider(displayBehaviorContent, {
         label = "Icon Zoom",
@@ -800,11 +852,6 @@ local function CreateOptionsPanel()
             BR.Config.Set("defaults.iconZoom", val)
         end,
     })
-    displayBehaviorLayout:AddRow(
-        { { defSizeHolder, displayBehaviorX }, { defZoomHolder, displayBehaviorX + DEF_COL2 } },
-        COMPONENT_GAP
-    )
-
     local defBorderHolder = Components.Slider(displayBehaviorContent, {
         label = "Border",
         min = 0,
@@ -834,9 +881,10 @@ local function CreateOptionsPanel()
         end,
     })
     displayBehaviorLayout:AddRow(
-        { { defBorderHolder, displayBehaviorX }, { defAlphaHolder, displayBehaviorX + DEF_COL2 } },
+        { { defZoomHolder, displayBehaviorX }, { defBorderHolder, displayBehaviorX + DEF_COL2 } },
         COMPONENT_GAP
     )
+    displayBehaviorLayout:AddRow({ { defAlphaHolder, displayBehaviorX } }, COMPONENT_GAP)
 
     local defSpacingHolder = Components.Slider(displayBehaviorContent, {
         label = "Spacing",
@@ -1816,6 +1864,7 @@ local function CreateOptionsPanel()
                     local cs = db.categorySettings[category]
                     local appearanceKeys = {
                         "iconSize",
+                        "iconWidth",
                         "spacing",
                         "iconZoom",
                         "borderSize",
@@ -1867,7 +1916,7 @@ local function CreateOptionsPanel()
         -- Appearance controls (3-row grid with fixed columns)
         catLayout:SetX(10)
         local appFrame = CreateFrame("Frame", nil, catContent)
-        appFrame:SetSize(380, 50)
+        appFrame:SetSize(460, 50)
         catLayout:SetX(10)
         catLayout:Add(appFrame, 0)
 
@@ -1884,10 +1933,56 @@ local function CreateOptionsPanel()
         end
 
         local CAT_LW = 50 -- Shared label width for aligned columns
-        local CAT_COL2 = CAT_LW + 100 + 60 + 10 -- labelWidth + slider + value + gap = 220
+        local CAT_LINK_X = 216 -- labelWidth(50) + sliderWidth(100) + value(60) + gap(6)
+        local CAT_COL2 = 240 -- CAT_LINK_X + linkIcon(16) + gap(8)
 
-        local sizeHolder = Components.Slider(appFrame, {
-            label = "Size",
+        local function isCatDimensionsLinked()
+            local cs = db.categorySettings and db.categorySettings[category]
+            return not cs or cs.iconWidth == nil
+        end
+
+        local widthHolder, heightHolder -- forward declarations for cross-refresh
+
+        widthHolder = Components.Slider(appFrame, {
+            label = "Width",
+            min = 16,
+            max = 128,
+            labelWidth = CAT_LW,
+            get = function()
+                local w = getCatOwnValue("iconWidth", nil)
+                return w or getCatOwnValue("iconSize", 64)
+            end,
+            enabled = isCustomAppearanceEnabled,
+            onChange = function(val)
+                if isCatDimensionsLinked() then
+                    BR.Config.Set("categorySettings." .. category .. ".iconSize", val)
+                else
+                    BR.Config.Set("categorySettings." .. category .. ".iconWidth", val)
+                end
+                if heightHolder then
+                    heightHolder:Refresh()
+                end
+            end,
+        })
+        widthHolder:SetPoint("TOPLEFT", 0, 0)
+
+        local catLinkBtn = Components.DimensionLink(appFrame, {
+            isLinked = isCatDimensionsLinked,
+            enabled = isCustomAppearanceEnabled,
+            onLink = function()
+                BR.Config.Set("categorySettings." .. category .. ".iconWidth", nil)
+                Components.RefreshAll()
+            end,
+            onUnlink = function()
+                local size = getCatOwnValue("iconSize", 64)
+                BR.Config.Set("categorySettings." .. category .. ".iconWidth", size)
+                Components.RefreshAll()
+            end,
+        })
+        catLinkBtn:SetPoint("TOPLEFT", CAT_LINK_X, 0)
+
+        heightHolder = Components.Slider(appFrame, {
+            label = "Height",
             min = 16,
             max = 128,
             labelWidth = CAT_LW,
@@ -1897,9 +1992,12 @@ local function CreateOptionsPanel()
             enabled = isCustomAppearanceEnabled,
             onChange = function(val)
                 BR.Config.Set("categorySettings." .. category .. ".iconSize", val)
+                if widthHolder then
+                    widthHolder:Refresh()
+                end
             end,
         })
-        sizeHolder:SetPoint("TOPLEFT", 0, 0)
+        heightHolder:SetPoint("TOPLEFT", CAT_COL2, 0)
 
         local zoomHolder = Components.Slider(appFrame, {
             label = "Zoom",
@@ -1917,7 +2015,7 @@ local function CreateOptionsPanel()
                 BR.Config.Set("categorySettings." .. category .. ".iconZoom", val)
             end,
         })
-        zoomHolder:SetPoint("TOPLEFT", CAT_COL2, 0)
+        zoomHolder:SetPoint("TOPLEFT", 0, -24)
 
         local borderHolder = Components.Slider(appFrame, {
             label = "Border",
@@ -1935,7 +2033,7 @@ local function CreateOptionsPanel()
                 BR.Config.Set("categorySettings." .. category .. ".borderSize", val)
             end,
         })
-        borderHolder:SetPoint("TOPLEFT", 0, -24)
+        borderHolder:SetPoint("TOPLEFT", CAT_COL2, -24)
 
         local catAlphaHolder = Components.Slider(appFrame, {
             label = "Alpha",
@@ -1951,7 +2049,7 @@ local function CreateOptionsPanel()
                 BR.Config.Set("categorySettings." .. category .. ".iconAlpha", val / 100)
             end,
         })
-        catAlphaHolder:SetPoint("TOPLEFT", CAT_COL2, -24)
+        catAlphaHolder:SetPoint("TOPLEFT", 0, -48)
 
         local spacingHolder = Components.Slider(appFrame, {
             label = "Spacing",
@@ -1967,7 +2065,7 @@ local function CreateOptionsPanel()
                 BR.Config.Set("categorySettings." .. category .. ".spacing", val / 100)
             end,
         })
-        spacingHolder:SetPoint("TOPLEFT", 0, -48)
+        spacingHolder:SetPoint("TOPLEFT", CAT_COL2, -48)
 
         local catTextSizeHolder = Components.NumericStepper(appFrame, {
             label = "Text",
@@ -1988,7 +2086,7 @@ local function CreateOptionsPanel()
                 BR.Config.Set("categorySettings." .. category .. ".textSize", val)
             end,
         })
-        catTextSizeHolder:SetPoint("TOPLEFT", CAT_COL2, -48)
+        catTextSizeHolder:SetPoint("TOPLEFT", CAT_COL2, -72)
 
         local catTextColorHolder = Components.ColorSwatch(appFrame, {
             hasOpacity = true,
@@ -2026,7 +2124,7 @@ local function CreateOptionsPanel()
                     })
                 end,
             })
-            catPetGlowHolder:SetPoint("TOPLEFT", 0, -72)
+            catPetGlowHolder:SetPoint("TOPLEFT", 0, -96)
 
             local catGlowTypeOptions = {}
             for gi, gt in ipairs(GlowTypes) do
@@ -2052,7 +2150,7 @@ local function CreateOptionsPanel()
                     BR.Config.Set("categorySettings." .. category .. ".glowType", val)
                 end,
             }, "BuffReminders_" .. category .. "_GlowTypeDropdown")
-            catGlowTypeHolder:SetPoint("TOPLEFT", CAT_COL2, -72)
+            catGlowTypeHolder:SetPoint("TOPLEFT", CAT_COL2, -96)
 
             local catUseCustomColorHolder = Components.Checkbox(appFrame, {
                 label = "Color",
@@ -2093,11 +2191,11 @@ local function CreateOptionsPanel()
                     BR.Config.Set("categorySettings." .. category .. ".glowSize", val)
                 end,
             })
-            catGlowSizeHolder:SetPoint("TOPLEFT", CAT_COL2, -96)
+            catGlowSizeHolder:SetPoint("TOPLEFT", CAT_COL2, -120)
             catUseCustomColorHolder:SetPoint("LEFT", catGlowSizeHolder, "RIGHT", 6, 0)
             catGlowColorHolder:SetPoint("LEFT", catUseCustomColorHolder.label, "RIGHT", 4, 0)
 
-            gridHeight = 120 -- 5 rows (glow + size)
+            gridHeight = 144 -- 6 rows (appearance + glow + size)
         else
             local function isGlowEnabled()
                 return isCustomAppearanceEnabled() and getCatOwnValue("showExpirationGlow", true) ~= false
@@ -2114,7 +2212,7 @@ local function CreateOptionsPanel()
                     Components.RefreshAll()
                 end,
             })
-            catGlowCheckHolder:SetPoint("TOPLEFT", 0, -72)
+            catGlowCheckHolder:SetPoint("TOPLEFT", 0, -96)
 
             local catGlowThresholdHolder = Components.Slider(appFrame, {
                 min = 1,
@@ -2149,7 +2247,7 @@ local function CreateOptionsPanel()
                     BR.Config.Set("categorySettings." .. category .. ".glowType", val)
                 end,
             }, "BuffReminders_" .. category .. "_GlowTypeDropdown")
-            catGlowTypeHolder:SetPoint("TOPLEFT", CAT_COL2, -72)
+            catGlowTypeHolder:SetPoint("TOPLEFT", CAT_COL2, -96)
 
             local catUseCustomColorHolder = Components.Checkbox(appFrame, {
                 label = "Color",
@@ -2203,12 +2301,12 @@ local function CreateOptionsPanel()
                     BR.Config.Set("categorySettings." .. category .. ".glowWhenMissing", checked)
                 end,
             })
-            catGlowWhenMissingHolder:SetPoint("TOPLEFT", 20, -96)
-            catGlowSizeHolder:SetPoint("TOPLEFT", CAT_COL2, -96)
+            catGlowWhenMissingHolder:SetPoint("TOPLEFT", 20, -120)
+            catGlowSizeHolder:SetPoint("TOPLEFT", CAT_COL2, -120)
             catUseCustomColorHolder:SetPoint("LEFT", catGlowSizeHolder, "RIGHT", 6, 0)
             catGlowColorHolder:SetPoint("LEFT", catUseCustomColorHolder.label, "RIGHT", 4, 0)
 
-            gridHeight = 120 -- 5 rows with glow + when missing
+            gridHeight = 144 -- 6 rows with glow + when missing
         end
 
         -- Advance past the appFrame grid and finalize section height
@@ -2286,7 +2384,10 @@ local function CreateOptionsPanel()
 
     local combatExpiringHolder = Components.Checkbox(settingsContent, {
         label = "Hide expiring",
-        tooltip = { title = "Hide expiring", desc = "During combat, hide buffs that are expiring soon and only show completely missing ones" },
+        tooltip = {
+            title = "Hide expiring",
+            desc = "During combat, hide buffs that are expiring soon and only show completely missing ones",
+        },
         get = function()
             return BuffRemindersDB.hideExpiringInCombat ~= false
         end,
@@ -2302,7 +2403,10 @@ local function CreateOptionsPanel()
 
     local vehicleHolder = Components.Checkbox(settingsContent, {
         label = "Hide in vehicle",
-        tooltip = { title = "Hide in vehicle", desc = "Hide all buff reminders while in a quest vehicle. When disabled, raid and presence buffs still show" },
+        tooltip = {
+            title = "Hide in vehicle",
+            desc = "Hide all buff reminders while in a quest vehicle. When disabled, raid and presence buffs still show",
+        },
         get = function()
             return BuffRemindersDB.hideAllInVehicle == true
         end,

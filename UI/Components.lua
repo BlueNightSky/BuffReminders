@@ -895,6 +895,132 @@ function Components.Checkbox(parent, config)
     return holder
 end
 
+-- ============================================================================
+-- DIMENSION LINK (chain toggle between Width/Height sliders)
+-- ============================================================================
+
+local DimensionLinkColors = {
+    linked = { 0.9, 0.75, 0.2, 1 }, -- gold when linked
+    unlinked = { 0.35, 0.35, 0.35, 1 }, -- dim when unlinked
+    hover = { 1, 0.82, 0, 1 }, -- bright gold on hover
+    disabled = { 0.2, 0.2, 0.2, 1 },
+}
+
+---@class DimensionLinkConfig
+---@field isLinked fun(): boolean
+---@field onLink fun()
+---@field onUnlink fun()
+---@field enabled? fun(): boolean
+
+---Create a small link/unlink toggle button for pairing Width and Height sliders
+---@param parent Frame
+---@param config DimensionLinkConfig
+---@return Frame
+function Components.DimensionLink(parent, config)
+    local colors = DimensionLinkColors
+    local ICON_SIZE = 16
+    local BAR_W = 2
+    local BAR_H = 10
+    local BRIDGE_W = 6
+    local BRIDGE_H = 2
+    local BREAK_OFFSET = 3 -- vertical offset for broken chain look
+
+    local holder = CreateFrame("Button", nil, parent)
+    holder:SetSize(ICON_SIZE, 20)
+
+    -- Draw a chain/link icon: two vertical bars connected by horizontal bridges
+    local leftBar = holder:CreateTexture(nil, "ARTWORK")
+    leftBar:SetSize(BAR_W, BAR_H)
+
+    local rightBar = holder:CreateTexture(nil, "ARTWORK")
+    rightBar:SetSize(BAR_W, BAR_H)
+
+    local topBridge = holder:CreateTexture(nil, "ARTWORK")
+    topBridge:SetSize(BRIDGE_W, BRIDGE_H)
+
+    local bottomBridge = holder:CreateTexture(nil, "ARTWORK")
+    bottomBridge:SetSize(BRIDGE_W, BRIDGE_H)
+
+    local allParts = { leftBar, rightBar, topBridge, bottomBridge }
+    local isEnabled = true
+
+    local function PositionParts(linked)
+        leftBar:ClearAllPoints()
+        rightBar:ClearAllPoints()
+        topBridge:ClearAllPoints()
+        bottomBridge:ClearAllPoints()
+        if linked then
+            -- Aligned bars with bridges
+            leftBar:SetPoint("LEFT", holder, "CENTER", -BRIDGE_W / 2, 0)
+            rightBar:SetPoint("RIGHT", holder, "CENTER", BRIDGE_W / 2, 0)
+            topBridge:SetPoint("TOP", holder, "CENTER", 0, BAR_H / 2 - 1)
+            bottomBridge:SetPoint("BOTTOM", holder, "CENTER", 0, -(BAR_H / 2 - 1))
+        else
+            -- Offset bars: left shifts up, right shifts down (broken chain)
+            leftBar:SetPoint("LEFT", holder, "CENTER", -BRIDGE_W / 2, BREAK_OFFSET)
+            rightBar:SetPoint("RIGHT", holder, "CENTER", BRIDGE_W / 2, -BREAK_OFFSET)
+            topBridge:SetPoint("TOP", holder, "CENTER", 0, BAR_H / 2 - 1)
+            bottomBridge:SetPoint("BOTTOM", holder, "CENTER", 0, -(BAR_H / 2 - 1))
+        end
+    end
+
+    local function UpdateVisual()
+        local linked = config.isLinked()
+        local color = isEnabled and (linked and colors.linked or colors.unlinked) or colors.disabled
+        for _, part in ipairs(allParts) do
+            part:SetColorTexture(unpack(color))
+        end
+        topBridge:SetShown(linked)
+        bottomBridge:SetShown(linked)
+        PositionParts(linked)
+    end
+
+    holder:SetScript("OnClick", function()
+        if not isEnabled then
+            return
+        end
+        if config.isLinked() then
+            config.onUnlink()
+        else
+            config.onLink()
+        end
+        UpdateVisual()
+    end)
+
+    holder:SetScript("OnEnter", function()
+        if isEnabled then
+            local color = colors.hover
+            for _, part in ipairs(allParts) do
+                part:SetColorTexture(unpack(color))
+            end
+            local tipText = config.isLinked() and "Unlink width and height" or "Link width and height"
+            ShowTooltip(holder, tipText, "When linked, changing one updates both.", "ANCHOR_TOP")
+        end
+    end)
+
+    holder:SetScript("OnLeave", function()
+        HideTooltip()
+        UpdateVisual()
+    end)
+
+    function holder:SetEnabled(enabled)
+        isEnabled = enabled
+        UpdateVisual()
+    end
+
+    function holder:Refresh()
+        if config.enabled then
+            isEnabled = config.enabled()
+        end
+        UpdateVisual()
+    end
+
+    table.insert(RefreshableComponents, holder)
+
+    UpdateVisual()
+    return holder
+end
+
 -- Toggle (pill/switch) component colors
 local ToggleColors = {
     trackOff = { 0.12, 0.12, 0.12, 1 },

@@ -34,9 +34,9 @@ local function RoundCoord(x)
 end
 
 -- Convert saved position from one anchor to another so the frame stays in place
-local function ConvertPosition(oldAnchor, newAnchor, x, y, size)
+local function ConvertPosition(oldAnchor, newAnchor, x, y, width, height)
     local o, n = ANCHOR_TO_CENTER[oldAnchor], ANCHOR_TO_CENTER[newAnchor]
-    return RoundCoord(x + (o.x - n.x) * size), RoundCoord(y + (o.y - n.y) * size)
+    return RoundCoord(x + (o.x - n.x) * width), RoundCoord(y + (o.y - n.y) * height)
 end
 
 ---Get the saved position table for a category key
@@ -285,9 +285,10 @@ local function CreateMoverFrame(catKey, displayName)
     local fontPath = BR.Display.GetFontPath()
     local catSettings = GetCategorySettings(catKey)
     local iconSize = catSettings.iconSize or 64
+    local iconWidth = catSettings.iconWidth or iconSize
 
     local mover = CreateFrame("Frame", nil, UIParent)
-    mover:SetSize(iconSize, iconSize)
+    mover:SetSize(iconWidth, iconSize)
     mover:SetFrameStrata("HIGH")
     mover:SetClampedToScreen(true)
     mover:SetMovable(true)
@@ -317,7 +318,7 @@ local function CreateMoverFrame(catKey, displayName)
     function mover:UpdateSize()
         local settings = GetCategorySettings(catKey)
         local size = settings.iconSize or 64
-        self:SetSize(size, size)
+        self:SetSize(settings.iconWidth or size, size)
     end
 
     -- Position at saved location using direction-based anchor
@@ -468,7 +469,8 @@ local function ConvertDirectionPositions()
             local newAnchor = DIRECTION_ANCHORS[dir] or "CENTER"
             local pos = GetSavedPosition(catKey)
             local size = settings.iconSize or 64
-            local nx, ny = ConvertPosition(oldAnchor, newAnchor, pos.x or 0, pos.y or 0, size)
+            local w = settings.iconWidth or size
+            local nx, ny = ConvertPosition(oldAnchor, newAnchor, pos.x or 0, pos.y or 0, w, size)
             SavePosition(catKey, nx, ny)
         end
         lastDirection[catKey] = dir

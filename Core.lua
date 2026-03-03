@@ -114,6 +114,7 @@ local RootSettings = {
 local CategorySettingKeys = {
     -- Appearance (visual properties)
     iconSize = "VisualsRefresh",
+    iconWidth = "VisualsRefresh",
     iconZoom = "VisualsRefresh",
     borderSize = "VisualsRefresh",
     textSize = "VisualsRefresh",
@@ -148,6 +149,7 @@ local CategorySettingKeys = {
 local DefaultSettingKeys = {
     -- Appearance
     iconSize = "VisualsRefresh",
+    iconWidth = "VisualsRefresh",
     iconZoom = "VisualsRefresh",
     borderSize = "VisualsRefresh",
     textSize = "VisualsRefresh",
@@ -264,6 +266,7 @@ local function ValidatePath(segments)
             local knownKeys = {
                 "position",
                 "iconSize",
+                "iconWidth",
                 "iconZoom",
                 "borderSize",
                 "textSize",
@@ -495,6 +498,7 @@ end
 -- Keys that are appearance-related (inherit from defaults when useCustomAppearance is false)
 local AppearanceKeys = {
     iconSize = true,
+    iconWidth = true,
     textSize = true,
     iconAlpha = true,
     textAlpha = true,
