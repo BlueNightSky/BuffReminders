@@ -7,6 +7,7 @@
 ---@field Show fun(self: Frame)
 ---@field Hide fun(self: Frame)
 ---@field IsShown fun(self: Frame): boolean
+---@field SetPoint fun(self: Frame, point: string, relativeTo?: any, relativePoint?: string|number, x?: number, y?: number)
 ---@field GetParent fun(self: Frame): Frame?
 ---@field GetWidth fun(self: Frame): number
 ---@field GetHeight fun(self: Frame): number

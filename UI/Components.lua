@@ -764,6 +764,7 @@ end
 ---@field infoTooltip? string Optional info icon tooltip (format: "title|description")
 ---@field warningTooltip? string Optional warning icon tooltip (format: "title|description")
 ---@field onRightClick? fun() Optional right-click callback (wired on all interactive children)
+---@field labelFont? string Font object name for the label (default "GameFontHighlightSmall")
 
 ---Create a modern flat-style checkbox with label and optional icons/tooltip
 ---@param parent table Parent frame
@@ -796,7 +797,7 @@ function Components.Checkbox(parent, config)
     end
 
     -- Label
-    local label = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    local label = holder:CreateFontString(nil, "OVERLAY", config.labelFont or "GameFontHighlightSmall")
     label:SetPoint("LEFT", lastAnchor, "RIGHT", ICON_SPACING + 1, 0) -- Slightly more space before text
     label:SetText(config.label)
     holder.label = label
@@ -2511,7 +2512,7 @@ end
 -- ============================================================================
 
 ---@class ColorSwatchConfig : ComponentConfig
----@field label string Display label
+---@field label? string Display label
 ---@field get? fun(): number, number, number, number? Getter returning r, g, b [, a]
 ---@field enabled? fun(): boolean Getter for enabled state
 ---@field onChange fun(r: number, g: number, b: number, a?: number) Callback when color changes
@@ -2884,6 +2885,225 @@ function Components.TextArea(parent, config)
     end
 
     return holder
+end
+
+-- ============================================================================
+-- APPEARANCE GRID
+-- ============================================================================
+-- Declarative 2-column, 4-row grid of appearance controls:
+--   Row 1: Width [link] Height
+--   Row 2: Zoom         Border
+--   Row 3: Spacing      Alpha
+--   Row 4: Text [+-] [color]
+
+---@class AppearanceGridConfig
+---@field get fun(key: string, default: any): any  Read setting value
+---@field set fun(key: string, value: any)          Write setting value
+---@field setMulti fun(changes: table)              Batch write settings
+---@field isLinked fun(): boolean                   Are width/height linked?
+---@field onLink fun()                              Called when user re-links dimensions
+---@field onUnlink fun()                            Called when user unlinks dimensions
+---@field enabled? fun(): boolean                   Wraps all controls (nil = always enabled)
+---@field masqueCheck? fun(): boolean               Returns true when Masque is active (disables zoom/border)
+
+---Create a 2-column appearance grid with standard layout
+---@param parent Frame
+---@param config AppearanceGridConfig
+---@return {frame: Frame, height: number, holders: table}
+function Components.AppearanceGrid(parent, config)
+    local LW = 50 -- labelWidth for all sliders
+    local LINK_X = 216 -- labelWidth(50) + sliderWidth(100) + value(60) + gap(6)
+    local COL2 = 240 -- LINK_X + linkIcon(16) + gap(8)
+    local ROW_H = 24
+    local GRID_HEIGHT = 96
+
+    local frame = CreateFrame("Frame", nil, parent)
+    frame:SetPoint("TOPLEFT")
+    frame:SetSize(480, GRID_HEIGHT)
+
+    local enabled = config.enabled
+    local masqueCheck = config.masqueCheck
+
+    -- Enabled helpers
+    local function baseEnabled()
+        return not enabled or enabled()
+    end
+    local function masqueEnabled()
+        return baseEnabled() and (not masqueCheck or not masqueCheck())
+    end
+
+    -- Forward declarations for cross-refresh
+    local widthHolder, heightHolder
+
+    -- Row 1: Width [link] Height
+    widthHolder = Components.Slider(frame, {
+        label = "Width",
+        min = 16,
+        max = 128,
+        labelWidth = LW,
+        get = function()
+            local w = config.get("iconWidth", nil)
+            return w or config.get("iconSize", 64)
+        end,
+        enabled = enabled and baseEnabled or nil,
+        onChange = function(val)
+            if config.isLinked() then
+                config.set("iconSize", val)
+            else
+                config.set("iconWidth", val)
+            end
+            if heightHolder then
+                heightHolder:Refresh()
+            end
+        end,
+    })
+    widthHolder:SetPoint("TOPLEFT", 0, 0)
+
+    local linkBtn = Components.DimensionLink(frame, {
+        isLinked = config.isLinked,
+        enabled = enabled and baseEnabled or nil,
+        onLink = config.onLink,
+        onUnlink = config.onUnlink,
+    })
+    linkBtn:SetPoint("TOPLEFT", LINK_X, 0)
+
+    heightHolder = Components.Slider(frame, {
+        label = "Height",
+        min = 16,
+        max = 128,
+        labelWidth = LW,
+        get = function()
+            return config.get("iconSize", 64)
+        end,
+        enabled = enabled and baseEnabled or nil,
+        onChange = function(val)
+            config.set("iconSize", val)
+            if widthHolder then
+                widthHolder:Refresh()
+            end
+        end,
+    })
+    heightHolder:SetPoint("TOPLEFT", COL2, 0)
+
+    -- Row 2: Zoom, Border
+    local zoomHolder = Components.Slider(frame, {
+        label = "Zoom",
+        min = 0,
+        max = 15,
+        labelWidth = LW,
+        suffix = "%",
+        get = function()
+            return config.get("iconZoom", BR.DEFAULT_ICON_ZOOM)
+        end,
+        enabled = masqueCheck and masqueEnabled or (enabled and baseEnabled or nil),
+        onChange = function(val)
+            config.set("iconZoom", val)
+        end,
+    })
+    zoomHolder:SetPoint("TOPLEFT", 0, -ROW_H)
+
+    local borderHolder = Components.Slider(frame, {
+        label = "Border",
+        min = 0,
+        max = 8,
+        labelWidth = LW,
+        suffix = "px",
+        get = function()
+            return config.get("borderSize", BR.DEFAULT_BORDER_SIZE)
+        end,
+        enabled = masqueCheck and masqueEnabled or (enabled and baseEnabled or nil),
+        onChange = function(val)
+            config.set("borderSize", val)
+        end,
+    })
+    borderHolder:SetPoint("TOPLEFT", COL2, -ROW_H)
+
+    -- Row 3: Spacing, Alpha
+    local spacingHolder = Components.Slider(frame, {
+        label = "Spacing",
+        min = 0,
+        max = 50,
+        labelWidth = LW,
+        suffix = "%",
+        get = function()
+            return math.floor((config.get("spacing", 0.2)) * 100)
+        end,
+        enabled = enabled and baseEnabled or nil,
+        onChange = function(val)
+            config.set("spacing", val / 100)
+        end,
+    })
+    spacingHolder:SetPoint("TOPLEFT", 0, -ROW_H * 2)
+
+    local alphaHolder = Components.Slider(frame, {
+        label = "Alpha",
+        min = 10,
+        max = 100,
+        labelWidth = LW,
+        suffix = "%",
+        get = function()
+            return math.floor((config.get("iconAlpha", 1)) * 100)
+        end,
+        enabled = enabled and baseEnabled or nil,
+        onChange = function(val)
+            config.set("iconAlpha", val / 100)
+        end,
+    })
+    alphaHolder:SetPoint("TOPLEFT", COL2, -ROW_H * 2)
+
+    -- Row 4: Text size stepper + color swatch
+    local textSizeHolder = Components.NumericStepper(frame, {
+        label = "Text",
+        labelWidth = LW,
+        min = 6,
+        max = 32,
+        get = function()
+            local textSize = config.get("textSize", nil)
+            if textSize then
+                return textSize
+            end
+            local iconSize = config.get("iconSize", 64)
+            return math.floor(iconSize * 0.32)
+        end,
+        enabled = enabled and baseEnabled or nil,
+        onChange = function(val)
+            config.set("textSize", val)
+        end,
+    })
+    textSizeHolder:SetPoint("TOPLEFT", 0, -ROW_H * 3)
+
+    local textColorHolder = Components.ColorSwatch(frame, {
+        hasOpacity = true,
+        get = function()
+            local tc = config.get("textColor", { 1, 1, 1 })
+            local ta = config.get("textAlpha", 1)
+            return tc[1], tc[2], tc[3], ta
+        end,
+        enabled = enabled and baseEnabled or nil,
+        onChange = function(r, g, b, a)
+            config.setMulti({
+                textColor = { r, g, b },
+                textAlpha = a or 1,
+            })
+        end,
+    })
+    textColorHolder:SetPoint("LEFT", textSizeHolder, "RIGHT", 12, 0)
+
+    return {
+        frame = frame,
+        height = GRID_HEIGHT,
+        holders = {
+            width = widthHolder,
+            height = heightHolder,
+            link = linkBtn,
+            zoom = zoomHolder,
+            border = borderHolder,
+            spacing = spacingHolder,
+            alpha = alphaHolder,
+            textSize = textSizeHolder,
+            textColor = textColorHolder,
+        },
+    }
 end
 
 ---Initialize panelEditBoxes reference (called from CreateOptionsPanel)
