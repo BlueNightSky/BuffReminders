@@ -337,8 +337,8 @@ local function BuildValidUnitCache()
     do
         -- Default: exclude NPCs from buff counting.
         -- Only whitelist specific content where NPC companions can receive player buffs.
-        local difficultyID, difficultyName = select(3, GetInstanceInfo())
-        includeNPCsInCounting = difficultyID == 205 or difficultyName == "Delves" -- Follower dungeon / Delves
+        local difficultyID = select(3, GetInstanceInfo())
+        includeNPCsInCounting = difficultyID == 205 or difficultyID == 208 -- Follower dungeon / Delves
     end
 
     local inRaid = IsInRaid()

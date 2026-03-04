@@ -2703,6 +2703,7 @@ end
 eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
@@ -3441,6 +3442,14 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                     end
                 end
             end
+        end)
+    elseif event == "ZONE_CHANGED_NEW_AREA" then
+        -- Delves have no loading screen, so PLAYER_ENTERING_WORLD doesn't fire.
+        -- GetInstanceInfo() still returns stale data when this event fires,
+        -- so defer the cache invalidation + refresh.
+        C_Timer.After(0.5, function()
+            BR.BuffState.InvalidateContentTypeCache()
+            SetDirty()
         end)
     elseif event == "GROUP_ROSTER_UPDATE" then
         SetDirty()
