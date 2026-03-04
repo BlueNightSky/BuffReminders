@@ -105,6 +105,27 @@ local _, BR = ...
 ---@field requireItemID? number    -- Only show if this item is equipped or in bags
 ---@field loadConditions? LoadConditions  -- Per-buff content visibility (nil = show everywhere)
 
+---Check if the player is inside a delve (scenario with Brann or Valeera)
+---@return boolean
+local function IsInDelve()
+    local _, instanceType = IsInInstance()
+    if instanceType ~= "scenario" then
+        return false
+    end
+    for i = 1, GetNumGroupMembers() do
+        local guid = UnitGUID("party" .. i)
+        if guid then
+            local npcID = select(6, strsplit("-", guid))
+            npcID = tonumber(npcID)
+            if npcID == 210759 or npcID == 248567 then
+                return true
+            end
+        end
+    end
+    return false
+end
+BR.IsInDelve = IsInDelve
+
 ---Check if the player's pet is on passive stance
 ---@return boolean? true if pet exists and is on passive, nil otherwise
 local function IsPetOnPassive()
@@ -623,31 +644,14 @@ BR.BUFF_TABLES = {
         },
         -- Delve Food (only when inside a delve with Brann or Valeera)
         {
-            buffIconID = 133954,
+            spellID = 442522,
             key = "delveFood",
             name = "Delve Food",
             missingText = "NO\nFOOD",
             groupId = "delveFood",
-            displayIcon = 133954,
             noExpirationGlow = true, -- 10-min duration makes standard thresholds meaningless
             infoTooltip = "Delves Only|Only shown inside delves when Brann or Valeera are in your party.\n\nExpiration glow is disabled for this buff because its short 10-minute duration would cause it to always glow.",
-            visibilityCondition = function()
-                local inInstance, instanceType = IsInInstance()
-                if not inInstance or instanceType ~= "scenario" then
-                    return false
-                end
-                for i = 1, GetNumGroupMembers() do
-                    local guid = UnitGUID("party" .. i)
-                    if guid then
-                        local npcID = select(6, strsplit("-", guid))
-                        npcID = tonumber(npcID)
-                        if npcID == 210759 or npcID == 248567 then
-                            return true
-                        end
-                    end
-                end
-                return false
-            end,
+            visibilityCondition = BR.IsInDelve,
         },
         -- Weapon Buffs (oils, stones - but not for classes with imbues)
         {

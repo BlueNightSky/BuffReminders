@@ -1611,6 +1611,21 @@ local function CreateOptionsPanel()
                 end,
             })
             catLayout:Add(showWithoutItemsHolder, nil, COMPONENT_GAP)
+
+            local delveFoodOnlyHolder = Components.Checkbox(catContent, {
+                label = "Only delve food in delves",
+                get = function()
+                    return BR.Config.Get("defaults.delveFoodOnly", false) == true
+                end,
+                tooltip = {
+                    title = "Only delve food in delves",
+                    desc = "When inside a delve, hide all consumable reminders except delve food.",
+                },
+                onChange = function(checked)
+                    BR.Config.Set("defaults.delveFoodOnly", checked)
+                end,
+            })
+            catLayout:Add(delveFoodOnlyHolder, nil, COMPONENT_GAP)
         end
 
         -- Layout sub-header

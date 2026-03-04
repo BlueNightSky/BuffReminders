@@ -1417,6 +1417,7 @@ function BuffState.Refresh()
     -- Process consumable buffs
     local consumableVisible = IsCategoryVisibleForContent("consumable")
     local consGlow, consGlowMissing, consGlowThreshold = GetCategoryGlow("consumable")
+    local delveFoodOnly = db.defaults and db.defaults.delveFoodOnly and BR.IsInDelve()
     for i, buff in ipairs(Consumables) do
         local entry = GetOrCreateEntry(buff.key, "consumable", i)
         local settingKey = buff.groupId or buff.key
@@ -1428,6 +1429,7 @@ function BuffState.Refresh()
             and consumableVisible
             and hasCaster
             and PassesPreChecks(buff, nil, db)
+            and not (buff.key ~= "delveFood" and delveFoodOnly)
         then
             local shouldShow, remainingTime = ShouldShowConsumableBuff(
                 buff.spellID,

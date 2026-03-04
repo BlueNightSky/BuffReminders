@@ -24,6 +24,7 @@ local addonName, BR = ...
 ---@field glowSize number
 ---@field fontFace? string
 ---@field showConsumablesWithoutItems? boolean
+---@field delveFoodOnly? boolean
 ---@field consumableRebuffWarning? boolean
 ---@field consumableRebuffThreshold? number
 ---@field consumableRebuffColor? number[]
@@ -240,9 +241,7 @@ end
 -- Note: enabledBuffs defaults to all enabled - only set false to disable by default
 local defaults = {
     locked = true,
-    enabledBuffs = {
-        delveFood = false,
-    },
+    enabledBuffs = {},
     showOnlyInGroup = false,
     hideWhileResting = false,
     hideInCombat = false,
@@ -280,6 +279,7 @@ local defaults = {
         useCustomGlowColor = false,
         glowSize = 2,
         showConsumablesWithoutItems = false,
+        delveFoodOnly = false,
         consumableDisplayMode = "sub_icons",
         petDisplayMode = "generic", -- "generic" or "expanded"
         petLabels = true,
@@ -2754,7 +2754,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 20
+        local DB_VERSION = 21
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3258,6 +3258,13 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
             [20] = function()
                 if not db.minimap then
                     db.minimap = {}
+                end
+            end,
+
+            -- [21] Enable delve food by default (was opt-in, now opt-out)
+            [21] = function()
+                if db.enabledBuffs and db.enabledBuffs.delveFood == false then
+                    db.enabledBuffs.delveFood = nil
                 end
             end,
         }

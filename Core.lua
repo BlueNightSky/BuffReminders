@@ -168,6 +168,7 @@ local DefaultSettingKeys = {
     useCustomGlowColor = "VisualsRefresh",
     glowSize = "VisualsRefresh",
     showConsumablesWithoutItems = "DisplayRefresh",
+    delveFoodOnly = "DisplayRefresh",
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
     -- Pet display mode
