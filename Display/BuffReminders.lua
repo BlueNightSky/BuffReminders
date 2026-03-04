@@ -1645,6 +1645,9 @@ local function ResolveConsumableFrame(frame)
     ClearFoodFrameStyle(frame)
     local def = frame.buffDef
     local fallback = def and (def.displayIcon or def.buffIconID)
+    if type(fallback) == "table" then
+        fallback = fallback[1]
+    end
     if fallback then
         frame.icon:SetTexture(fallback)
     end
