@@ -1748,6 +1748,8 @@ local function CreateOptionsPanel()
         })
         catLayout:Add(useCustomAppHolder, nil, COMPONENT_GAP)
 
+        local baseContentY = catLayout:GetY()
+
         -- Direction buttons (part of custom appearance)
         catLayout:SetX(10)
         local dirHolder = Components.DirectionButtons(catContent, {
@@ -2031,7 +2033,34 @@ local function CreateOptionsPanel()
         catLayout:Space(gridHeight)
         catLayout:SetX(0)
 
-        section:SetContentHeight(math.abs(catLayout:GetY()) + 10)
+        local fullContentHeight = math.abs(catLayout:GetY()) + 10
+        local baseContentHeight = math.abs(baseContentY) + 10
+
+        local UpdateCustomAppearanceVisibility = function()
+            local show = isCustomAppearanceEnabled()
+            if show then
+                dirHolder:Show()
+                appFrame:Show()
+                section:SetContentHeight(fullContentHeight)
+            else
+                dirHolder:Hide()
+                appFrame:Hide()
+                section:SetContentHeight(baseContentHeight)
+            end
+            C_Timer.After(0, UpdateAppearanceContentHeight)
+        end
+
+        -- Register so panel OnShow syncs visibility state
+        table.insert(BR.RefreshableComponents, { Refresh = UpdateCustomAppearanceVisibility })
+
+        -- Set initial state (inline to avoid deferred timer during loop)
+        if isCustomAppearanceEnabled() then
+            section:SetContentHeight(fullContentHeight)
+        else
+            dirHolder:Hide()
+            appFrame:Hide()
+            section:SetContentHeight(baseContentHeight)
+        end
         table.insert(categorySections, section)
         previousSection = section
     end
