@@ -3286,6 +3286,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- Sync flags with current state (in case of reload)
         inCombat = InCombatLockdown()
         isResting = IsResting()
+        BR.BuffState.SetInCombat(inCombat)
         BR.BuffState.SetInVehicle(UnitInVehicle("player") == true)
         BR.StateHelpers.ScanEatingState()
         ResolveFontPath()
@@ -3322,19 +3323,23 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         SetDirty()
     elseif event == "PLAYER_REGEN_ENABLED" then
         inCombat = inEncounter
+        BR.BuffState.SetInCombat(inCombat)
         BR.StateHelpers.ScanEatingState()
         BR.SecureButtons.RefreshOverlaySpells()
         StartUpdates()
     elseif event == "PLAYER_REGEN_DISABLED" then
         inCombat = true
+        BR.BuffState.SetInCombat(true)
         SetDirty()
     elseif event == "ENCOUNTER_START" then
         inEncounter = true
         inCombat = true
+        BR.BuffState.SetInCombat(true)
         SetDirty()
     elseif event == "ENCOUNTER_END" then
         inEncounter = false
         inCombat = inCombat and InCombatLockdown()
+        BR.BuffState.SetInCombat(inCombat)
         SetDirty()
     elseif event == "PLAYER_DEAD" then
         HideAllDisplayFrames()

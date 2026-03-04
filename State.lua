@@ -60,6 +60,21 @@ local inReadyCheck = false
 -- Vehicle state (set via SetInVehicle)
 local inVehicle = false
 
+-- Combat/encounter state (set via SetInCombat by the Display layer)
+-- IMPORTANT: This flag is the single source of truth for "are aura queries restricted?"
+-- within State.lua. It covers BOTH combat lockdown AND boss encounters.
+--
+-- Why not just call InCombatLockdown()? Because ENCOUNTER_START fires BEFORE
+-- InCombatLockdown() returns true — the player isn't in combat until their first hostile
+-- action lands on the boss. During that window (potentially hundreds of ms while a spell
+-- is traveling), the aura API is already restricted but InCombatLockdown() still returns
+-- false. Non-whitelisted spells (e.g. Devotion Aura 465) silently return nil from
+-- C_UnitAuras.GetUnitAuraBySpellID, causing false "missing" flashes.
+--
+-- The Display layer sets this flag on ENCOUNTER_START, PLAYER_REGEN_DISABLED, etc.,
+-- ensuring State.lua sees the restricted state as early as possible.
+local inCombat = false
+
 -- ============================================================================
 -- CACHED VALUES (invalidated by specific events)
 -- ============================================================================
@@ -121,9 +136,8 @@ local currentValidUnits = {}
 -- True in follower dungeons and delves where NPC companions can receive buffs.
 local includeNPCsInCounting = false
 
--- True when the player is in combat lockdown. Set once per Refresh() cycle in BuildValidUnitCache.
--- Used by CountMissingBuff to skip NPCs during combat (NPC buff spell IDs aren't combat-whitelisted).
-local refreshInCombat = false
+-- Note: inCombat (set via SetInCombat) is used by CountMissingBuff to skip NPCs during
+-- combat/encounters — NPC buff spell IDs aren't on the Blizzard aura whitelist.
 
 -- Aura-safe spell whitelist loaded from Data/CombatSafeSpells.lua
 local COMBAT_SAFE_SPELLS = BR.COMBAT_SAFE_SPELLS
@@ -321,7 +335,6 @@ local function BuildValidUnitCache()
         -- Only whitelist specific content where NPC companions can receive player buffs.
         local difficultyID, difficultyName = select(3, GetInstanceInfo())
         includeNPCsInCounting = difficultyID == 205 or difficultyName == "Delves" -- Follower dungeon / Delves
-        refreshInCombat = InCombatLockdown()
     end
 
     local inRaid = IsInRaid()
@@ -624,7 +637,7 @@ local function CountMissingBuff(spellIDs, buffKey, playerOnly)
         -- UnitHasBuff returns nil causing false missing counts. Targeted buffs (HasPresenceBuff,
         -- IsPlayerBuffActive) use player-cast spell IDs that ARE whitelisted, so they
         -- still include NPCs via the unchanged includeNPCsInCounting check.
-        if data.isPlayer or (includeNPCsInCounting and not refreshInCombat) then
+        if data.isPlayer or (includeNPCsInCounting and not inCombat) then
             -- Check if unit's class benefits from this buff
             if not beneficiaries or beneficiaries[data.class] then
                 total = total + 1
@@ -741,9 +754,9 @@ local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, 
         -- Shortcut: check if the caster has this buff on themselves (combat-safe spell ID)
         local hasBuff, remaining = UnitHasBuff("player", casterBuffId)
         -- Update last target cache by scanning group for the original buff.
-        -- Only out of combat: the target-side spell may not be on the combat whitelist,
+        -- Only out of combat/encounter: the target-side spell may not be on the aura whitelist,
         -- so UnitHasBuff would return nil and incorrectly clear the cache.
-        if buffKey and not InCombatLockdown() then
+        if buffKey and not inCombat then
             if hasBuff then
                 local foundTarget = false
                 for _, data in ipairs(currentValidUnits) do
@@ -1187,7 +1200,8 @@ function BuffState.Refresh()
     currentWeaponEnchants.offHandExpiration = offExp
 
     local trackingMode = db.buffTrackingMode
-    local inCombat = InCombatLockdown()
+    -- Aura API is restricted in combat/encounters (inCombat set by Display layer)
+    -- and during M+ keystones (always restricted regardless of combat state).
     local isAuraRestricted = inCombat or GetCurrentDifficultyKey() == "mythicPlus"
     local hideExpiring = isAuraRestricted and db.hideExpiringInCombat ~= false
 
@@ -1511,6 +1525,13 @@ end
 ---@return boolean
 function BuffState.GetInVehicle()
     return inVehicle
+end
+
+---Set the combat/encounter state (single source of truth for aura restrictions)
+---Called by the Display layer on ENCOUNTER_START, PLAYER_REGEN_DISABLED, etc.
+---@param state boolean
+function BuffState.SetInCombat(state)
+    inCombat = state
 end
 
 -- ============================================================================
