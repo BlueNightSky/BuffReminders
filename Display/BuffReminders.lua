@@ -286,6 +286,7 @@ local defaults = {
         showConsumablesWithoutItems = false,
         delveFoodOnly = false,
         consumableDisplayMode = "sub_icons",
+        showConsumableTooltips = false,
         petDisplayMode = "generic", -- "generic" or "expanded"
         petLabels = true,
         petSpecIconOnHover = true,

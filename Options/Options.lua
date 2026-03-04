@@ -1176,6 +1176,27 @@ local function CreateOptionsPanel()
                 catLayout:Add(specIconHolder, nil, COMPONENT_GAP)
             end
 
+            if category == "consumable" then
+                local showTooltipsHolder = Components.Checkbox(catContent, {
+                    label = "Show item tooltips",
+                    get = function()
+                        return BR.Config.Get("defaults.showConsumableTooltips", false) ~= false
+                    end,
+                    enabled = function()
+                        local hcs = db.categorySettings and db.categorySettings[category]
+                        return hcs and hcs.clickable == true
+                    end,
+                    tooltip = {
+                        title = "Show item tooltips",
+                        desc = "When hovering over a consumable icon, show its item tooltip.",
+                    },
+                    onChange = function(checked)
+                        BR.Config.Set("defaults.showConsumableTooltips", checked)
+                    end,
+                })
+                catLayout:Add(showTooltipsHolder, nil, COMPONENT_GAP)
+            end
+
             catLayout:SetX(0)
         end
 

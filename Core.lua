@@ -171,6 +171,7 @@ local DefaultSettingKeys = {
     delveFoodOnly = "DisplayRefresh",
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
+    showConsumableTooltips = nil, -- No refresh needed, read at tooltip time
     -- Pet display mode
     petDisplayMode = "DisplayRefresh",
     petLabels = "DisplayRefresh",

@@ -223,19 +223,33 @@ local function CreateClickOverlay(frame)
     overlay.highlight:SetAllPoints()
     overlay.highlight:SetTexCoord(BR.TEXCOORD_INSET, 1 - BR.TEXCOORD_INSET, BR.TEXCOORD_INSET, 1 - BR.TEXCOORD_INSET)
     overlay.highlight:SetColorTexture(1, 1, 1, 0.2)
-    -- Tooltip: show last target name for targeted buffs
+    -- Tooltip: show last target name for targeted buffs, or item tooltip for consumables
     overlay:HookScript("OnEnter", function()
-        if frame.buffCategory ~= "targeted" or not frame.buffDef then
+        if frame.buffCategory == "targeted" and frame.buffDef then
+            local name, class = BR.StateHelpers.GetLastTarget(frame.buffDef.key)
+            if name then
+                ShowLastTargetTooltip(overlay, name, class)
+            end
             return
         end
-        local name, class = BR.StateHelpers.GetLastTarget(frame.buffDef.key)
-        if not name then
-            return
+        if frame.buffCategory == "consumable" then
+            local db = BuffRemindersDB
+            if not db or not db.defaults or db.defaults.showConsumableTooltips ~= true then
+                return
+            end
+            local itemID = overlay.itemID
+            if itemID then
+                GameTooltip:SetOwner(overlay, "ANCHOR_RIGHT")
+                GameTooltip:SetItemByID(itemID)
+                GameTooltip:Show()
+            end
         end
-        ShowLastTargetTooltip(overlay, name, class)
     end)
     overlay:HookScript("OnLeave", function()
         HideLastTargetTooltip()
+        if frame.buffCategory == "consumable" then
+            GameTooltip:Hide()
+        end
     end)
     frame.clickOverlay = overlay
 end
@@ -368,6 +382,24 @@ local function CreateActionButton()
 
     btn.qualityOverlay = btn:CreateFontString(nil, "OVERLAY")
     btn.qualityOverlay:Hide()
+
+    btn:SetScript("OnEnter", function(self)
+        if not BuffRemindersDB or not BuffRemindersDB.defaults then
+            return
+        end
+        if BuffRemindersDB.defaults.showConsumableTooltips ~= true then
+            return
+        end
+        if not self.itemID then
+            return
+        end
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetItemByID(self.itemID)
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
 
     return btn
 end
