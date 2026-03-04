@@ -101,6 +101,7 @@ read_globals = {
 	"GameTooltip",
 	"GameTooltip_Hide",
 	"HideUIPanel",
+	"Minimap",
 	"RegisterStateDriver",
 	"STANDARD_TEXT_FONT",
 	"UISpecialFrames",

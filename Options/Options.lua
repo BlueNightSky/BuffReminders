@@ -2089,6 +2089,27 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(loginMsgHolder, nil, COMPONENT_GAP)
 
+    local minimapHolder = Components.Checkbox(settingsContent, {
+        label = "Show minimap button",
+        get = function()
+            return not BuffRemindersDB.minimap or not BuffRemindersDB.minimap.hide
+        end,
+        onChange = function(checked)
+            if not BuffRemindersDB.minimap then
+                BuffRemindersDB.minimap = {}
+            end
+            BuffRemindersDB.minimap.hide = not checked
+            if BR.MinimapButton then
+                if checked then
+                    BR.MinimapButton.Icon:Show("BuffReminders")
+                else
+                    BR.MinimapButton.Icon:Hide("BuffReminders")
+                end
+            end
+        end,
+    })
+    setLayout:Add(minimapHolder, nil, COMPONENT_GAP)
+
     -- General Settings section
     LayoutSectionHeader(setLayout, settingsContent, "Visibility")
 

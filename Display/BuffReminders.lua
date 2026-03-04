@@ -253,6 +253,9 @@ local defaults = {
     petPassiveOnlyInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
+    minimap = {
+        hide = false,
+    },
 
     -- Global defaults (inherited by categories unless overridden)
     ---@type DefaultSettings
@@ -2667,6 +2670,21 @@ local function SlashHandler(msg)
         BR.Movers.UpdateAnchor()
         BR.Components.RefreshAll()
         print("|cff00ccffBuffReminders:|r Frames unlocked.")
+    elseif cmd == "minimap" then
+        if not BuffRemindersDB.minimap then
+            BuffRemindersDB.minimap = {}
+        end
+        BuffRemindersDB.minimap.hide = not BuffRemindersDB.minimap.hide
+        if BR.MinimapButton then
+            if BuffRemindersDB.minimap.hide then
+                BR.MinimapButton.Icon:Hide("BuffReminders")
+                print("|cff00ccffBuffReminders:|r Minimap icon hidden.")
+            else
+                BR.MinimapButton.Icon:Show("BuffReminders")
+                print("|cff00ccffBuffReminders:|r Minimap icon shown.")
+            end
+        end
+        BR.Components.RefreshAll()
     else
         BR.Options.Toggle()
     end
@@ -2736,7 +2754,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 19
+        local DB_VERSION = 20
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3236,6 +3254,12 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                 end
             end,
 
+            -- [20] Ensure minimap table exists for LibDBIcon
+            [20] = function()
+                if not db.minimap then
+                    db.minimap = {}
+                end
+            end,
         }
 
         -- Run pending migrations
@@ -3327,10 +3351,40 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
 
         local slashInfo = settingsPanel:CreateFontString(nil, "ARTWORK", "GameFontDisable")
         slashInfo:SetPoint("TOPLEFT", openBtn, "BOTTOMLEFT", 0, -12)
-        slashInfo:SetText("Slash commands: /br, /br lock, /br unlock, /br test")
+        slashInfo:SetText("Slash commands: /br, /br lock, /br unlock, /br test, /br minimap")
 
         local category = Settings.RegisterCanvasLayoutCategory(settingsPanel, settingsPanel.name)
         Settings.RegisterAddOnCategory(category)
+
+        -- Minimap button (LibDBIcon)
+        local LDB = LibStub("LibDataBroker-1.1", true)
+        local LDBIcon = LDB and LibStub("LibDBIcon-1.0", true)
+        if LDB and LDBIcon then
+            local dataObj = LDB:NewDataObject("BuffReminders", {
+                type = "launcher",
+                label = "BuffReminders",
+                icon = "Interface\\AddOns\\BuffReminders\\icon",
+                OnClick = function(_, button)
+                    if button == "LeftButton" then
+                        BR.Options.Toggle()
+                    elseif button == "RightButton" then
+                        ToggleTestMode(true)
+                    end
+                end,
+                OnTooltipShow = function(tooltip)
+                    tooltip:AddLine("BuffReminders")
+                    tooltip:AddLine("|cFFCFCFCFLeft click|r: Options")
+                    tooltip:AddLine("|cFFCFCFCFRight click|r: Test mode")
+                    local owner = tooltip:GetOwner()
+                    if owner and owner:GetParent() == Minimap then
+                        tooltip:AddLine("|cFF808080/br minimap|r |cFF808080to toggle this icon|r")
+                    end
+                end,
+            })
+            LDBIcon:Register("BuffReminders", dataObj, db.minimap)
+            LDBIcon:AddButtonToCompartment("BuffReminders")
+            BR.MinimapButton = { Icon = LDBIcon, DataObj = dataObj }
+        end
     elseif event == "PLAYER_ENTERING_WORLD" then
         -- Invalidate caches on zone change (spec may have auto-switched on entry)
         BR.BuffState.InvalidateContentTypeCache()
