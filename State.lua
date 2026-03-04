@@ -553,6 +553,52 @@ local function IsCategoryVisibleForContent(category)
     return true
 end
 
+---Check if a custom buff should be visible based on its per-buff loadConditions
+---@param buff CustomBuff
+---@return boolean
+local function IsCustomBuffVisibleForContent(buff)
+    if inVehicle then
+        return false
+    end
+    local lc = buff.loadConditions
+    if not lc then
+        return true
+    end -- nil = show everywhere
+
+    local contentType = GetCurrentContentType()
+    if lc[contentType] == false then
+        return false
+    end
+
+    -- Difficulty sub-filter
+    local diffKey = GetCurrentDifficultyKey()
+    if diffKey then
+        if contentType == "dungeon" and lc.dungeonDifficulty then
+            return lc.dungeonDifficulty[diffKey] ~= false
+        elseif contentType == "raid" and lc.raidDifficulty then
+            return lc.raidDifficulty[diffKey] ~= false
+        end
+    end
+
+    -- Per-buff ready check filter
+    if lc.readyCheckOnly and not inReadyCheck then
+        return false
+    end
+
+    -- Level filter
+    if lc.levelFilter then
+        local playerLevel = UnitLevel("player")
+        local maxLevel = GetMaxLevelForPlayerExpansion()
+        if lc.levelFilter == "maxLevel" and playerLevel < maxLevel then
+            return false
+        elseif lc.levelFilter == "belowMaxLevel" and playerLevel >= maxLevel then
+            return false
+        end
+    end
+
+    return true
+end
+
 ---Determine visibility and scan scope for a buff based on tracking mode.
 ---Raid buffs go on everyone, so "scan group" means showing coverage numbers.
 ---Presence buffs live on the caster, so "scan group" means finding if anyone has the aura.
@@ -1406,7 +1452,6 @@ function BuffState.Refresh()
     end
 
     -- Process custom buffs (user-defined, flows through ShouldShowSelfBuff like self/pet)
-    local customVisible = IsCategoryVisibleForContent("custom")
     local customGlow, customGlowMissing, customGlowThreshold = GetCategoryGlow("custom")
     local skipSpellKnown = SKIP_SPELL_KNOWN_CATEGORIES["custom"]
     for i, buff in ipairs(CustomBuffs) do
@@ -1415,7 +1460,7 @@ function BuffState.Refresh()
 
         local shouldProcess = (not isAuraRestricted or IsAuraTrackable(buff))
             and IsBuffEnabled(settingKey)
-            and customVisible
+            and IsCustomBuffVisibleForContent(buff)
 
         -- If requireSpellKnown is true, check if player knows at least one spell
         if shouldProcess and buff.requireSpellKnown then

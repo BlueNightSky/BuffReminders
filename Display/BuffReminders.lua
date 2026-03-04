@@ -242,7 +242,6 @@ local defaults = {
     locked = true,
     enabledBuffs = {
         delveFood = false,
-        burningRush = false,
     },
     showOnlyInGroup = false,
     hideWhileResting = false,
@@ -318,7 +317,6 @@ local defaults = {
                 mythic = true,
             },
         },
-        custom = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
     },
 
     ---@type AllCategorySettings
@@ -2738,7 +2736,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 18
+        local DB_VERSION = 19
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3183,6 +3181,61 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                     end
                 end
             end,
+
+            -- [19] Custom buffs now use per-buff loadConditions; migrate category-level custom visibility
+            [19] = function()
+                -- Carry over old category-level settings to each existing custom buff
+                local oldVis = db.categoryVisibility and db.categoryVisibility.custom
+                local oldReadyCheck = db.categorySettings
+                    and db.categorySettings.custom
+                    and db.categorySettings.custom.showOnlyOnReadyCheck
+                if db.customBuffs then
+                    for _, buff in pairs(db.customBuffs) do
+                        if not buff.loadConditions then
+                            -- Migrate from category visibility or use old defaults
+                            local lc = {}
+                            if oldVis then
+                                -- Preserve user's per-content-type choices
+                                for _, key in ipairs({ "openWorld", "scenario", "dungeon", "raid", "housing" }) do
+                                    if oldVis[key] == false then
+                                        lc[key] = false
+                                    end
+                                end
+                                if oldVis.dungeonDifficulty then
+                                    lc.dungeonDifficulty = {}
+                                    for dk, dv in pairs(oldVis.dungeonDifficulty) do
+                                        lc.dungeonDifficulty[dk] = dv
+                                    end
+                                end
+                                if oldVis.raidDifficulty then
+                                    lc.raidDifficulty = {}
+                                    for dk, dv in pairs(oldVis.raidDifficulty) do
+                                        lc.raidDifficulty[dk] = dv
+                                    end
+                                end
+                            else
+                                -- No custom visibility was set; apply old default (housing off)
+                                lc.housing = false
+                            end
+                            if oldReadyCheck then
+                                lc.readyCheckOnly = true
+                            end
+                            -- Only store if any value is non-default
+                            if next(lc) then
+                                buff.loadConditions = lc
+                            end
+                        end
+                    end
+                end
+                -- Clean up category-level keys
+                if db.categoryVisibility then
+                    db.categoryVisibility.custom = nil
+                end
+                if db.categorySettings and db.categorySettings.custom then
+                    db.categorySettings.custom.showOnlyOnReadyCheck = nil
+                end
+            end,
+
         }
 
         -- Run pending migrations

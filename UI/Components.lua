@@ -1717,20 +1717,29 @@ end
 
 Components.CreateSegmentedBar = CreateSegmentedBar
 
----Build barConfig for the content-type (W/S/D/R) bar
+---@class VisibilityTogglesConfig : ComponentConfig
+---@field category? CategoryName Category for DB-backed visibility toggles
+---@field store? VisibilityStore Custom data source (overrides category DB access)
+---@field onChange fun() Callback when visibility changes
+---@field noAutoRefresh? boolean Skip auto-registration in RefreshableComponents
+
+---@class VisibilityStore
+---@field getContent fun(key: string): boolean Whether content type is enabled
+---@field setContent fun(key: string) Toggle content type
+---@field getDiffTable fun(dbKey: string): table? Get difficulty sub-table (nil = all enabled)
+---@field ensureDiffTable fun(dbKey: string): table Get or create difficulty sub-table
+
+---Build a DB-backed VisibilityStore for a category
 ---@param category CategoryName
----@param onChange fun()
----@return table barConfig
-local function MakeContentBarConfig(category, onChange)
+---@return VisibilityStore
+local function MakeCategoryStore(category)
     return {
-        toggleDefs = CONTENT_TOGGLE_DEFS,
-        segmentWidth = DEFAULT_SEGMENT_W,
-        getState = function(key)
+        getContent = function(key)
             local db = BuffRemindersDB
-            local visibility = db.categoryVisibility and db.categoryVisibility[category]
-            return not visibility or visibility[key] ~= false
+            local vis = db.categoryVisibility and db.categoryVisibility[category]
+            return not vis or vis[key] ~= false
         end,
-        setState = function(key)
+        setContent = function(key)
             local db = BuffRemindersDB
             if not db.categoryVisibility then
                 db.categoryVisibility = {}
@@ -1741,20 +1750,33 @@ local function MakeContentBarConfig(category, onChange)
             end
             db.categoryVisibility[category][key] = not db.categoryVisibility[category][key]
         end,
-        onChange = onChange,
+        getDiffTable = function(dbKey)
+            local db = BuffRemindersDB
+            local vis = db.categoryVisibility and db.categoryVisibility[category]
+            return vis and vis[dbKey]
+        end,
+        ensureDiffTable = function(dbKey)
+            local db = BuffRemindersDB
+            if not db.categoryVisibility then
+                db.categoryVisibility = {}
+            end
+            if not db.categoryVisibility[category] then
+                db.categoryVisibility[category] = { openWorld = true, scenario = true, dungeon = true, raid = true }
+            end
+            if not db.categoryVisibility[category][dbKey] then
+                db.categoryVisibility[category][dbKey] = {}
+            end
+            return db.categoryVisibility[category][dbKey]
+        end,
     }
 end
-
----@class VisibilityTogglesConfig : ComponentConfig
----@field category CategoryName Category for visibility toggles
----@field onChange fun() Callback when visibility changes
 
 ---Create standalone content + difficulty visibility toggles (D/R expand to the right)
 ---@param parent table Parent frame
 ---@param config VisibilityTogglesConfig Configuration table
 ---@return table holder Frame containing segmented toggle bar with D/R difficulty expansion
 function Components.VisibilityToggles(parent, config)
-    local category = config.category
+    local store = config.store or MakeCategoryStore(config.category)
     local DIFF_SEGMENT_W = 26
 
     local holder = CreateFrame("Frame", nil, parent)
@@ -1763,39 +1785,12 @@ function Components.VisibilityToggles(parent, config)
     -- All toggle buttons across all bars (content + difficulty bars) for Refresh
     local allToggleButtons = {}
 
-    -- Helper: get/set difficulty sub-table
-    local function getDiffTable(dbKey)
-        local db = BuffRemindersDB
-        local vis = db.categoryVisibility and db.categoryVisibility[category]
-        return vis and vis[dbKey]
-    end
-
-    local function ensureDiffTable(dbKey)
-        local db = BuffRemindersDB
-        if not db.categoryVisibility then
-            db.categoryVisibility = {}
-        end
-        if not db.categoryVisibility[category] then
-            db.categoryVisibility[category] = { openWorld = true, scenario = true, dungeon = true, raid = true }
-        end
-        if not db.categoryVisibility[category][dbKey] then
-            db.categoryVisibility[category][dbKey] = {}
-        end
-        return db.categoryVisibility[category][dbKey]
-    end
-
-    local function isContentEnabled(contentKey)
-        local db = BuffRemindersDB
-        local vis = db.categoryVisibility and db.categoryVisibility[category]
-        return not vis or vis[contentKey] ~= false
-    end
-
     -- Compute tri-state visual for D/R buttons: "on" (all diffs enabled), "partial" (some), "off" (content disabled)
     local function getDiffVisualState(contentKey, diffDbKey, diffDefs)
-        if not isContentEnabled(contentKey) then
+        if not store.getContent(contentKey) then
             return "off"
         end
-        local diffTable = getDiffTable(diffDbKey)
+        local diffTable = store.getDiffTable(diffDbKey)
         if not diffTable then
             return "on" -- nil = all enabled
         end
@@ -1824,18 +1819,27 @@ function Components.VisibilityToggles(parent, config)
     contentLabel:SetPoint("LEFT", 0, 0)
     contentLabel:SetText("Show in:")
 
-    -- Content bar with custom getVisualState for D/R
-    local contentBarConfig = MakeContentBarConfig(category, config.onChange)
-    contentBarConfig.getVisualState = function(key)
-        if key == "dungeon" then
-            return getDiffVisualState("dungeon", "dungeonDifficulty", DUNGEON_DIFF_DEFS)
-        elseif key == "raid" then
-            return getDiffVisualState("raid", "raidDifficulty", RAID_DIFF_DEFS)
-        else
-            return isContentEnabled(key) and "on" or "off"
-        end
-    end
-    local contentBar, contentButtons = CreateSegmentedBar(holder, contentBarConfig)
+    -- Content bar
+    local contentBar, contentButtons = CreateSegmentedBar(holder, {
+        toggleDefs = CONTENT_TOGGLE_DEFS,
+        segmentWidth = DEFAULT_SEGMENT_W,
+        getState = function(key)
+            return store.getContent(key)
+        end,
+        getVisualState = function(key)
+            if key == "dungeon" then
+                return getDiffVisualState("dungeon", "dungeonDifficulty", DUNGEON_DIFF_DEFS)
+            elseif key == "raid" then
+                return getDiffVisualState("raid", "raidDifficulty", RAID_DIFF_DEFS)
+            else
+                return store.getContent(key) and "on" or "off"
+            end
+        end,
+        setState = function(key)
+            store.setContent(key)
+        end,
+        onChange = config.onChange,
+    })
     contentBar:SetPoint("LEFT", contentLabel, "RIGHT", 6, 0)
 
     for _, btn in ipairs(contentButtons) do
@@ -1864,22 +1868,19 @@ function Components.VisibilityToggles(parent, config)
 
     -- Pre-create difficulty bars
     for _, mapping in ipairs(diffMappings) do
-        -- Difficulty bar: parented to holder so it's clipped by scroll frame
         local bar, buttons = CreateSegmentedBar(holder, {
             toggleDefs = mapping.diffDefs,
             segmentWidth = DIFF_SEGMENT_W,
             getState = function(key)
-                local diffTable = getDiffTable(mapping.diffDbKey)
+                local diffTable = store.getDiffTable(mapping.diffDbKey)
                 return not diffTable or diffTable[key] ~= false
             end,
             setState = function(key)
-                local t = ensureDiffTable(mapping.diffDbKey)
+                local t = store.ensureDiffTable(mapping.diffDbKey)
                 local wasEnabled = t[key] ~= false
                 t[key] = not wasEnabled
 
                 -- Auto-manage content type toggle
-                local db = BuffRemindersDB
-                local vis = db.categoryVisibility and db.categoryVisibility[category]
                 if wasEnabled then
                     -- Turned off: check if ALL are now off -> disable content type
                     local anyStillOn = false
@@ -1889,14 +1890,14 @@ function Components.VisibilityToggles(parent, config)
                             break
                         end
                     end
-                    if not anyStillOn and vis then
-                        vis[mapping.contentKey] = false
+                    if not anyStillOn and store.getContent(mapping.contentKey) then
+                        store.setContent(mapping.contentKey)
                     end
                 else
                     -- Turned on from off: if content type was disabled, re-enable it
                     -- and set only the clicked difficulty to true (others stay off)
-                    if vis and vis[mapping.contentKey] == false then
-                        vis[mapping.contentKey] = true
+                    if not store.getContent(mapping.contentKey) then
+                        store.setContent(mapping.contentKey)
                         for _, def in ipairs(mapping.diffDefs) do
                             t[def.key] = def.key == key
                         end
@@ -1974,7 +1975,9 @@ function Components.VisibilityToggles(parent, config)
         refreshAll()
     end
 
-    table.insert(RefreshableComponents, holder)
+    if not config.noAutoRefresh then
+        table.insert(RefreshableComponents, holder)
+    end
 
     return holder
 end

@@ -989,34 +989,42 @@ local function CreateOptionsPanel()
 
         local db = BuffRemindersDB
 
-        -- Visibility callback for W/S/D/R toggles
-        local function OnCategoryVisibilityChange()
-            UpdateDisplay()
+        -- W/S/D/R content visibility + ready check (not for custom — custom uses per-buff loadConditions)
+        if category ~= "custom" then
+            local function OnCategoryVisibilityChange()
+                UpdateDisplay()
+            end
+
+            local visToggles = Components.VisibilityToggles(catContent, {
+                category = category,
+                onChange = OnCategoryVisibilityChange,
+            })
+            catLayout:Add(visToggles, nil, SECTION_GAP)
+
+            local readyCheckHolder = Components.Checkbox(catContent, {
+                label = "Show only on ready check",
+                get = function()
+                    local cs = db.categorySettings and db.categorySettings[category]
+                    return cs and cs.showOnlyOnReadyCheck == true
+                end,
+                tooltip = {
+                    title = "Show only on ready check",
+                    desc = "Only show this category's buffs for 15 seconds after a ready check starts",
+                },
+                onChange = function(checked)
+                    BR.Config.Set("categorySettings." .. category .. ".showOnlyOnReadyCheck", checked)
+                end,
+            })
+            catLayout:Add(readyCheckHolder, nil, COMPONENT_GAP)
+        else
+            local banner = Components.Banner(catContent, {
+                text = "Visibility and ready check settings moved to each buff's edit menu.",
+                color = "orange",
+                icon = "services-icon-warning",
+            })
+            catLayout:Add(banner, nil, SECTION_GAP)
+            banner:SetPoint("RIGHT", catContent, "RIGHT", 0, 0)
         end
-
-        -- W/S/D/R content visibility toggles
-        local visToggles = Components.VisibilityToggles(catContent, {
-            category = category,
-            onChange = OnCategoryVisibilityChange,
-        })
-        catLayout:Add(visToggles, nil, SECTION_GAP)
-
-        -- Show only on ready check (per-category)
-        local readyCheckHolder = Components.Checkbox(catContent, {
-            label = "Show only on ready check",
-            get = function()
-                local cs = db.categorySettings and db.categorySettings[category]
-                return cs and cs.showOnlyOnReadyCheck == true
-            end,
-            tooltip = {
-                title = "Show only on ready check",
-                desc = "Only show this category's buffs for 15 seconds after a ready check starts",
-            },
-            onChange = function(checked)
-                BR.Config.Set("categorySettings." .. category .. ".showOnlyOnReadyCheck", checked)
-            end,
-        })
-        catLayout:Add(readyCheckHolder, nil, COMPONENT_GAP)
 
         -- Icons sub-header (all categories except custom)
         if category ~= "custom" then
@@ -2462,7 +2470,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     end
 
     local MODAL_WIDTH = 460
-    local BASE_HEIGHT = 530
+    local BASE_HEIGHT = 636
     local ROW_HEIGHT = 26
     local CONTENT_LEFT = 20
     local ROWS_START_Y = -60
@@ -2661,7 +2669,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
 
     -- Sections frame (always visible, below add-spell button)
     sectionsFrame = CreateFrame("Frame", nil, modal)
-    sectionsFrame:SetSize(MODAL_WIDTH - 40, 350)
+    sectionsFrame:SetSize(MODAL_WIDTH - 40, 456)
 
     local function CreateSeparator(parent, yOff, width)
         local line = parent:CreateTexture(nil, "ARTWORK")
@@ -2821,9 +2829,89 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     })
     glowModeDropdown:SetPoint("TOPLEFT", 0, -192)
 
+    -- Load conditions section (per-buff content visibility)
+    CreateSeparator(sectionsFrame, -222)
+    CreateSectionHeader(sectionsFrame, "SHOW IN", 0, -231)
+
+    -- Local state for load conditions (read on save)
+    local loadConditions = {}
+    if editingBuff and editingBuff.loadConditions then
+        for k, v in pairs(editingBuff.loadConditions) do
+            if type(v) == "table" then
+                loadConditions[k] = {}
+                for dk, dv in pairs(v) do
+                    loadConditions[k][dk] = dv
+                end
+            else
+                loadConditions[k] = v
+            end
+        end
+    elseif not editingBuff then
+        -- New buff defaults: housing off (matches old category-level default)
+        loadConditions.housing = false
+    end
+
+    -- Reuse VisibilityToggles with a table-backed store instead of DB-backed
+    local visToggles = Components.VisibilityToggles(sectionsFrame, {
+        store = {
+            getContent = function(key)
+                return loadConditions[key] ~= false
+            end,
+            setContent = function(key)
+                if loadConditions[key] ~= false then
+                    loadConditions[key] = false
+                else
+                    loadConditions[key] = nil
+                end
+            end,
+            getDiffTable = function(dbKey)
+                return loadConditions[dbKey]
+            end,
+            ensureDiffTable = function(dbKey)
+                if not loadConditions[dbKey] then
+                    loadConditions[dbKey] = {}
+                end
+                return loadConditions[dbKey]
+            end,
+        },
+        noAutoRefresh = true,
+        onChange = function() end,
+    })
+    visToggles:SetPoint("TOPLEFT", 0, -248)
+
+    -- Ready check toggle
+    local lcReadyCheckToggle = Components.Toggle(sectionsFrame, {
+        label = "Only on ready check",
+        checked = editingBuff and editingBuff.loadConditions and editingBuff.loadConditions.readyCheckOnly or false,
+        onChange = function(isChecked)
+            loadConditions.readyCheckOnly = isChecked or nil
+        end,
+    })
+    lcReadyCheckToggle:SetPoint("TOPLEFT", 0, -276)
+
+    -- Level filter dropdown
+    local levelFilterHolder = Components.Dropdown(sectionsFrame, {
+        label = "Level:",
+        labelWidth = 38,
+        width = 150,
+        options = {
+            { value = "any", label = "Any level" },
+            { value = "maxLevel", label = "Max level only" },
+            { value = "belowMaxLevel", label = "Below max level" },
+        },
+        get = function()
+            local lf = loadConditions.levelFilter
+            return lf or "any"
+        end,
+        onChange = function(val)
+            loadConditions.levelFilter = (val ~= "any") and val or nil
+        end,
+    })
+    levelFilterHolder:SetPoint("TOPLEFT", 0, -298)
+
     -- Click action section
-    CreateSeparator(sectionsFrame, -224)
-    CreateSectionHeader(sectionsFrame, "CLICK ACTION", 0, -233)
+    CreateSeparator(sectionsFrame, -330)
+    CreateSectionHeader(sectionsFrame, "CLICK ACTION", 0, -339)
 
     -- Determine existing action type
     local existingActionType = "none"
@@ -2840,7 +2928,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     -- Container for the conditional input (spell/item Lookup or macro text)
     actionInputHolder = CreateFrame("Frame", nil, sectionsFrame)
     actionInputHolder:SetSize(MODAL_WIDTH - 40, 26)
-    actionInputHolder:SetPoint("TOPLEFT", 0, -284)
+    actionInputHolder:SetPoint("TOPLEFT", 0, -390)
 
     -- Spell ID input with Lookup
     castSpellEditBox = CreateFrame("EditBox", nil, actionInputHolder)
@@ -3009,7 +3097,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             UpdateActionInputVisibility(value)
         end,
     })
-    actionTypeDropdown:SetPoint("TOPLEFT", 0, -254)
+    actionTypeDropdown:SetPoint("TOPLEFT", 0, -360)
 
     -- Initialize visibility for the current action type
     UpdateActionInputVisibility(existingActionType)
@@ -3086,6 +3174,41 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             end
         end
 
+        -- Only persist loadConditions if any value differs from default (all-enabled)
+        -- Clean up difficulty sub-tables where all entries are enabled (true/nil)
+        for _, diffKey in ipairs({ "dungeonDifficulty", "raidDifficulty" }) do
+            local dt = loadConditions[diffKey]
+            if dt then
+                local anyOff = false
+                for _, v in pairs(dt) do
+                    if v == false then
+                        anyOff = true
+                        break
+                    end
+                end
+                if not anyOff then
+                    loadConditions[diffKey] = nil
+                end
+            end
+        end
+
+        local savedLoadConditions = nil
+        local function hasNonDefault(t)
+            for _, v in pairs(t) do
+                if type(v) == "table" then
+                    if hasNonDefault(v) then
+                        return true
+                    end
+                else
+                    return true
+                end
+            end
+            return false
+        end
+        if hasNonDefault(loadConditions) then
+            savedLoadConditions = loadConditions
+        end
+
         local customBuff = {
             spellID = spellIDValue,
             key = key,
@@ -3100,6 +3223,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             castItemID = castItemIDValue,
             castMacro = castMacroValue,
             requireItemID = tonumber(strtrim(requireItemEditBox:GetText())) or nil,
+            loadConditions = savedLoadConditions,
         }
 
         BuffRemindersDB.customBuffs[key] = customBuff

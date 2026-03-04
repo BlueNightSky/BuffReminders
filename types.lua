@@ -39,3 +39,14 @@
 ---@alias SpellID number|number[]
 ---@alias ClassName "WARRIOR"|"PALADIN"|"HUNTER"|"ROGUE"|"PRIEST"|"DEATHKNIGHT"|"SHAMAN"|"MAGE"|"WARLOCK"|"MONK"|"DRUID"|"DEMONHUNTER"|"EVOKER"
 ---@alias RoleType "TANK"|"HEALER"|"DAMAGER"
+
+---@class LoadConditions
+---@field openWorld? boolean
+---@field dungeon? boolean
+---@field scenario? boolean
+---@field raid? boolean
+---@field housing? boolean
+---@field readyCheckOnly? boolean
+---@field levelFilter? "maxLevel"|"belowMaxLevel"
+---@field dungeonDifficulty? table<string, boolean>
+---@field raidDifficulty? table<string, boolean>
