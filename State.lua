@@ -481,6 +481,14 @@ local function GetCurrentContentType()
         return cachedContentType
     end
 
+    -- Delves report inInstance=false but instanceType="scenario" and difficultyID=208;
+    -- check difficultyID first so they are correctly classified as scenarios.
+    local difficultyID = select(3, GetInstanceInfo())
+    if difficultyID == 208 then
+        cachedContentType = "scenario"
+        return cachedContentType
+    end
+
     local inInstance, instanceType = IsInInstance()
     if not inInstance then
         cachedContentType = "openWorld"

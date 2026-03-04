@@ -108,24 +108,11 @@ local min = math.min
 ---@field requireItemID? number    -- Only show if this item is equipped or in bags
 ---@field loadConditions? LoadConditions  -- Per-buff content visibility (nil = show everywhere)
 
----Check if the player is inside a delve (scenario with Brann or Valeera)
+---Check if the player is inside a delve (difficultyID 208)
 ---@return boolean
 local function IsInDelve()
-    local _, instanceType = IsInInstance()
-    if instanceType ~= "scenario" then
-        return false
-    end
-    for i = 1, GetNumGroupMembers() do
-        local guid = UnitGUID("party" .. i)
-        if guid then
-            local npcID = select(6, strsplit("-", guid))
-            npcID = tonumber(npcID)
-            if npcID == 210759 or npcID == 248567 then
-                return true
-            end
-        end
-    end
-    return false
+    local difficultyID = select(3, GetInstanceInfo())
+    return difficultyID == 208
 end
 BR.IsInDelve = IsInDelve
 
