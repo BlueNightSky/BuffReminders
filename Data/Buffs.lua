@@ -1,5 +1,8 @@
 local _, BR = ...
 
+-- Lua stdlib locals
+local min = math.min
+
 -- ============================================================================
 -- BUFF DATA TABLES
 -- ============================================================================
@@ -393,8 +396,8 @@ BR.BUFF_TABLES = {
                 local hasDragonTemperedBlades = IsPlayerSpell(381801)
 
                 -- Only require as many as the player actually knows
-                local requiredLethal = math.min(knownLethal, hasDragonTemperedBlades and 2 or 1)
-                local requiredNonLethal = math.min(knownNonLethal, hasDragonTemperedBlades and 2 or 1)
+                local requiredLethal = min(knownLethal, hasDragonTemperedBlades and 2 or 1)
+                local requiredNonLethal = min(knownNonLethal, hasDragonTemperedBlades and 2 or 1)
 
                 return activeLethal < requiredLethal or activeNonLethal < requiredNonLethal
             end,

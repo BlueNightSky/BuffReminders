@@ -6,6 +6,10 @@ local _, BR = ...
 -- Each category (and the main combined frame) gets its own mover.
 -- ============================================================================
 
+-- Lua stdlib locals
+local floor = math.floor
+local tinsert, tconcat = table.insert, table.concat
+
 local CATEGORIES = BR.CATEGORIES
 local CATEGORY_LABELS = BR.CATEGORY_LABELS
 local DIRECTION_ANCHORS = BR.DIRECTION_ANCHORS
@@ -30,7 +34,7 @@ local EDIT_MODE_DIM_ALPHA = 0.3
 
 ---Round a number to the nearest integer
 local function RoundCoord(x)
-    return math.floor(x + 0.5)
+    return floor(x + 0.5)
 end
 
 -- Convert saved position from one anchor to another so the frame stays in place
@@ -92,7 +96,7 @@ local function GetMainFrameLabel()
     local parts = {}
     for _, category in ipairs(CATEGORIES) do
         if not IsCategorySplit(category) then
-            table.insert(parts, CATEGORY_LABELS[category])
+            tinsert(parts, CATEGORY_LABELS[category])
         end
     end
     if #parts == 0 then
@@ -100,7 +104,7 @@ local function GetMainFrameLabel()
     elseif #parts == #CATEGORIES then
         return "Main (all)"
     else
-        return table.concat(parts, " + ")
+        return tconcat(parts, " + ")
     end
 end
 

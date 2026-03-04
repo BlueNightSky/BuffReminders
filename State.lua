@@ -26,6 +26,10 @@ local _, BR = ...
 ---@field eatingExpirationTime number?      -- GetTime()-based expiration of eating aura
 ---@field petActions PetActionList?           -- Expanded pet summon actions
 
+-- Lua stdlib locals (avoid repeated global lookups in hot paths)
+local floor = math.floor
+local tinsert = table.insert
+
 -- Buff tables from Buffs.lua (via BR namespace)
 local BUFF_TABLES = BR.BUFF_TABLES
 local BuffBeneficiaries = BR.BuffBeneficiaries
@@ -435,11 +439,11 @@ end
 ---@param seconds number
 ---@return string
 local function FormatRemainingTime(seconds)
-    local mins = math.floor(seconds / 60)
+    local mins = floor(seconds / 60)
     if mins > 0 then
         return mins .. "m"
     else
-        return math.floor(seconds) .. "s"
+        return floor(seconds) .. "s"
     end
 end
 
@@ -1521,7 +1525,7 @@ function BuffState.Refresh()
             if not BuffState.visibleByCategory[cat] then
                 BuffState.visibleByCategory[cat] = {}
             end
-            table.insert(BuffState.visibleByCategory[cat], entry)
+            tinsert(BuffState.visibleByCategory[cat], entry)
         end
     end
 

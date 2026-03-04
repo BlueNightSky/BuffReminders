@@ -33,6 +33,11 @@ local _, BR = ...
 ---@field onChange fun(checked: boolean)
 ---@field tooltip? string|table
 
+-- Lua stdlib locals (avoid repeated global lookups in hot paths)
+local floor, max, min = math.floor, math.max, math.min
+local rad = math.rad
+local tinsert = table.insert
+
 local Components = BR.Components
 local RefreshableComponents = BR.RefreshableComponents
 
@@ -122,7 +127,7 @@ function BR.CreateButton(parent, text, onClick, tooltip)
 
     -- Auto-size based on text with padding
     local textWidth = btnText:GetStringWidth()
-    btn:SetSize(math.max(textWidth + 16, 60), 22)
+    btn:SetSize(max(textWidth + 16, 60), 22)
 
     -- Visual state tracking
     local isEnabled = true
@@ -188,7 +193,7 @@ function BR.CreateButton(parent, text, onClick, tooltip)
     function btn:SetText(newText)
         btnText:SetText(newText)
         local newWidth = btnText:GetStringWidth()
-        self:SetSize(math.max(newWidth + 16, 60), 22)
+        self:SetSize(max(newWidth + 16, 60), 22)
     end
 
     function btn:GetText()
@@ -370,7 +375,7 @@ function Components.Slider(parent, config)
     local valueText = valueBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     valueText:SetAllPoints()
     valueText:SetJustifyH("LEFT")
-    valueText:SetText(math.floor(currentValue) .. suffix)
+    valueText:SetText(floor(currentValue) .. suffix)
     holder.valueText = valueText
 
     local function ValueToPosition(val)
@@ -384,17 +389,17 @@ function Components.Slider(parent, config)
 
     local function PositionToValue(pos)
         local pct = pos / (sliderWidth - THUMB_WIDTH)
-        pct = math.max(0, math.min(1, pct))
+        pct = max(0, min(1, pct))
         local val = config.min + pct * (config.max - config.min)
         -- Snap to nearest multiple of step (aligned to 0, not min)
-        val = math.floor(val / step + 0.5) * step
-        return math.max(config.min, math.min(config.max, val))
+        val = floor(val / step + 0.5) * step
+        return max(config.min, min(config.max, val))
     end
 
     local function UpdateThumbPosition()
         local pos = ValueToPosition(currentValue)
         thumb:SetPoint("CENTER", trackBg, "LEFT", pos + THUMB_WIDTH / 2, 0)
-        trackFill:SetWidth(math.max(1, pos + THUMB_WIDTH / 2))
+        trackFill:SetWidth(max(1, pos + THUMB_WIDTH / 2))
     end
 
     local function UpdateVisual()
@@ -446,9 +451,9 @@ function Components.Slider(parent, config)
             local newVal = PositionToValue(localX)
             if newVal ~= currentValue then
                 currentValue = newVal
-                valueText:SetText(math.floor(currentValue) .. suffix)
+                valueText:SetText(floor(currentValue) .. suffix)
                 UpdateThumbPosition()
-                config.onChange(math.floor(currentValue))
+                config.onChange(floor(currentValue))
             end
         end
     end)
@@ -463,9 +468,9 @@ function Components.Slider(parent, config)
             local localX = (mouseX - frameLeft) / scale - THUMB_WIDTH / 2
             local newVal = PositionToValue(localX)
             currentValue = newVal
-            valueText:SetText(math.floor(currentValue) .. suffix)
+            valueText:SetText(floor(currentValue) .. suffix)
             UpdateVisual()
-            config.onChange(math.floor(currentValue))
+            config.onChange(floor(currentValue))
             isDragging = true
         end
     end)
@@ -488,11 +493,11 @@ function Components.Slider(parent, config)
     editBox:SetScript("OnEnterPressed", function(self)
         local num = tonumber(self:GetText())
         if num then
-            num = math.max(config.min, math.min(config.max, num))
+            num = max(config.min, min(config.max, num))
             currentValue = num
-            valueText:SetText(math.floor(currentValue) .. suffix)
+            valueText:SetText(floor(currentValue) .. suffix)
             UpdateVisual()
-            config.onChange(math.floor(currentValue))
+            config.onChange(floor(currentValue))
         end
         editContainer:Hide()
         valueBtn:Show()
@@ -510,12 +515,12 @@ function Components.Slider(parent, config)
 
     -- Track editbox for focus cleanup on panel hide
     if panelEditBoxes then
-        table.insert(panelEditBoxes, editBox)
+        tinsert(panelEditBoxes, editBox)
     end
 
     valueBtn:SetScript("OnClick", function()
         valueBtn:Hide()
-        editBox:SetText(tostring(math.floor(currentValue)))
+        editBox:SetText(tostring(floor(currentValue)))
         editContainer:Show()
         editBox:SetFocus()
         editBox:HighlightText()
@@ -538,11 +543,11 @@ function Components.Slider(parent, config)
                 -- Snap down to previous multiple of step
                 newVal = currentValue - remainder
             end
-            newVal = math.max(config.min, math.min(config.max, newVal))
+            newVal = max(config.min, min(config.max, newVal))
             currentValue = newVal
-            valueText:SetText(math.floor(currentValue) .. suffix)
+            valueText:SetText(floor(currentValue) .. suffix)
             UpdateVisual()
-            config.onChange(math.floor(currentValue))
+            config.onChange(floor(currentValue))
         end
     end)
 
@@ -588,7 +593,7 @@ function Components.Slider(parent, config)
     -- Public methods
     function holder:SetValue(val)
         currentValue = val
-        valueText:SetText(math.floor(currentValue) .. suffix)
+        valueText:SetText(floor(currentValue) .. suffix)
         UpdateVisual()
     end
 
@@ -613,7 +618,7 @@ function Components.Slider(parent, config)
     function holder:Refresh()
         if config.get then
             currentValue = config.get()
-            valueText:SetText(math.floor(currentValue) .. suffix)
+            valueText:SetText(floor(currentValue) .. suffix)
             UpdateVisual()
         end
         if config.enabled then
@@ -623,7 +628,7 @@ function Components.Slider(parent, config)
 
     -- Auto-register if refreshable
     if config.get or config.enabled then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     return holder
@@ -890,7 +895,7 @@ function Components.Checkbox(parent, config)
 
     -- Auto-register if refreshable
     if config.get or config.enabled then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     return holder
@@ -1016,7 +1021,7 @@ function Components.DimensionLink(parent, config)
         UpdateVisual()
     end
 
-    table.insert(RefreshableComponents, holder)
+    tinsert(RefreshableComponents, holder)
 
     UpdateVisual()
     return holder
@@ -1176,7 +1181,7 @@ function Components.Toggle(parent, config)
 
     -- Auto-register if refreshable
     if config.get or config.enabled then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     UpdateVisual()
@@ -1255,7 +1260,7 @@ local function CreateDropdownCore(parent, width, options, initialValue, onChange
     arrow:SetSize(12, 12)
     arrow:SetPoint("RIGHT", -6, 0)
     arrow:SetTexture("Interface\\ChatFrame\\ChatFrameExpandArrow")
-    arrow:SetRotation(math.rad(-90)) -- points down
+    arrow:SetRotation(rad(-90)) -- points down
 
     -- ==================== MENU ====================
     -- Parent to dropdown parent so it scrolls with container
@@ -1290,7 +1295,7 @@ local function CreateDropdownCore(parent, width, options, initialValue, onChange
         scrollFrame:SetScript("OnMouseWheel", function(_, delta)
             local current = scrollFrame:GetVerticalScroll()
             local maxScroll = #options * ITEM_HEIGHT - visibleCount * ITEM_HEIGHT
-            local newScroll = math.max(0, math.min(maxScroll, current - delta * ITEM_HEIGHT * 3))
+            local newScroll = max(0, min(maxScroll, current - delta * ITEM_HEIGHT * 3))
             scrollFrame:SetVerticalScroll(newScroll)
         end)
     end
@@ -1424,7 +1429,7 @@ local function CreateDropdownCore(parent, width, options, initialValue, onChange
             item:SetScript("OnMouseWheel", function(_, delta)
                 local current = scrollFrame:GetVerticalScroll()
                 local maxScroll = #options * ITEM_HEIGHT - visibleCount * ITEM_HEIGHT
-                local newScroll = math.max(0, math.min(maxScroll, current - delta * ITEM_HEIGHT * 3))
+                local newScroll = max(0, min(maxScroll, current - delta * ITEM_HEIGHT * 3))
                 scrollFrame:SetVerticalScroll(newScroll)
             end)
         end
@@ -1511,7 +1516,7 @@ function Components.DirectionButtons(parent, config)
     -- Build options array
     local options = {}
     for _, dir in ipairs(directions) do
-        table.insert(options, { label = dirLabels[dir], value = dir })
+        tinsert(options, { label = dirLabels[dir], value = dir })
     end
 
     -- Container frame
@@ -1560,7 +1565,7 @@ function Components.DirectionButtons(parent, config)
 
     -- Auto-register if refreshable
     if config.get or config.enabled then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     -- Backwards compatibility: empty buttons table (no longer used)
@@ -1976,7 +1981,7 @@ function Components.VisibilityToggles(parent, config)
     end
 
     if not config.noAutoRefresh then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     return holder
@@ -2075,7 +2080,7 @@ function Components.Dropdown(parent, config, _)
 
     -- Auto-register if refreshable
     if config.get or config.enabled then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     return holder
@@ -2196,7 +2201,7 @@ function Components.TextInput(parent, config)
 
     -- Track editbox for focus cleanup
     if panelEditBoxes then
-        table.insert(panelEditBoxes, editBox)
+        tinsert(panelEditBoxes, editBox)
     end
 
     -- Callbacks
@@ -2243,7 +2248,7 @@ function Components.TextInput(parent, config)
 
     -- Auto-register if refreshable
     if config.get or config.enabled then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     return holder
@@ -2301,8 +2306,8 @@ function Components.NumericStepper(parent, config)
     end
 
     local function ClampAndSet(val)
-        val = math.max(config.min or 0, math.min(config.max or 100, val))
-        val = math.floor(val / step + 0.5) * step
+        val = max(config.min or 0, min(config.max or 100, val))
+        val = floor(val / step + 0.5) * step
         if val ~= currentValue then
             currentValue = val
             UpdateValueText()
@@ -2407,7 +2412,7 @@ function Components.NumericStepper(parent, config)
 
     -- Track editbox for focus cleanup on panel hide
     if panelEditBoxes then
-        table.insert(panelEditBoxes, editBox)
+        tinsert(panelEditBoxes, editBox)
     end
 
     valueBtn:SetScript("OnClick", function()
@@ -2415,7 +2420,7 @@ function Components.NumericStepper(parent, config)
             return
         end
         valueBtn:Hide()
-        editBox:SetText(tostring(math.floor(currentValue)))
+        editBox:SetText(tostring(floor(currentValue)))
         editContainer:Show()
         editBox:SetFocus()
         editBox:HighlightText()
@@ -2465,7 +2470,7 @@ function Components.NumericStepper(parent, config)
 
     -- Public methods
     function holder:SetValue(val)
-        currentValue = math.max(config.min or 0, math.min(config.max or 100, val))
+        currentValue = max(config.min or 0, min(config.max or 100, val))
         UpdateValueText()
     end
 
@@ -2506,7 +2511,7 @@ function Components.NumericStepper(parent, config)
 
     -- Auto-register if refreshable
     if config.get or config.enabled then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     return holder
@@ -2571,13 +2576,13 @@ function Components.ColorSwatch(parent, config)
     if config.hasOpacity then
         alphaText = holder:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         alphaText:SetPoint("LEFT", swatchBtn, "RIGHT", 4, 0)
-        alphaText:SetText(math.floor(currentA * 100) .. "%")
+        alphaText:SetText(floor(currentA * 100) .. "%")
     end
 
     local function UpdateSwatchColor()
         swatchBtn:SetBackdropColor(currentR, currentG, currentB, 1)
         if alphaText then
-            alphaText:SetText(math.floor(currentA * 100) .. "%")
+            alphaText:SetText(floor(currentA * 100) .. "%")
         end
     end
     UpdateSwatchColor()
@@ -2668,7 +2673,7 @@ function Components.ColorSwatch(parent, config)
 
     -- Auto-register if refreshable
     if config.get or config.enabled then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     return holder
@@ -2797,8 +2802,8 @@ function Components.TextArea(parent, config)
     scrollFrame:EnableMouseWheel(true)
     scrollFrame:SetScript("OnMouseWheel", function(self, delta)
         local current = self:GetVerticalScroll()
-        local maxScroll = math.max(0, self:GetScrollChild():GetHeight() - self:GetHeight())
-        local newScroll = math.max(0, math.min(maxScroll, current - delta * 20))
+        local maxScroll = max(0, self:GetScrollChild():GetHeight() - self:GetHeight())
+        local newScroll = max(0, min(maxScroll, current - delta * 20))
         self:SetVerticalScroll(newScroll)
     end)
 
@@ -2855,7 +2860,7 @@ function Components.TextArea(parent, config)
         local text = self:GetText()
         local _, fontHeight = self:GetFont()
         local lineCount = select(2, string.gsub(text, "\n", "\n")) + 1
-        local contentHeight = math.max(config.height - 4, fontHeight * lineCount + 12)
+        local contentHeight = max(config.height - 4, fontHeight * lineCount + 12)
         self:SetHeight(contentHeight)
 
         if config.onTextChanged then
@@ -2865,7 +2870,7 @@ function Components.TextArea(parent, config)
 
     -- Track editbox for focus cleanup
     if panelEditBoxes then
-        table.insert(panelEditBoxes, editBox)
+        tinsert(panelEditBoxes, editBox)
     end
 
     -- Public methods
@@ -3031,7 +3036,7 @@ function Components.AppearanceGrid(parent, config)
         labelWidth = LW,
         suffix = "%",
         get = function()
-            return math.floor((config.get("spacing", 0.2)) * 100)
+            return floor((config.get("spacing", 0.2)) * 100)
         end,
         enabled = enabled and baseEnabled or nil,
         onChange = function(val)
@@ -3047,7 +3052,7 @@ function Components.AppearanceGrid(parent, config)
         labelWidth = LW,
         suffix = "%",
         get = function()
-            return math.floor((config.get("iconAlpha", 1)) * 100)
+            return floor((config.get("iconAlpha", 1)) * 100)
         end,
         enabled = enabled and baseEnabled or nil,
         onChange = function(val)
@@ -3068,7 +3073,7 @@ function Components.AppearanceGrid(parent, config)
                 return textSize
             end
             local iconSize = config.get("iconSize", 64)
-            return math.floor(iconSize * 0.32)
+            return floor(iconSize * 0.32)
         end,
         enabled = enabled and baseEnabled or nil,
         onChange = function(val)
@@ -3345,7 +3350,7 @@ function Components.CollapsibleSection(parent, config)
             contentBg:Hide()
             holder:SetHeight(HEADER_HEIGHT)
         else
-            indicator:SetRotation(math.rad(-90)) -- points down
+            indicator:SetRotation(rad(-90)) -- points down
             contentBg:Show()
             holder:SetHeight(HEADER_HEIGHT + contentHeight + CONTENT_PADDING * 2)
         end
@@ -3476,7 +3481,7 @@ function Components.Banner(parent, config)
     end
 
     if config.visible then
-        table.insert(RefreshableComponents, holder)
+        tinsert(RefreshableComponents, holder)
     end
 
     return holder

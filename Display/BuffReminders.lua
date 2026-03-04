@@ -115,6 +115,11 @@ local addonName, BR = ...
 ---@field qualityOverlay? FontString         -- Quality rank text (R1/R2/R3) for consumable frames
 ---@field _cachedItems? table|false         -- Per-cycle cache for GetConsumableActionItems result
 
+-- Lua stdlib locals (avoid repeated global lookups in hot paths)
+local floor, max, min = math.floor, math.max, math.min
+local random = math.random
+local tinsert, tremove, tsort, tconcat = table.insert, table.remove, table.sort, table.concat
+
 -- Shared constants (from Core.lua)
 local DEFAULT_BORDER_SIZE = BR.DEFAULT_BORDER_SIZE
 local DEFAULT_ICON_ZOOM = BR.DEFAULT_ICON_ZOOM
@@ -223,7 +228,7 @@ local function BuildCustomBuffArray()
     for k in pairs(db.customBuffs) do
         sortedKeys[#sortedKeys + 1] = k
     end
-    table.sort(sortedKeys)
+    tsort(sortedKeys)
     for _, k in ipairs(sortedKeys) do
         CustomBuffs[#CustomBuffs + 1] = db.customBuffs[k]
     end
@@ -594,8 +599,8 @@ local TEXT_SCALE_RATIO = 0.32
 ---@param iconSize? number
 ---@return number
 local function GetFontSize(scale, textSize, iconSize)
-    local baseSize = textSize or math.floor((iconSize or 64) * TEXT_SCALE_RATIO)
-    return math.max(6, math.floor(baseSize * (scale or 1)))
+    local baseSize = textSize or floor((iconSize or 64) * TEXT_SCALE_RATIO)
+    return max(6, floor(baseSize * (scale or 1)))
 end
 
 ---Get effective icon width (falls back to iconSize for square icons)
@@ -933,7 +938,7 @@ local function CreateBuffFrame(buff, category)
     if buff.key == "food" then
         frame.foodLabel = frame:CreateFontString(nil, "OVERLAY")
         frame.foodLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
-        local flSize = math.max(8, (catSettings.iconSize or 64) * 0.22)
+        local flSize = max(8, (catSettings.iconSize or 64) * 0.22)
         frame.foodLabel:SetFont(fontPath, flSize, "OUTLINE")
         frame.foodLabel:SetTextColor(1, 1, 1, 1)
         frame.foodLabel:Hide()
@@ -1060,7 +1065,7 @@ local function GetSortedCategories()
     for i, category in ipairs(CATEGORIES) do
         sorted[#sorted + 1] = { name = category, index = i }
     end
-    table.sort(sorted, function(a, b)
+    tsort(sorted, function(a, b)
         local aPri = db.categorySettings and db.categorySettings[a.name] and db.categorySettings[a.name].priority
             or defaults.categorySettings[a.name].priority
         local bPri = db.categorySettings and db.categorySettings[b.name] and db.categorySettings[b.name].priority
@@ -1086,7 +1091,7 @@ local function BuildLayoutSignature(frames)
     for i, frame in ipairs(frames) do
         keys[i] = (frame.buffDef and frame.buffDef.key) or frame.key or ""
     end
-    return table.concat(keys, ",")
+    return tconcat(keys, ",")
 end
 
 ---Position frames with variable sizes inside the main container, centering smaller frames on the cross-axis.
@@ -1128,7 +1133,7 @@ local function PositionFramesVariable(container, frames, widths, heights, spacin
 
         -- Advance offset for next frame
         if i < count then
-            local gap = math.max(spacings[i], spacings[i + 1])
+            local gap = max(spacings[i], spacings[i + 1])
             offset = offset + mainSize + gap
         end
     end
@@ -1168,7 +1173,7 @@ local function PositionMainContainer(mainFrameBuffs)
             widths[i] = iconWidth
             heights[i] = iconSize
             local mainDim = isVertical and iconSize or iconWidth
-            spacings[i] = math.floor(mainDim * (settings.spacing or 0.2))
+            spacings[i] = floor(mainDim * (settings.spacing or 0.2))
             frame:SetSize(iconWidth, iconSize)
             if iconWidth > maxWidth then
                 maxWidth = iconWidth
@@ -1184,15 +1189,15 @@ local function PositionMainContainer(mainFrameBuffs)
             local mainSize = isVertical and heights[i] or widths[i]
             totalMain = totalMain + mainSize
             if i < #widths then
-                totalMain = totalMain + math.max(spacings[i], spacings[i + 1])
+                totalMain = totalMain + max(spacings[i], spacings[i + 1])
             end
         end
 
         -- Size mainFrame to fit contents
         if isVertical then
-            mainFrame:SetSize(maxWidth, math.max(totalMain, maxHeight))
+            mainFrame:SetSize(maxWidth, max(totalMain, maxHeight))
         else
-            mainFrame:SetSize(math.max(totalMain, maxWidth), maxHeight)
+            mainFrame:SetSize(max(totalMain, maxWidth), maxHeight)
         end
 
         -- Re-anchor based on growth direction so first icon stays at anchor position
@@ -1234,7 +1239,7 @@ local function PositionSplitCategory(category, frames)
         local iconWidth = GetEffectiveWidth(catSettings.iconWidth, iconSize)
         local isVertical = direction == "UP" or direction == "DOWN"
         local mainSize = isVertical and iconSize or iconWidth
-        local spacing = math.floor(mainSize * (catSettings.spacing or 0.2))
+        local spacing = floor(mainSize * (catSettings.spacing or 0.2))
 
         -- Resize individual buff frames to category's icon size
         for _, frame in ipairs(frames) do
@@ -1245,9 +1250,9 @@ local function PositionSplitCategory(category, frames)
         local crossSize = isVertical and iconWidth or iconSize
         local totalSize = #frames * mainSize + (#frames - 1) * spacing
         if isVertical then
-            catFrame:SetSize(crossSize, math.max(totalSize, iconSize))
+            catFrame:SetSize(crossSize, max(totalSize, iconSize))
         else
-            catFrame:SetSize(math.max(totalSize, iconWidth), crossSize)
+            catFrame:SetSize(max(totalSize, iconWidth), crossSize)
         end
 
         catFrame:ClearAllPoints()
@@ -1379,7 +1384,7 @@ local function GenerateTestEntries()
             if not BR.BuffState.visibleByCategory[cat] then
                 BR.BuffState.visibleByCategory[cat] = {}
             end
-            table.insert(BR.BuffState.visibleByCategory[cat], entry)
+            tinsert(BR.BuffState.visibleByCategory[cat], entry)
         end
     end
 
@@ -1431,13 +1436,13 @@ ToggleTestMode = function(showLabels)
         -- Seed fake values for consistent display during test mode
         local db = BuffRemindersDB
         testModeData = {
-            fakeTotal = math.random(10, 20),
-            fakeRemaining = math.random(1, (db.defaults and db.defaults.expirationThreshold) or 15) * 60,
+            fakeTotal = random(10, 20),
+            fakeRemaining = random(1, (db.defaults and db.defaults.expirationThreshold) or 15) * 60,
             fakeMissing = {},
             showLabels = showLabels,
         }
         for i = 1, #RaidBuffs do
-            testModeData.fakeMissing[i] = math.random(1, 5)
+            testModeData.fakeMissing[i] = random(1, 5)
         end
         BR.SecureButtons.HideAllSecureFrames()
         lastMainSignature = ""
@@ -1590,7 +1595,7 @@ local function ApplyFoodFrameStyle(frame, label, hearty)
         frame.foodLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
     end
     local size = frame:GetWidth()
-    local fontSize = math.max(8, size * 0.22)
+    local fontSize = max(8, size * 0.22)
     frame.foodLabel:SetFont(fontPath, fontSize, "OUTLINE")
     frame.foodLabel:SetTextColor(1, 1, 1, 1)
     if hearty then
@@ -1808,8 +1813,8 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
             local catSettings = GetCategorySettings(effectiveCat)
             local consumableSettings = GetCategorySettings("consumable")
             local iconSize = catSettings.iconSize or 64
-            local size = math.max(18, math.floor(iconSize * 0.45))
-            local btnSpacing = math.max(2, math.floor(size * 0.2))
+            local size = max(18, floor(iconSize * 0.45))
+            local btnSpacing = max(2, floor(size * 0.2))
             local subIconSide = consumableSettings.subIconSide or "BOTTOM"
             local subIconOffset = -6
             local itemCount = #items - 1
@@ -1824,7 +1829,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 if extra.qualityOverlay then
                     BR.SecureButtons.SetQualityOverlay(extra.qualityOverlay, items[i].craftedQuality, size)
                 end
-                extra.stackCount:SetFont(fontPath, math.max(10, math.floor(size * 0.45)), "OUTLINE")
+                extra.stackCount:SetFont(fontPath, max(10, floor(size * 0.45)), "OUTLINE")
                 extra.stackCount:SetText(items[i].count > 1 and tostring(items[i].count) or "")
                 extra.stackCount:Show()
                 extra.count:Hide()
@@ -1833,10 +1838,10 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
 
                 extra:ClearAllPoints()
                 if isSideways then
-                    local maxPerCol = math.max(1, math.floor((iconSize + btnSpacing) / (size + btnSpacing)))
+                    local maxPerCol = max(1, floor((iconSize + btnSpacing) / (size + btnSpacing)))
                     local row = idx % maxPerCol
-                    local col = math.floor(idx / maxPerCol)
-                    local thisColCount = math.min(maxPerCol, itemCount - col * maxPerCol)
+                    local col = floor(idx / maxPerCol)
+                    local thisColCount = min(maxPerCol, itemCount - col * maxPerCol)
                     local thisColHeight = thisColCount * size + (thisColCount - 1) * btnSpacing
                     local startY = (iconSize - thisColHeight) / 2
                     local yOff = -(startY + row * (size + btnSpacing))
@@ -1846,10 +1851,10 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                         extra:SetPoint("TOPLEFT", frame, "TOPRIGHT", -subIconOffset + col * (size + btnSpacing), yOff)
                     end
                 else
-                    local maxPerRow = math.max(1, math.floor((iconSize + btnSpacing) / (size + btnSpacing)))
+                    local maxPerRow = max(1, floor((iconSize + btnSpacing) / (size + btnSpacing)))
                     local col = idx % maxPerRow
-                    local row = math.floor(idx / maxPerRow)
-                    local thisRowCount = math.min(maxPerRow, itemCount - row * maxPerRow)
+                    local row = floor(idx / maxPerRow)
+                    local thisRowCount = min(maxPerRow, itemCount - row * maxPerRow)
                     local thisRowWidth = thisRowCount * size + (thisRowCount - 1) * btnSpacing
                     local startX = (iconSize - thisRowWidth) / 2
                     local xOff = startX + col * (size + btnSpacing)
@@ -1950,8 +1955,8 @@ local function UpdatePetLabels(frame, petAction)
     end
 
     local ratio = scale / 100
-    local nameSize = math.max(7, math.floor(frame:GetWidth() * 0.18 * ratio))
-    local familySize = math.max(7, math.floor(nameSize * 0.85))
+    local nameSize = max(7, floor(frame:GetWidth() * 0.18 * ratio))
+    local familySize = max(7, floor(nameSize * 0.85))
     frame._br_pet_name_text:SetFont(fontPath, nameSize, "OUTLINE")
     frame._br_pet_name_text:ClearAllPoints()
     frame._br_pet_name_text:SetPoint("TOP", frame, "BOTTOM", 0, -2)
@@ -2069,7 +2074,7 @@ RenderPetEntries = function()
         return
     end
     if not petEntries._sorted then
-        table.sort(petEntries, function(a, b)
+        tsort(petEntries, function(a, b)
             return a.sortOrder < b.sortOrder
         end)
     end
@@ -2161,7 +2166,7 @@ UpdateDisplay = function()
 
         if entries and #entries > 0 then
             if not entries._sorted then
-                table.sort(entries, function(a, b)
+                tsort(entries, function(a, b)
                     return a.sortOrder < b.sortOrder
                 end)
             end
@@ -2354,7 +2359,7 @@ local function CreateCustomBuffFrameRuntime(customBuff)
     end
     local frame = CreateBuffFrame(customBuff, "custom")
     buffFrames[customBuff.key] = frame
-    table.insert(CustomBuffs, customBuff)
+    tinsert(CustomBuffs, customBuff)
     -- Only register for glow tracking if glowMode is not disabled
     if customBuff.glowMode ~= "disabled" then
         RegisterGlowBuff(customBuff, "custom")
@@ -2429,7 +2434,7 @@ local function RemoveCustomBuffFrame(key)
     -- Remove from BUFF_TABLES.custom array
     for i = #CustomBuffs, 1, -1 do
         if CustomBuffs[i].key == key then
-            table.remove(CustomBuffs, i)
+            tremove(CustomBuffs, i)
             break
         end
     end
@@ -2491,7 +2496,7 @@ local function UpdateVisuals()
 
         -- Food label font update
         if frame.foodLabel then
-            local flSize = math.max(8, size * 0.22)
+            local flSize = max(8, size * 0.22)
             frame.foodLabel:SetFont(fontPath, flSize, "OUTLINE")
         end
         if frame.buffText then

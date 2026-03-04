@@ -7,6 +7,10 @@ local _, BR = ...
 -- keep combat-lockdown-sensitive code isolated.
 -- ============================================================================
 
+-- Lua stdlib locals (avoid repeated global lookups in hot paths)
+local floor, max, min = math.floor, math.max, math.min
+local tsort = table.sort
+
 local GetCategorySettings = BR.Helpers.GetCategorySettings
 local IsCategorySplit = BR.Helpers.IsCategorySplit
 
@@ -310,7 +314,7 @@ local function SetQualityOverlay(overlay, craftedQuality, size)
     if info then
         -- Scale font with icon size (minimum 8px font)
         local fontPath = BR.Display.GetFontPath()
-        local fontSize = math.max(8, size * 0.25)
+        local fontSize = max(8, size * 0.25)
         overlay:SetFont(fontPath, fontSize, "OUTLINE")
         overlay:SetText(info.text)
         overlay:SetTextColor(info.r, info.g, info.b, 1)
@@ -447,7 +451,7 @@ local function RefreshConsumableCache()
             items[#items + 1] = item
         end
         local allowedSet = itemSets[category]
-        table.sort(items, function(a, b)
+        tsort(items, function(a, b)
             -- If items have numeric priority values, sort by priority first (lower = better)
             local aPri = allowedSet and allowedSet[a.itemID]
             local bPri = allowedSet and allowedSet[b.itemID]
@@ -708,8 +712,8 @@ local function SyncSecureButtons()
                     local effectiveCat = GetEffectiveCategory(frame)
                     local catSettings = GetCategorySettings(effectiveCat)
                     local consumableSettings = GetCategorySettings("consumable")
-                    local size = math.max(ACTION_ICON_MIN, math.floor((catSettings.iconSize or 64) * ACTION_ICON_SCALE))
-                    local btnSpacing = math.max(2, math.floor(size * 0.2))
+                    local size = max(ACTION_ICON_MIN, floor((catSettings.iconSize or 64) * ACTION_ICON_SCALE))
+                    local btnSpacing = max(2, floor(size * 0.2))
                     local subIconSide = consumableSettings.subIconSide or "BOTTOM"
                     -- Count visible buttons
                     local visibleCount = 0
@@ -725,11 +729,10 @@ local function SyncSecureButtons()
                                 local btnX, btnY
                                 local isSideways = subIconSide == "LEFT" or subIconSide == "RIGHT"
                                 if isSideways then
-                                    local maxPerCol =
-                                        math.max(1, math.floor((height + btnSpacing) / (size + btnSpacing)))
+                                    local maxPerCol = max(1, floor((height + btnSpacing) / (size + btnSpacing)))
                                     local row = idx % maxPerCol
-                                    local col = math.floor(idx / maxPerCol)
-                                    local thisColCount = math.min(maxPerCol, visibleCount - col * maxPerCol)
+                                    local col = floor(idx / maxPerCol)
+                                    local thisColCount = min(maxPerCol, visibleCount - col * maxPerCol)
                                     local thisColHeight = thisColCount * size + (thisColCount - 1) * btnSpacing
                                     local thisColStartY = bottom + (height - thisColHeight) / 2
                                     if subIconSide == "LEFT" then
@@ -739,11 +742,10 @@ local function SyncSecureButtons()
                                     end
                                     btnY = thisColStartY + row * (size + btnSpacing)
                                 else
-                                    local maxPerRow =
-                                        math.max(1, math.floor((width + btnSpacing) / (size + btnSpacing)))
+                                    local maxPerRow = max(1, floor((width + btnSpacing) / (size + btnSpacing)))
                                     local col = idx % maxPerRow
-                                    local row = math.floor(idx / maxPerRow)
-                                    local thisRowCount = math.min(maxPerRow, visibleCount - row * maxPerRow)
+                                    local row = floor(idx / maxPerRow)
+                                    local thisRowCount = min(maxPerRow, visibleCount - row * maxPerRow)
                                     local thisRowWidth = thisRowCount * size + (thisRowCount - 1) * btnSpacing
                                     local thisRowStartX = left + (width - thisRowWidth) / 2
                                     btnX = thisRowStartX + col * (size + btnSpacing)
@@ -771,7 +773,7 @@ local function SyncSecureButtons()
                                     btn.count:SetText(
                                         btn._br_count and btn._br_count > 1 and tostring(btn._br_count) or ""
                                     )
-                                    btn.count:SetFont(fontPath, math.max(10, math.floor(size * 0.45)), "OUTLINE")
+                                    btn.count:SetFont(fontPath, max(10, floor(size * 0.45)), "OUTLINE")
                                     SetQualityOverlay(btn.qualityOverlay, btn._br_craftedQuality, size)
                                     btn._br_needs_sync = false
                                 end

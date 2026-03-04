@@ -5,6 +5,10 @@ local _, BR = ...
 -- ============================================================================
 -- Simplified 3-tab layout: Buffs, Display/Behavior, Settings
 
+-- Lua stdlib locals
+local floor, max, min, abs = math.floor, math.max, math.min, math.abs
+local tinsert, tsort, tremove = table.insert, table.sort, table.remove
+
 -- Aliases from BR namespace
 local Components = BR.Components
 local CreateButton = BR.CreateButton
@@ -180,7 +184,7 @@ local function CreateOptionsPanel()
     local MIN_PCT, MAX_PCT = 80, 150
 
     local currentScale = BuffRemindersDB.optionsPanelScale or BASE_SCALE
-    local currentPct = math.floor(currentScale / BASE_SCALE * 100 + 0.5)
+    local currentPct = floor(currentScale / BASE_SCALE * 100 + 0.5)
 
     -- Close button
     local closeBtn = CreateButton(panel, "x", function()
@@ -206,15 +210,15 @@ local function CreateOptionsPanel()
     scaleUp:SetText(">")
 
     local function UpdateScaleText()
-        local pct = math.floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
+        local pct = floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
         scaleValue:SetText(pct .. "%")
         scaleDown:SetTextColor(pct > MIN_PCT and 1 or 0.4, pct > MIN_PCT and 1 or 0.4, pct > MIN_PCT and 1 or 0.4)
         scaleUp:SetTextColor(pct < MAX_PCT and 1 or 0.4, pct < MAX_PCT and 1 or 0.4, pct < MAX_PCT and 1 or 0.4)
     end
 
     local function UpdateScale(delta)
-        local oldPct = math.floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
-        local newPct = math.max(MIN_PCT, math.min(MAX_PCT, oldPct + delta))
+        local oldPct = floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
+        local newPct = max(MIN_PCT, min(MAX_PCT, oldPct + delta))
         local newScale = newPct / 100 * BASE_SCALE
         BuffRemindersDB.optionsPanelScale = newScale
         panel:SetScale(newScale)
@@ -242,7 +246,7 @@ local function CreateOptionsPanel()
         UpdateScale(10)
     end)
     upBtn:SetScript("OnEnter", function()
-        local pct = math.floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
+        local pct = floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
         if pct < MAX_PCT then
             scaleUp:SetTextColor(1, 0.82, 0)
         end
@@ -403,7 +407,7 @@ local function CreateOptionsPanel()
                 local texture = GetBuffTexture(spellID)
                 if texture and not seenTextures[texture] then
                     seenTextures[texture] = true
-                    table.insert(icons, texture)
+                    tinsert(icons, texture)
                 end
             end
             return #icons > 0 and icons or nil
@@ -499,14 +503,14 @@ local function CreateOptionsPanel()
                 if buff.spellID then
                     local spellList = type(buff.spellID) == "table" and buff.spellID or { buff.spellID }
                     for _, id in ipairs(spellList) do
-                        table.insert(groupSpells[buff.groupId], id)
+                        tinsert(groupSpells[buff.groupId], id)
                     end
                 end
                 if buff.displaySpells then
                     local displayList = type(buff.displaySpells) == "table" and buff.displaySpells
                         or { buff.displaySpells }
                     for _, id in ipairs(displayList) do
-                        table.insert(groupDisplaySpells[buff.groupId], id)
+                        tinsert(groupDisplaySpells[buff.groupId], id)
                     end
                 end
                 -- Resolve display icon(s) per entry: displayIcon > displaySpells > primary spellID
@@ -521,7 +525,7 @@ local function CreateOptionsPanel()
                     for _, icon in ipairs(overrides) do
                         if not seen[icon] then
                             seen[icon] = true
-                            table.insert(groupIconOverrides[buff.groupId], icon)
+                            tinsert(groupIconOverrides[buff.groupId], icon)
                         end
                     end
                 elseif buff.displaySpells then
@@ -531,7 +535,7 @@ local function CreateOptionsPanel()
                         local texture = GetBuffTexture(id)
                         if texture and not seen[texture] then
                             seen[texture] = true
-                            table.insert(groupIconOverrides[buff.groupId], texture)
+                            tinsert(groupIconOverrides[buff.groupId], texture)
                         end
                     end
                 elseif buff.spellID then
@@ -540,7 +544,7 @@ local function CreateOptionsPanel()
                         local texture = GetBuffTexture(primarySpell)
                         if texture and not seen[texture] then
                             seen[texture] = true
-                            table.insert(groupIconOverrides[buff.groupId], texture)
+                            tinsert(groupIconOverrides[buff.groupId], texture)
                         end
                     end
                 end
@@ -689,10 +693,10 @@ local function CreateOptionsPanel()
         local sortedKeys = {}
         if db.customBuffs then
             for key in pairs(db.customBuffs) do
-                table.insert(sortedKeys, key)
+                tinsert(sortedKeys, key)
             end
         end
-        table.sort(sortedKeys)
+        tsort(sortedKeys)
 
         for _, key in ipairs(sortedKeys) do
             local customBuff = db.customBuffs[key]
@@ -716,7 +720,7 @@ local function CreateOptionsPanel()
             holder:SetPoint("TOPLEFT", 0, rowY)
             panel.buffCheckboxes[key] = holder
 
-            table.insert(panel.customBuffRows, holder)
+            tinsert(panel.customBuffRows, holder)
             rowY = rowY - ITEM_HEIGHT
         end
 
@@ -724,13 +728,13 @@ local function CreateOptionsPanel()
             ShowCustomBuffModal(nil, RenderCustomBuffRows)
         end)
         addBtn:SetPoint("TOPLEFT", 0, rowY - ADD_BTN_GAP)
-        table.insert(panel.customBuffRows, addBtn)
+        tinsert(panel.customBuffRows, addBtn)
 
-        customBuffsContainer:SetHeight(math.abs(rowY) + CUSTOM_CONTAINER_PAD)
+        customBuffsContainer:SetHeight(abs(rowY) + CUSTOM_CONTAINER_PAD)
 
         -- Recalculate content height when custom buffs change
         local effectiveRightY = customSectionStartY + rowY - CUSTOM_CONTAINER_PAD
-        buffsContent:SetHeight(math.max(math.abs(buffsLeftY), math.abs(effectiveRightY)) + 4)
+        buffsContent:SetHeight(max(abs(buffsLeftY), abs(effectiveRightY)) + 4)
 
         return rowY
     end
@@ -789,7 +793,7 @@ local function CreateOptionsPanel()
         local fontList = LSM:List("font")
         local opts = { { label = "Default", value = nil } }
         for _, name in ipairs(fontList) do
-            table.insert(opts, { label = name, value = name })
+            tinsert(opts, { label = name, value = name })
         end
         return opts
     end
@@ -959,7 +963,7 @@ local function CreateOptionsPanel()
 
     local function UpdateAppearanceContentHeight()
         -- Calculate total height: fixed header area + all collapsible sections
-        local totalHeight = math.abs(displayBehaviorLayout:GetY())
+        local totalHeight = abs(displayBehaviorLayout:GetY())
         for _, sec in ipairs(categorySections) do
             totalHeight = totalHeight + sec:GetHeight() + 4
         end
@@ -1081,9 +1085,9 @@ local function CreateOptionsPanel()
                     local textSize = cs and cs.textSize
                     if not textSize then
                         local iconSize = (cs and cs.iconSize) or 64
-                        textSize = math.floor(iconSize * 0.32)
+                        textSize = floor(iconSize * 0.32)
                     end
-                    return math.max(6, math.floor(textSize * 0.8))
+                    return max(6, floor(textSize * 0.8))
                 end,
                 enabled = function()
                     local cs = db.categorySettings and db.categorySettings.raid
@@ -1312,7 +1316,7 @@ local function CreateOptionsPanel()
             function petPreviewHolder:Refresh()
                 updatePetDisplayModePreview(BR.Config.Get("defaults.petDisplayMode", "generic"))
             end
-            table.insert(BR.RefreshableComponents, petPreviewHolder)
+            tinsert(BR.RefreshableComponents, petPreviewHolder)
 
             local petLabelsHolder = Components.Checkbox(catContent, {
                 label = "Pet labels",
@@ -1398,7 +1402,7 @@ local function CreateOptionsPanel()
                     btn.UpdateVisual()
                 end
             end
-            table.insert(BR.RefreshableComponents, petClassBarRefreshHolder)
+            tinsert(BR.RefreshableComponents, petClassBarRefreshHolder)
         end
 
         -- Item display mode (consumable only, grouped with icon options)
@@ -1563,7 +1567,7 @@ local function CreateOptionsPanel()
             function previewHolder:Refresh()
                 updateDisplayModePreview(BR.Config.Get("defaults.consumableDisplayMode", "sub_icons"))
             end
-            table.insert(BR.RefreshableComponents, previewHolder)
+            tinsert(BR.RefreshableComponents, previewHolder)
 
             -- Sub-icon placement side (anchored below preview, visible only in sub_icons mode)
             local subIconSideHolder = Components.Dropdown(catContent, {
@@ -2048,8 +2052,8 @@ local function CreateOptionsPanel()
         catLayout:Space(gridHeight)
         catLayout:SetX(0)
 
-        local fullContentHeight = math.abs(catLayout:GetY()) + 10
-        local baseContentHeight = math.abs(baseContentY) + 10
+        local fullContentHeight = abs(catLayout:GetY()) + 10
+        local baseContentHeight = abs(baseContentY) + 10
 
         local UpdateCustomAppearanceVisibility = function()
             local show = isCustomAppearanceEnabled()
@@ -2066,7 +2070,7 @@ local function CreateOptionsPanel()
         end
 
         -- Register so panel OnShow syncs visibility state
-        table.insert(BR.RefreshableComponents, { Refresh = UpdateCustomAppearanceVisibility })
+        tinsert(BR.RefreshableComponents, { Refresh = UpdateCustomAppearanceVisibility })
 
         -- Set initial state (inline to avoid deferred timer during loop)
         if isCustomAppearanceEnabled() then
@@ -2076,7 +2080,7 @@ local function CreateOptionsPanel()
             appFrame:Hide()
             section:SetContentHeight(baseContentHeight)
         end
-        table.insert(categorySections, section)
+        tinsert(categorySections, section)
         previousSection = section
     end
 
@@ -2317,7 +2321,7 @@ local function CreateOptionsPanel()
     profLayout:Add(importButton, 22)
     importStatus:SetPoint("LEFT", importButton, "RIGHT", 10, 0)
 
-    profilesContent:SetHeight(math.abs(profLayout:GetY()) + 50)
+    profilesContent:SetHeight(abs(profLayout:GetY()) + 50)
 
     -- ========== BOTTOM BUTTONS ==========
     local bottomFrame = CreateFrame("Frame", nil, panel)
@@ -2348,7 +2352,7 @@ local function CreateOptionsPanel()
         self.text:SetText(BuffRemindersDB.locked and "Unlock" or "Lock")
     end
     lockBtn:Refresh()
-    table.insert(BR.RefreshableComponents, lockBtn)
+    tinsert(BR.RefreshableComponents, lockBtn)
 
     local testBtn = CreateButton(btnHolder, "Stop Test", function(self)
         local isOn = ToggleTestMode()
@@ -2545,10 +2549,10 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     if editingBuff then
         if type(editingBuff.spellID) == "table" then
             for _, id in ipairs(editingBuff.spellID) do
-                table.insert(existingSpellIDs, id)
+                tinsert(existingSpellIDs, id)
             end
         else
-            table.insert(existingSpellIDs, editingBuff.spellID)
+            tinsert(existingSpellIDs, editingBuff.spellID)
         end
     end
 
@@ -2634,7 +2638,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         sectionsFrame:ClearAllPoints()
         sectionsFrame:SetPoint("TOPLEFT", modal, "TOPLEFT", CONTENT_LEFT, addBtnY - 28)
 
-        local extraRows = math.max(0, rowCount - 1)
+        local extraRows = max(0, rowCount - 1)
         modal:SetHeight(BASE_HEIGHT + (extraRows * ROW_HEIGHT))
     end
 
@@ -2689,7 +2693,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             for i, rd in ipairs(spellRows) do
                 if rd == rowData then
                     rowData.frame:Hide()
-                    table.remove(spellRows, i)
+                    tremove(spellRows, i)
                     UpdateLayout()
                     break
                 end
@@ -2718,7 +2722,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             end
         end
 
-        table.insert(spellRows, rowData)
+        tinsert(spellRows, rowData)
 
         if initialSpellID then
             doLookup()
@@ -3196,7 +3200,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         local firstName = nil
         for _, rowData in ipairs(spellRows) do
             if rowData.validated and rowData.spellID then
-                table.insert(validatedIDs, rowData.spellID)
+                tinsert(validatedIDs, rowData.spellID)
                 if not firstName then
                     firstName = rowData.spellName
                 end
