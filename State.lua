@@ -465,7 +465,7 @@ end
 ---@param key string
 ---@return boolean
 local function IsBuffEnabled(key)
-    local db = BuffRemindersDB
+    local db = BR.profile
     return db.enabledBuffs[key] ~= false
 end
 
@@ -547,7 +547,7 @@ local function IsCategoryVisibleForContent(category)
     if inVehicle and category ~= "raid" and category ~= "presence" then
         return false
     end
-    local db = BuffRemindersDB
+    local db = BR.profile
     if not db.categoryVisibility then
         return true
     end
@@ -1235,7 +1235,7 @@ end
 
 ---Recompute all buff states
 function BuffState.Refresh()
-    local db = BuffRemindersDB
+    local db = BR.profile
     if not db then
         return
     end
@@ -1407,10 +1407,10 @@ function BuffState.Refresh()
 
     -- Process pet buffs (pet summon reminders — no expiration tracking)
     local petVisible = IsCategoryVisibleForContent("pet")
-    if BuffRemindersDB.hidePetWhileMounted ~= false and IsMounted() then
+    if BR.profile.hidePetWhileMounted ~= false and IsMounted() then
         petVisible = false
     end
-    local petPassiveHidden = BuffRemindersDB.petPassiveOnlyInCombat and not UnitAffectingCombat("player")
+    local petPassiveHidden = BR.profile.petPassiveOnlyInCombat and not UnitAffectingCombat("player")
     local _, petGlowMissing = GetCategoryGlow("pet")
     for i, buff in ipairs(PetBuffs) do
         local entry = GetOrCreateEntry(buff.key, "pet", i)

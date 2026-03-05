@@ -183,7 +183,7 @@ local function CreateOptionsPanel()
     local BASE_SCALE = OPTIONS_BASE_SCALE
     local MIN_PCT, MAX_PCT = 80, 150
 
-    local currentScale = BuffRemindersDB.optionsPanelScale or BASE_SCALE
+    local currentScale = BR.profile.optionsPanelScale or BASE_SCALE
     local currentPct = floor(currentScale / BASE_SCALE * 100 + 0.5)
 
     -- Close button
@@ -210,17 +210,17 @@ local function CreateOptionsPanel()
     scaleUp:SetText(">")
 
     local function UpdateScaleText()
-        local pct = floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
+        local pct = floor((BR.profile.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
         scaleValue:SetText(pct .. "%")
         scaleDown:SetTextColor(pct > MIN_PCT and 1 or 0.4, pct > MIN_PCT and 1 or 0.4, pct > MIN_PCT and 1 or 0.4)
         scaleUp:SetTextColor(pct < MAX_PCT and 1 or 0.4, pct < MAX_PCT and 1 or 0.4, pct < MAX_PCT and 1 or 0.4)
     end
 
     local function UpdateScale(delta)
-        local oldPct = floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
+        local oldPct = floor((BR.profile.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
         local newPct = max(MIN_PCT, min(MAX_PCT, oldPct + delta))
         local newScale = newPct / 100 * BASE_SCALE
-        BuffRemindersDB.optionsPanelScale = newScale
+        BR.profile.optionsPanelScale = newScale
         panel:SetScale(newScale)
         UpdateScaleText()
     end
@@ -246,7 +246,7 @@ local function CreateOptionsPanel()
         UpdateScale(10)
     end)
     upBtn:SetScript("OnEnter", function()
-        local pct = floor((BuffRemindersDB.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
+        local pct = floor((BR.profile.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
         if pct < MAX_PCT then
             scaleUp:SetTextColor(1, 0.82, 0)
         end
@@ -257,8 +257,8 @@ local function CreateOptionsPanel()
 
     UpdateScaleText()
 
-    if BuffRemindersDB.optionsPanelScale then
-        panel:SetScale(BuffRemindersDB.optionsPanelScale)
+    if BR.profile.optionsPanelScale then
+        panel:SetScale(BR.profile.optionsPanelScale)
     end
 
     -- ========== TABS ==========
@@ -291,7 +291,7 @@ local function CreateOptionsPanel()
     tabButtons.displayBehavior =
         Components.Tab(panel, { name = "displayBehavior", label = "Display/Behavior", width = 110 })
     tabButtons.settings = Components.Tab(panel, { name = "settings", label = "Settings", width = 65 })
-    tabButtons.profiles = Components.Tab(panel, { name = "profiles", label = "Import/Export", width = 95 })
+    tabButtons.profiles = Components.Tab(panel, { name = "profiles", label = "Profiles", width = 65 })
 
     -- Position tabs below title
     tabButtons.buffs:SetPoint("TOPLEFT", panel, "TOPLEFT", COL_PADDING, -30)
@@ -432,10 +432,10 @@ local function CreateOptionsPanel()
             icons = ResolveBuffIcons(displayIcon, spellIDs),
             infoTooltip = not readyCheckOnly and infoTooltip or nil,
             get = function()
-                return BuffRemindersDB.enabledBuffs[key] ~= false
+                return BR.profile.enabledBuffs[key] ~= false
             end,
             onChange = function(checked)
-                BuffRemindersDB.enabledBuffs[key] = checked
+                BR.profile.enabledBuffs[key] = checked
                 UpdateDisplay()
                 if readyCheckOnly then
                     Components.RefreshAll()
@@ -448,7 +448,7 @@ local function CreateOptionsPanel()
         -- Inline toggle: "Ready check only" / "Always show" (replaces info tooltip icon)
         if readyCheckOnly then
             local function GetReadyCheckOnlyState()
-                local overrides = BuffRemindersDB.readyCheckOnlyOverrides
+                local overrides = BR.profile.readyCheckOnlyOverrides
                 return not overrides or overrides[key] ~= false
             end
 
@@ -461,7 +461,7 @@ local function CreateOptionsPanel()
                 label = ToggleLabel(GetReadyCheckOnlyState()),
                 get = GetReadyCheckOnlyState,
                 enabled = function()
-                    return BuffRemindersDB.enabledBuffs[key] ~= false
+                    return BR.profile.enabledBuffs[key] ~= false
                 end,
                 onChange = function(checked)
                     if checked then
@@ -687,7 +687,7 @@ local function CreateOptionsPanel()
         end
         panel.customBuffRows = {}
 
-        local db = BuffRemindersDB
+        local db = BR.profile
         local rowY = 0
 
         local sortedKeys = {}
@@ -706,10 +706,10 @@ local function CreateOptionsPanel()
                 label = customBuff.name or ("Spell " .. tostring(customBuff.spellID)),
                 icons = ResolveBuffIcons(nil, customBuff.spellID),
                 get = function()
-                    return BuffRemindersDB.enabledBuffs[key] ~= false
+                    return BR.profile.enabledBuffs[key] ~= false
                 end,
                 onChange = function(checked)
-                    BuffRemindersDB.enabledBuffs[key] = checked
+                    BR.profile.enabledBuffs[key] = checked
                     UpdateDisplay()
                 end,
                 onRightClick = function()
@@ -755,13 +755,13 @@ local function CreateOptionsPanel()
     defNote:SetText("(All categories inherit these unless overridden)")
 
     local function isDefDimensionsLinked()
-        local db = BuffRemindersDB.defaults
+        local db = BR.profile.defaults
         return not db or db.iconWidth == nil
     end
 
     local defGrid = Components.AppearanceGrid(displayBehaviorContent, {
         get = function(key, default)
-            local d = BuffRemindersDB.defaults
+            local d = BR.profile.defaults
             return d and d[key] or default
         end,
         set = function(key, value)
@@ -780,7 +780,7 @@ local function CreateOptionsPanel()
             Components.RefreshAll()
         end,
         onUnlink = function()
-            local db = BuffRemindersDB.defaults
+            local db = BR.profile.defaults
             BR.Config.Set("defaults.iconWidth", db and db.iconSize or 64)
             Components.RefreshAll()
         end,
@@ -813,7 +813,7 @@ local function CreateOptionsPanel()
             end
         end,
         get = function()
-            return BuffRemindersDB.defaults and BuffRemindersDB.defaults.fontFace or nil
+            return BR.profile.defaults and BR.profile.defaults.fontFace or nil
         end,
         onChange = function(val)
             BR.Config.Set("defaults.fontFace", val)
@@ -824,7 +824,7 @@ local function CreateOptionsPanel()
     local defDirHolder = Components.DirectionButtons(displayBehaviorContent, {
         labelWidth = 50,
         get = function()
-            return BuffRemindersDB.defaults and BuffRemindersDB.defaults.growDirection or "CENTER"
+            return BR.profile.defaults and BR.profile.defaults.growDirection or "CENTER"
         end,
         onChange = function(dir)
             BR.Config.Set("defaults.growDirection", dir)
@@ -844,7 +844,7 @@ local function CreateOptionsPanel()
     local defGlowHolder = Components.Checkbox(displayBehaviorContent, {
         label = "Glow",
         get = function()
-            return BuffRemindersDB.defaults and BuffRemindersDB.defaults.showExpirationGlow ~= false
+            return BR.profile.defaults and BR.profile.defaults.showExpirationGlow ~= false
         end,
         onChange = function(checked)
             BR.Config.Set("defaults.showExpirationGlow", checked)
@@ -853,7 +853,7 @@ local function CreateOptionsPanel()
     })
 
     local function isExpirationGlowEnabled()
-        return BuffRemindersDB.defaults and BuffRemindersDB.defaults.showExpirationGlow ~= false
+        return BR.profile.defaults and BR.profile.defaults.showExpirationGlow ~= false
     end
 
     local defThresholdHolder = Components.Slider(displayBehaviorContent, {
@@ -861,7 +861,7 @@ local function CreateOptionsPanel()
         max = 45,
         step = 5,
         get = function()
-            return BuffRemindersDB.defaults and BuffRemindersDB.defaults.expirationThreshold or 15
+            return BR.profile.defaults and BR.profile.defaults.expirationThreshold or 15
         end,
         enabled = isExpirationGlowEnabled,
         suffix = " min",
@@ -881,7 +881,7 @@ local function CreateOptionsPanel()
         labelWidth = 34,
         options = typeOptions,
         get = function()
-            return BuffRemindersDB.defaults and BuffRemindersDB.defaults.glowType or 1
+            return BR.profile.defaults and BR.profile.defaults.glowType or 1
         end,
         enabled = isExpirationGlowEnabled,
         width = 130,
@@ -895,7 +895,7 @@ local function CreateOptionsPanel()
         label = "Color",
         tooltip = "Use a custom glow color instead of the default.\nWhen off, glows use the native library color which looks more vibrant.",
         get = function()
-            return BuffRemindersDB.defaults and BuffRemindersDB.defaults.useCustomGlowColor or false
+            return BR.profile.defaults and BR.profile.defaults.useCustomGlowColor or false
         end,
         enabled = isExpirationGlowEnabled,
         onChange = function(checked)
@@ -912,7 +912,7 @@ local function CreateOptionsPanel()
         end,
         enabled = function()
             return isExpirationGlowEnabled()
-                and (BuffRemindersDB.defaults and BuffRemindersDB.defaults.useCustomGlowColor or false)
+                and (BR.profile.defaults and BR.profile.defaults.useCustomGlowColor or false)
         end,
         onChange = function(r, g, b, a)
             BR.Config.Set("defaults.glowColor", { r, g, b, a or 1 })
@@ -926,7 +926,7 @@ local function CreateOptionsPanel()
         max = 5,
         step = 1,
         get = function()
-            return BuffRemindersDB.defaults and BuffRemindersDB.defaults.glowSize or 2
+            return BR.profile.defaults and BR.profile.defaults.glowSize or 2
         end,
         enabled = isExpirationGlowEnabled,
         onChange = function(val)
@@ -939,7 +939,7 @@ local function CreateOptionsPanel()
         label = "Also when missing",
         tooltip = "Show glow on buff icons that are completely missing, not just expiring.",
         get = function()
-            return BuffRemindersDB.defaults and BuffRemindersDB.defaults.glowWhenMissing ~= false
+            return BR.profile.defaults and BR.profile.defaults.glowWhenMissing ~= false
         end,
         enabled = isExpirationGlowEnabled,
         onChange = function(checked)
@@ -991,7 +991,7 @@ local function CreateOptionsPanel()
         local catContent = section:GetContentFrame()
         local catLayout = Components.VerticalLayout(catContent, { x = 0, y = 0 })
 
-        local db = BuffRemindersDB
+        local db = BR.profile
 
         -- W/S/D/R content visibility + ready check (not for custom — custom uses per-buff loadConditions)
         if category ~= "custom" then
@@ -1210,10 +1210,10 @@ local function CreateOptionsPanel()
             local hideMountHolder = Components.Checkbox(catContent, {
                 label = "Hide while mounted",
                 get = function()
-                    return BuffRemindersDB.hidePetWhileMounted ~= false
+                    return BR.profile.hidePetWhileMounted ~= false
                 end,
                 onChange = function(checked)
-                    BuffRemindersDB.hidePetWhileMounted = checked
+                    BR.profile.hidePetWhileMounted = checked
                     UpdateDisplay()
                 end,
             })
@@ -1222,14 +1222,14 @@ local function CreateOptionsPanel()
             local passiveCombatHolder = Components.Checkbox(catContent, {
                 label = "Pet passive only in combat",
                 get = function()
-                    return BuffRemindersDB.petPassiveOnlyInCombat == true
+                    return BR.profile.petPassiveOnlyInCombat == true
                 end,
                 tooltip = {
                     title = "Pet passive only in combat",
                     desc = "Only show the passive pet reminder while in combat. When disabled, the reminder is always shown.",
                 },
                 onChange = function(checked)
-                    BuffRemindersDB.petPassiveOnlyInCombat = checked
+                    BR.profile.petPassiveOnlyInCombat = checked
                     UpdateDisplay()
                 end,
             })
@@ -1390,19 +1390,19 @@ local function CreateOptionsPanel()
                     { key = "MAGE", label = "M", tooltip = "Mage", color = classColor("MAGE") },
                 },
                 getState = function(key)
-                    local vis = BuffRemindersDB.defaults.petLabelClasses
+                    local vis = BR.profile.defaults.petLabelClasses
                     return not vis or vis[key] ~= false
                 end,
                 setState = function(key)
-                    if not BuffRemindersDB.defaults.petLabelClasses then
-                        BuffRemindersDB.defaults.petLabelClasses = {
+                    if not BR.profile.defaults.petLabelClasses then
+                        BR.profile.defaults.petLabelClasses = {
                             HUNTER = true,
                             WARLOCK = true,
                             DEATHKNIGHT = true,
                             MAGE = true,
                         }
                     end
-                    BuffRemindersDB.defaults.petLabelClasses[key] = not BuffRemindersDB.defaults.petLabelClasses[key]
+                    BR.profile.defaults.petLabelClasses[key] = not BR.profile.defaults.petLabelClasses[key]
                 end,
                 onChange = function()
                     UpdateDisplay()
@@ -2121,10 +2121,10 @@ local function CreateOptionsPanel()
     local loginMsgHolder = Components.Checkbox(settingsContent, {
         label = "Show login messages",
         get = function()
-            return BuffRemindersDB.showLoginMessages ~= false
+            return BR.profile.showLoginMessages ~= false
         end,
         onChange = function(checked)
-            BuffRemindersDB.showLoginMessages = checked
+            BR.profile.showLoginMessages = checked
         end,
     })
     setLayout:Add(loginMsgHolder, nil, COMPONENT_GAP)
@@ -2132,13 +2132,10 @@ local function CreateOptionsPanel()
     local minimapHolder = Components.Checkbox(settingsContent, {
         label = "Show minimap button",
         get = function()
-            return not BuffRemindersDB.minimap or not BuffRemindersDB.minimap.hide
+            return not BR.aceDB.global.minimap.hide
         end,
         onChange = function(checked)
-            if not BuffRemindersDB.minimap then
-                BuffRemindersDB.minimap = {}
-            end
-            BuffRemindersDB.minimap.hide = not checked
+            BR.aceDB.global.minimap.hide = not checked
             if BR.MinimapButton then
                 if checked then
                     BR.MinimapButton.Icon:Show("BuffReminders")
@@ -2156,10 +2153,10 @@ local function CreateOptionsPanel()
     local groupHolder = Components.Checkbox(settingsContent, {
         label = "Show only in group/raid",
         get = function()
-            return BuffRemindersDB.showOnlyInGroup ~= false
+            return BR.profile.showOnlyInGroup ~= false
         end,
         onChange = function(checked)
-            BuffRemindersDB.showOnlyInGroup = checked
+            BR.profile.showOnlyInGroup = checked
             UpdateDisplay()
         end,
     })
@@ -2168,11 +2165,11 @@ local function CreateOptionsPanel()
     local restingHolder = Components.Checkbox(settingsContent, {
         label = "Hide while resting",
         get = function()
-            return BuffRemindersDB.hideWhileResting == true
+            return BR.profile.hideWhileResting == true
         end,
         tooltip = { title = "Hide while resting", desc = "Hide buff reminders while in inns or capital cities" },
         onChange = function(checked)
-            BuffRemindersDB.hideWhileResting = checked
+            BR.profile.hideWhileResting = checked
             UpdateDisplay()
         end,
     })
@@ -2181,10 +2178,10 @@ local function CreateOptionsPanel()
     local combatHolder = Components.Checkbox(settingsContent, {
         label = "Hide in combat",
         get = function()
-            return BuffRemindersDB.hideInCombat == true
+            return BR.profile.hideInCombat == true
         end,
         onChange = function(checked)
-            BuffRemindersDB.hideInCombat = checked
+            BR.profile.hideInCombat = checked
             UpdateDisplay()
         end,
     })
@@ -2197,13 +2194,13 @@ local function CreateOptionsPanel()
             desc = "During combat, hide buffs that are expiring soon and only show completely missing ones",
         },
         get = function()
-            return BuffRemindersDB.hideExpiringInCombat ~= false
+            return BR.profile.hideExpiringInCombat ~= false
         end,
         enabled = function()
-            return BuffRemindersDB.hideInCombat ~= true
+            return BR.profile.hideInCombat ~= true
         end,
         onChange = function(checked)
-            BuffRemindersDB.hideExpiringInCombat = checked
+            BR.profile.hideExpiringInCombat = checked
             UpdateDisplay()
         end,
     })
@@ -2216,10 +2213,10 @@ local function CreateOptionsPanel()
             desc = "Hide all buff reminders while in a quest vehicle. When disabled, raid and presence buffs still show",
         },
         get = function()
-            return BuffRemindersDB.hideAllInVehicle == true
+            return BR.profile.hideAllInVehicle == true
         end,
         onChange = function(checked)
-            BuffRemindersDB.hideAllInVehicle = checked
+            BR.profile.hideAllInVehicle = checked
             UpdateDisplay()
         end,
     })
@@ -2264,27 +2261,194 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(trackingModeHolder, nil, COMPONENT_GAP)
 
-    LayoutSectionHeader(setLayout, settingsContent, "Danger zone")
-
-    local resetBtn = CreateButton(settingsContent, "Reset to Defaults", function()
-        StaticPopup_Show("BUFFREMINDERS_RESET_DEFAULTS")
-    end, {
-        title = "Reset to Defaults",
-        desc = "Wipe all settings and restore defaults. This will reload the UI.",
-    })
-    resetBtn:SetSize(130, 22)
-    setLayout:Add(resetBtn)
-
-    -- ========== IMPORT/EXPORT TAB ==========
+    -- ========== PROFILES TAB ==========
     -- Use simple frame (not scrollable) to avoid nested scroll frame issues with edit boxes
     local profilesContent = CreateFrame("Frame", nil, panel)
     profilesContent:SetPoint("TOPLEFT", 0, CONTENT_TOP)
-    profilesContent:SetSize(PANEL_WIDTH, 500)
+    profilesContent:SetSize(PANEL_WIDTH, 600)
     profilesContent:Hide()
     contentContainers.profiles = profilesContent
 
     local profX = COL_PADDING
     local profLayout = Components.VerticalLayout(profilesContent, { x = profX, y = -10 })
+    local RefreshProfileDropdown -- forward declaration for closures
+
+    -- Profile management section
+    LayoutSectionHeader(profLayout, profilesContent, "Active Profile")
+
+    local profileDesc = profilesContent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    profileDesc:SetText("Switch between saved configurations. Each character can use a different profile.")
+    profLayout:AddText(profileDesc, 12, COMPONENT_GAP)
+
+    local function GetProfileOptions()
+        local names = BR.Profiles.ListProfiles()
+        local options = {}
+        for _, name in ipairs(names) do
+            options[#options + 1] = { value = name, label = name }
+        end
+        return options
+    end
+
+    local function GetOtherProfileOptions()
+        local names = BR.Profiles.ListProfiles()
+        local active = BR.Profiles.GetActiveProfileName()
+        local options = { { value = "", label = "Select a profile" } }
+        for _, name in ipairs(names) do
+            if name ~= active then
+                options[#options + 1] = { value = name, label = name }
+            end
+        end
+        return options
+    end
+
+    local PROF_LABEL_WIDTH = 70
+    local PROF_DROPDOWN_WIDTH = 150
+
+    -- Active profile row: dropdown + New / Reset buttons
+    local profileRow = CreateFrame("Frame", nil, profilesContent)
+    profileRow:SetSize(PANEL_WIDTH - COL_PADDING * 2, 26)
+
+    local profileDropdown = Components.Dropdown(profileRow, {
+        label = "Profile",
+        labelWidth = PROF_LABEL_WIDTH,
+        width = PROF_DROPDOWN_WIDTH,
+        options = GetProfileOptions(),
+        get = function()
+            return BR.Profiles.GetActiveProfileName()
+        end,
+        onChange = function(value)
+            BR.Profiles.SwitchProfile(value)
+            Components.RefreshAll()
+        end,
+    })
+    profileDropdown:SetPoint("LEFT", 0, 0)
+
+    local btnX = PROF_LABEL_WIDTH + PROF_DROPDOWN_WIDTH + 10
+
+    local newProfileBtn = CreateButton(profileRow, "New", function()
+        StaticPopup_Show("BUFFREMINDERS_NEW_PROFILE")
+    end)
+    newProfileBtn:SetSize(50, 22)
+    newProfileBtn:SetPoint("LEFT", btnX, 0)
+
+    local resetProfileBtn = CreateButton(profileRow, "Reset", function()
+        StaticPopup_Show("BUFFREMINDERS_RESET_DEFAULTS")
+    end)
+    resetProfileBtn:SetSize(50, 22)
+    resetProfileBtn:SetPoint("LEFT", btnX + 54, 0)
+
+    profLayout:Add(profileRow, 26, COMPONENT_GAP)
+
+    -- Copy From dropdown
+    local copyDropdown = Components.Dropdown(profilesContent, {
+        label = "Copy From",
+        labelWidth = PROF_LABEL_WIDTH,
+        width = PROF_DROPDOWN_WIDTH,
+        options = GetOtherProfileOptions(),
+        get = function()
+            return ""
+        end,
+        onChange = function(value)
+            if value == "" then
+                return
+            end
+            BR.Profiles.CopyProfile(value)
+            Components.RefreshAll()
+        end,
+    })
+    profLayout:Add(copyDropdown, 26, COMPONENT_GAP)
+
+    -- Delete dropdown
+    local deleteDropdown = Components.Dropdown(profilesContent, {
+        label = "Delete",
+        labelWidth = PROF_LABEL_WIDTH,
+        width = PROF_DROPDOWN_WIDTH,
+        options = GetOtherProfileOptions(),
+        get = function()
+            return ""
+        end,
+        onChange = function(value)
+            if value == "" then
+                return
+            end
+            BR.Profiles.DeleteProfile(value)
+            -- RefreshProfileDropdown called below (forward ref via closure)
+            RefreshProfileDropdown()
+        end,
+    })
+    profLayout:Add(deleteDropdown, 26, SECTION_GAP)
+
+    -- Rebuild all profile dropdowns after CRUD (defined after all dropdowns exist)
+    RefreshProfileDropdown = function()
+        local opts = GetProfileOptions()
+        local otherOpts = GetOtherProfileOptions()
+        profileDropdown.dropdown:SetOptions(opts)
+        profileDropdown:SetValue(BR.Profiles.GetActiveProfileName())
+        copyDropdown.dropdown:SetOptions(otherOpts)
+        copyDropdown:SetValue("")
+        deleteDropdown.dropdown:SetOptions(otherOpts)
+        deleteDropdown:SetValue("")
+    end
+
+    -- Per-spec profiles section (LibDualSpec)
+    LayoutSectionHeader(profLayout, profilesContent, "Per-Specialization Profiles")
+
+    local specDesc = profilesContent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    specDesc:SetText("Automatically switch profiles when you change specialization.")
+    profLayout:AddText(specDesc, 12, COMPONENT_GAP)
+
+    local specEnabled = Components.Checkbox(profilesContent, {
+        label = "Enable per-specialization profiles",
+        get = function()
+            return BR.Profiles.IsPerSpecEnabled()
+        end,
+        onChange = function(checked)
+            BR.Profiles.SetPerSpecEnabled(checked)
+            Components.RefreshAll()
+        end,
+    })
+    profLayout:Add(specEnabled, 20, COMPONENT_GAP)
+
+    -- Per-spec dropdowns
+    local numSpecs = GetNumSpecializations() or 0
+    local specDropdowns = {}
+    for i = 1, numSpecs do
+        local _, specName = GetSpecializationInfo(i)
+        if specName then
+            local specDropdown = Components.Dropdown(profilesContent, {
+                label = specName,
+                labelWidth = 100,
+                width = 150,
+                options = GetProfileOptions(),
+                get = function()
+                    return BR.Profiles.GetSpecProfile(i)
+                end,
+                enabled = function()
+                    return BR.Profiles.IsPerSpecEnabled()
+                end,
+                onChange = function(value)
+                    BR.Profiles.SetSpecProfile(i, value)
+                end,
+            })
+            profLayout:Add(specDropdown, 26, COMPONENT_GAP)
+            specDropdowns[i] = specDropdown
+        end
+    end
+
+    -- Extend RefreshProfileDropdown to also update spec dropdowns
+    local baseRefreshProfileDropdown = RefreshProfileDropdown
+    RefreshProfileDropdown = function()
+        baseRefreshProfileDropdown()
+        local opts = GetProfileOptions()
+        for _, sd in pairs(specDropdowns) do
+            sd.dropdown:SetOptions(opts)
+        end
+    end
+
+    -- Export so popup dialogs can call it
+    BR.Options.RefreshProfileDropdown = function()
+        RefreshProfileDropdown()
+    end
 
     -- Export section
     LayoutSectionHeader(profLayout, profilesContent, "Export Settings")
@@ -2294,10 +2458,10 @@ local function CreateOptionsPanel()
     profLayout:AddText(exportDesc, 12, COMPONENT_GAP)
 
     local exportTextArea = Components.TextArea(profilesContent, {
-        width = PANEL_WIDTH - COL_PADDING * 2 - SCROLLBAR_WIDTH,
-        height = 80,
+        width = PANEL_WIDTH - COL_PADDING * 2,
+        height = 50,
     })
-    profLayout:Add(exportTextArea, 80, COMPONENT_GAP)
+    profLayout:Add(exportTextArea, 50, COMPONENT_GAP)
 
     local exportButton = CreateButton(profilesContent, "Export", function()
         local exportString, err = BuffReminders:Export()
@@ -2315,14 +2479,14 @@ local function CreateOptionsPanel()
     LayoutSectionHeader(profLayout, profilesContent, "Import Settings")
 
     local importDesc = profilesContent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    importDesc:SetText("Paste a settings string below. This will overwrite your current settings.")
+    importDesc:SetText("Paste a settings string below. |cffff6600This will overwrite the active profile.|r")
     profLayout:AddText(importDesc, 12, COMPONENT_GAP)
 
     local importTextArea = Components.TextArea(profilesContent, {
-        width = PANEL_WIDTH - COL_PADDING * 2 - SCROLLBAR_WIDTH,
-        height = 80,
+        width = PANEL_WIDTH - COL_PADDING * 2,
+        height = 50,
     })
-    profLayout:Add(importTextArea, 80, COMPONENT_GAP)
+    profLayout:Add(importTextArea, 50, COMPONENT_GAP)
 
     local importStatus = profilesContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     importStatus:SetWidth(PANEL_WIDTH - COL_PADDING * 2 - 120)
@@ -2370,7 +2534,7 @@ local function CreateOptionsPanel()
     lockBtn:SetPoint("RIGHT", btnHolder, "CENTER", -4, 0)
 
     function lockBtn:Refresh()
-        self.text:SetText(BuffRemindersDB.locked and "Unlock" or "Lock")
+        self.text:SetText(BR.profile.locked and "Unlock" or "Lock")
     end
     lockBtn:Refresh()
     tinsert(BR.RefreshableComponents, lockBtn)
@@ -2491,8 +2655,8 @@ StaticPopupDialogs["BUFFREMINDERS_DELETE_CUSTOM"] = {
     button2 = "Cancel",
     OnAccept = function(_, data)
         if data and data.key then
-            BuffRemindersDB.customBuffs[data.key] = nil
-            BuffRemindersDB.enabledBuffs[data.key] = nil
+            BR.profile.customBuffs[data.key] = nil
+            BR.profile.enabledBuffs[data.key] = nil
             RemoveCustomBuffFrame(data.key)
             if data.refreshPanel then
                 data.refreshPanel()
@@ -2507,11 +2671,11 @@ StaticPopupDialogs["BUFFREMINDERS_DELETE_CUSTOM"] = {
 }
 
 StaticPopupDialogs["BUFFREMINDERS_RESET_DEFAULTS"] = {
-    text = "Reset BuffReminders to defaults?\n\nThis will erase all customizations\nand reload the UI.",
+    text = "Reset the active profile to defaults?\n\nThis will erase all customizations\nin the current profile and reload the UI.",
     button1 = "Reset",
     button2 = "Cancel",
     OnAccept = function()
-        wipe(BuffRemindersDB)
+        BR.Profiles.ResetProfile()
         ReloadUI()
     end,
     showAlert = true,
@@ -2527,6 +2691,42 @@ StaticPopupDialogs["BUFFREMINDERS_RELOAD_UI"] = {
     button2 = "Cancel",
     OnAccept = function()
         ReloadUI()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
+local function CreateNewProfile(name)
+    if name == "" then
+        return
+    end
+    local copyFrom = BR.Profiles.GetActiveProfileName()
+    BR.Profiles.BatchOperation(function()
+        BR.aceDB:SetProfile(name)
+        BR.aceDB:CopyProfile(copyFrom)
+    end)
+    if BR.Options.RefreshProfileDropdown then
+        BR.Options.RefreshProfileDropdown()
+    end
+end
+
+StaticPopupDialogs["BUFFREMINDERS_NEW_PROFILE"] = {
+    text = "Enter a name for the new profile:",
+    button1 = "Create",
+    button2 = "Cancel",
+    hasEditBox = true,
+    editBoxWidth = 200,
+    OnAccept = function(self)
+        CreateNewProfile(self.EditBox:GetText():trim())
+    end,
+    EditBoxOnEnterPressed = function(self)
+        CreateNewProfile(self:GetText():trim())
+        self:GetParent():Hide()
+    end,
+    EditBoxOnEscapePressed = function(self)
+        self:GetParent():Hide()
     end,
     timeout = 0,
     whileDead = true,
@@ -2564,7 +2764,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     local ROW_HEIGHT = 26
     local CONTENT_LEFT = 20
     local ROWS_START_Y = -60
-    local editingBuff = existingKey and BuffRemindersDB.customBuffs[existingKey] or nil
+    local editingBuff = existingKey and BR.profile.customBuffs[existingKey] or nil
 
     local existingSpellIDs = {}
     if editingBuff then
@@ -3316,7 +3516,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             loadConditions = savedLoadConditions,
         }
 
-        BuffRemindersDB.customBuffs[key] = customBuff
+        BR.profile.customBuffs[key] = customBuff
 
         if not existingKey then
             CreateCustomBuffFrameRuntime(customBuff)

@@ -47,7 +47,7 @@ end
 ---@param catKey string "main" or a category name
 ---@return table position {point, x, y}
 local function GetSavedPosition(catKey)
-    local db = BuffRemindersDB
+    local db = BR.profile
     local defaults = BR.Display.defaults
     if catKey == "main" then
         return (db.categorySettings and db.categorySettings.main and db.categorySettings.main.position)
@@ -68,7 +68,7 @@ local PositionMoverFrame
 ---@param x number
 ---@param y number
 local function SavePosition(catKey, x, y)
-    local db = BuffRemindersDB
+    local db = BR.profile
     if not db.categorySettings then
         db.categorySettings = {}
     end
@@ -411,7 +411,7 @@ local function UpdateAnchor()
         return
     end
 
-    local db = BuffRemindersDB
+    local db = BR.profile
     local unlocked = not db.locked
 
     -- Main mover: show when unlocked AND not all categories split
@@ -481,6 +481,25 @@ local function ConvertDirectionPositions()
     end
 end
 
+-- Sync lastDirection cache from the current profile's settings.
+-- Must run before LayoutRefresh on profile switch to prevent ConvertDirectionPositions
+-- from seeing a stale oldDir and doing a spurious position conversion.
+local function SyncDirectionCache()
+    lastDirection["main"] = (GetCategorySettings("main").growDirection or "CENTER")
+    for _, category in ipairs(CATEGORIES) do
+        lastDirection[category] = (GetCategorySettings(category).growDirection or "CENTER")
+    end
+end
+
+-- Reposition all mover frames from the active profile's saved positions.
+-- Called after profile switch to move frames to the new profile's positions.
+local function RepositionAllFrames()
+    PositionMoverFrame("main")
+    for _, category in ipairs(CATEGORIES) do
+        PositionMoverFrame(category)
+    end
+end
+
 -- Export module
 BR.Movers = {
     Initialize = InitializeMovers,
@@ -491,4 +510,6 @@ BR.Movers = {
         return moverFrames
     end,
     ConvertDirectionPositions = ConvertDirectionPositions,
+    SyncDirectionCache = SyncDirectionCache,
+    RepositionAllFrames = RepositionAllFrames,
 }

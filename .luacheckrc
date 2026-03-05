@@ -9,6 +9,7 @@ ignore = {
 	"212/self",
 	"212/profileKey",
 	"311/currentValue", -- Closure state in dropdown components
+	"311/RefreshProfileDropdown", -- Used in popup dialog closures
 }
 
 globals = {
@@ -46,6 +47,7 @@ read_globals = {
 	"GetPetActionInfo",
 	"GetCursorPosition",
 	"GetNumGroupMembers",
+	"GetNumSpecializations",
 	"GetUnitName",
 	"GetSpecialization",
 	"GetSpecializationInfo",

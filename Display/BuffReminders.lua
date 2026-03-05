@@ -142,7 +142,7 @@ local fontPath = STANDARD_TEXT_FONT
 
 ---Resolve the font path from saved settings and update the cache
 local function ResolveFontPath()
-    local fontName = BuffRemindersDB and BuffRemindersDB.defaults and BuffRemindersDB.defaults.fontFace
+    local fontName = BR.profile and BR.profile.defaults and BR.profile.defaults.fontFace
     if fontName then
         local path = LSM:Fetch("font", fontName)
         if path then
@@ -220,7 +220,7 @@ end
 
 ---Rebuild BUFF_TABLES.custom from db.customBuffs (preserves table identity via wipe)
 local function BuildCustomBuffArray()
-    local db = BuffRemindersDB
+    local db = BR.profile
     wipe(CustomBuffs)
     if not db or not db.customBuffs then
         return
@@ -259,7 +259,7 @@ local defaults = {
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
     minimap = {
-        hide = false,
+        hide = true,
     },
 
     -- Global defaults (inherited by categories unless overridden)
@@ -474,7 +474,7 @@ end
 ---@param category string
 ---@return boolean
 local function IsCategorySplit(category)
-    local db = BuffRemindersDB
+    local db = BR.profile
     -- Check new location first (categorySettings.{cat}.split)
     if db.categorySettings and db.categorySettings[category] then
         if db.categorySettings[category].split ~= nil then
@@ -490,7 +490,7 @@ end
 ---@param category string
 ---@return table A table with all effective settings for this category
 local function GetCategorySettings(category)
-    local db = BuffRemindersDB
+    local db = BR.profile
     local catSettings = db.categorySettings and db.categorySettings[category]
     local globalDefaults = db.defaults or defaults.defaults
 
@@ -592,7 +592,7 @@ local function ShouldShowText(category)
     if not category then
         return true
     end
-    local cs = BuffRemindersDB.categorySettings and BuffRemindersDB.categorySettings[category]
+    local cs = BR.profile.categorySettings and BR.profile.categorySettings[category]
     return not cs or cs.showText ~= false
 end
 
@@ -691,7 +691,7 @@ for catName, category in pairs(BUFF_TABLES) do
         -- readyCheckOnly buffs are skipped unless the user overrode them to always-show
         local skipReadyCheck = buff.readyCheckOnly
         if skipReadyCheck then
-            local db = BuffRemindersDB
+            local db = BR.profile
             local overrides = db and db.readyCheckOnlyOverrides
             local overrideKey = buff.groupId or buff.key
             if overrides and overrides[overrideKey] == false then
@@ -794,7 +794,7 @@ BR.DIRECTION_ANCHORS = DIRECTION_ANCHORS
 
 -- Create a category frame for grouped display mode
 local function CreateCategoryFrame(category)
-    local db = BuffRemindersDB
+    local db = BR.profile
     local catSettings = db.categorySettings and db.categorySettings[category] or defaults.categorySettings[category]
     local pos = catSettings.position or defaults.categorySettings[category].position
     local direction = catSettings.growDirection or defaults.defaults.growDirection or "CENTER"
@@ -894,7 +894,7 @@ local function CreateBuffFrame(buff, category)
     frame.buffCategory = category
     frame.buffDef = buff
 
-    local db = BuffRemindersDB
+    local db = BR.profile
     -- Use effective category for initial sizing (UpdateVisuals + PositionMainContainer apply final sizes)
     local effectiveCat = (category and (IsCategorySplit(category) or BR.Config.HasCustomAppearance(category)))
             and category
@@ -1087,7 +1087,7 @@ local function GetSortedCategories()
     if cachedSortedCategories then
         return cachedSortedCategories
     end
-    local db = BuffRemindersDB
+    local db = BR.profile
     local sorted = {}
     for i, category in ipairs(CATEGORIES) do
         sorted[#sorted + 1] = { name = category, index = i }
@@ -1168,7 +1168,7 @@ end
 
 -- Position and size the main container frame with the given buff frames
 local function PositionMainContainer(mainFrameBuffs)
-    local db = BuffRemindersDB
+    local db = BR.profile
 
     if #mainFrameBuffs > 0 then
         -- Skip repositioning if the same frames are visible in the same order
@@ -1461,7 +1461,7 @@ ToggleTestMode = function(showLabels)
     else
         testMode = true
         -- Seed fake values for consistent display during test mode
-        local db = BuffRemindersDB
+        local db = BR.profile
         testModeData = {
             fakeTotal = random(10, 20),
             fakeRemaining = random(1, (db.defaults and db.defaults.expirationThreshold) or 15) * 60,
@@ -1680,7 +1680,7 @@ local function ResolveConsumableFrame(frame)
     if frame.qualityOverlay then
         frame.qualityOverlay:Hide()
     end
-    if (BuffRemindersDB.defaults or {}).showConsumablesWithoutItems then
+    if (BR.profile.defaults or {}).showConsumablesWithoutItems then
         return "missing"
     end
     return false
@@ -1829,7 +1829,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         return
     end
 
-    local displayMode = (BuffRemindersDB.defaults or {}).consumableDisplayMode or "sub_icons"
+    local displayMode = (BR.profile.defaults or {}).consumableDisplayMode or "sub_icons"
     local items = frame._cachedItems
     if items == nil then
         items = BR.SecureButtons.GetConsumableActionItems(frame.buffDef) or false
@@ -1898,7 +1898,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra:Show()
             end
         elseif not testMode then
-            local cs = BuffRemindersDB.categorySettings and BuffRemindersDB.categorySettings.consumable
+            local cs = BR.profile.categorySettings and BR.profile.categorySettings.consumable
             local clickable = cs and cs.clickable == true
             -- Skip first item (already shown as main icon)
             BR.SecureButtons.UpdateConsumableButtons(frame, items, clickable, 2)
@@ -1945,8 +1945,8 @@ end
 ---@param frame BuffFrame
 ---@param petAction PetAction?
 local function UpdatePetLabels(frame, petAction)
-    local showLabels = (BuffRemindersDB.defaults or {}).petLabels ~= false
-    local petClassVis = (BuffRemindersDB.defaults or {}).petLabelClasses
+    local showLabels = (BR.profile.defaults or {}).petLabels ~= false
+    local petClassVis = (BR.profile.defaults or {}).petLabelClasses
     local classLabelsOff = playerClass and petClassVis and petClassVis[playerClass] == false
     if not petAction or not showLabels or classLabelsOff then
         if frame._br_pet_label_key then
@@ -1965,7 +1965,7 @@ local function UpdatePetLabels(frame, petAction)
     end
 
     -- Early out if nothing changed since last call
-    local scale = (BuffRemindersDB.defaults or {}).petLabelScale or 100
+    local scale = (BR.profile.defaults or {}).petLabelScale or 100
     local cacheKey = petAction.key
         .. ":"
         .. (petAction.label or "")
@@ -2057,7 +2057,7 @@ local function ApplyPetDisplayMode(frame, entry, frameList)
         end
     end
 
-    local petMode = (BuffRemindersDB.defaults or {}).petDisplayMode or "generic"
+    local petMode = (BR.profile.defaults or {}).petDisplayMode or "generic"
 
     -- Set up main frame icon and click-to-cast target
     if petMode == "expanded" then
@@ -2142,7 +2142,7 @@ UpdateDisplay = function()
             return
         end
 
-        local db = BuffRemindersDB
+        local db = BR.profile
 
         if db.showOnlyInGroup and GetNumGroupMembers() == 0 then
             HideAllDisplayFrames()
@@ -2295,7 +2295,7 @@ UpdateDisplay = function()
         -- Sync click overlays on expanded extra frames (they are created above but
         -- UpdateActionButtons is the only place that wires up their click overlays).
         if not InCombatLockdown() then
-            local displayMode = (BuffRemindersDB.defaults or {}).consumableDisplayMode
+            local displayMode = (BR.profile.defaults or {}).consumableDisplayMode
             if displayMode == "expanded" then
                 BR.SecureButtons.UpdateActionButtons("consumable")
             end
@@ -2348,7 +2348,7 @@ local function InitializeFrames()
     mainFrame = CreateFrame("Frame", "BuffRemindersFrame", UIParent)
     mainFrame:SetSize(200, 50)
 
-    local db = BuffRemindersDB
+    local db = BR.profile
     local pos = (db.categorySettings and db.categorySettings.main and db.categorySettings.main.position)
         or db.position
         or { point = "CENTER", x = 0, y = 0 }
@@ -2489,7 +2489,7 @@ BR.CustomBuffs = {
             frame.spellIDs = spellIDValue
             -- Rebuild array (modal creates a new object for db.customBuffs[key], staling the old ref)
             BuildCustomBuffArray()
-            local customBuff = BuffRemindersDB and BuffRemindersDB.customBuffs and BuffRemindersDB.customBuffs[key]
+            local customBuff = BR.profile and BR.profile.customBuffs and BR.profile.customBuffs[key]
             if customBuff then
                 -- Update frame's buffDef reference so click actions pick up new fields
                 frame.buffDef = customBuff
@@ -2531,16 +2531,16 @@ local function UpdateVisuals()
         end
         if frame.buffText then
             -- Raid BUFF! text
-            local raidBts = BuffRemindersDB.categorySettings
-                and BuffRemindersDB.categorySettings.raid
-                and BuffRemindersDB.categorySettings.raid.buffTextSize
+            local raidBts = BR.profile.categorySettings
+                and BR.profile.categorySettings.raid
+                and BR.profile.categorySettings.raid.buffTextSize
             frame.buffText:SetFont(fontPath, raidBts or GetFrameFontSize(frame, 0.8), "OUTLINE")
             frame.buffText:SetTextColor(tc[1], tc[2], tc[3], ta)
             -- BUFF! text: use buff's actual category (raid only)
             local buffCat = frame.buffCategory
             local showReminder = false
             if buffCat == "raid" then
-                local cs = BuffRemindersDB.categorySettings and BuffRemindersDB.categorySettings.raid
+                local cs = BR.profile.categorySettings and BR.profile.categorySettings.raid
                 showReminder = not cs or cs.showBuffReminder ~= false
             end
             frame.buffText:SetShown(showReminder)
@@ -2656,7 +2656,7 @@ BR.Helpers = {
 
 -- Toggle lock state: when unlocked, show mover frames for dragging
 local function ToggleLock()
-    local db = BuffRemindersDB
+    local db = BR.profile
     db.locked = not db.locked
     if db.locked then
         BR.Movers.HideAll()
@@ -2696,22 +2696,19 @@ local function SlashHandler(msg)
     if cmd == "test" then
         ToggleTestMode(false) -- no labels, for previews
     elseif cmd == "lock" then
-        BuffRemindersDB.locked = true
+        BR.profile.locked = true
         BR.Movers.HideAll()
         BR.Components.RefreshAll()
         print("|cff00ccffBuffReminders:|r Frames locked.")
     elseif cmd == "unlock" then
-        BuffRemindersDB.locked = false
+        BR.profile.locked = false
         BR.Movers.UpdateAnchor()
         BR.Components.RefreshAll()
         print("|cff00ccffBuffReminders:|r Frames unlocked.")
     elseif cmd == "minimap" then
-        if not BuffRemindersDB.minimap then
-            BuffRemindersDB.minimap = {}
-        end
-        BuffRemindersDB.minimap.hide = not BuffRemindersDB.minimap.hide
+        BR.aceDB.global.minimap.hide = not BR.aceDB.global.minimap.hide
         if BR.MinimapButton then
-            if BuffRemindersDB.minimap.hide then
+            if BR.aceDB.global.minimap.hide then
                 BR.MinimapButton.Icon:Hide("BuffReminders")
                 print("|cff00ccffBuffReminders:|r Minimap icon hidden.")
             else
@@ -2763,6 +2760,50 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
             BuffRemindersDB = {}
         end
 
+        -- ====================================================================
+        -- Pre-AceDB migration: convert old formats so AceDB picks up the data
+        -- ====================================================================
+        if rawget(BuffRemindersDB, "_profiles") then
+            -- Custom profile format -> AceDB format (rename underscore keys)
+            local p = rawget(BuffRemindersDB, "_profiles")
+            local pk = rawget(BuffRemindersDB, "_profileKeys")
+            local g = rawget(BuffRemindersDB, "_global")
+            rawset(BuffRemindersDB, "profiles", p)
+            rawset(BuffRemindersDB, "profileKeys", pk)
+            rawset(BuffRemindersDB, "global", g)
+            rawset(BuffRemindersDB, "_profiles", nil)
+            rawset(BuffRemindersDB, "_profileKeys", nil)
+            rawset(BuffRemindersDB, "_global", nil)
+        elseif not rawget(BuffRemindersDB, "profiles") then
+            -- Old flat format -> AceDB format
+            local profileData, globalData = {}, {}
+            for k, v in pairs(BuffRemindersDB) do
+                if k == "minimap" then
+                    globalData[k] = v
+                else
+                    profileData[k] = v
+                end
+            end
+            wipe(BuffRemindersDB)
+            rawset(BuffRemindersDB, "profiles", { ["Default"] = profileData })
+            rawset(BuffRemindersDB, "profileKeys", {})
+            rawset(BuffRemindersDB, "global", globalData)
+        end
+
+        -- Build AceDB defaults (minimap is global, everything else is per-profile)
+        local aceDefaults = {
+            profile = {},
+            global = { minimap = defaults.minimap },
+        }
+        for k, v in pairs(defaults) do
+            if k ~= "minimap" then
+                aceDefaults.profile[k] = v
+            end
+        end
+
+        -- Initialize AceDB + profile proxy
+        BR.Profiles.Initialize(aceDefaults)
+
         -- Deep copy default values for missing keys (skips 'defaults' sub-table, served by metatable)
         local function DeepCopyDefault(source, target)
             for k, v in pairs(source) do
@@ -2785,7 +2826,11 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
             end
         end
 
-        local db = BuffRemindersDB
+        -- Export functions for profile switch refresh
+        BR.Display.DeepCopyDefault = DeepCopyDefault
+        BR.Display.BuildCustomBuffArray = BuildCustomBuffArray
+
+        local db = BR.profile
 
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
@@ -3290,12 +3335,10 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                 end
             end,
 
-            -- [20] Ensure minimap table exists for LibDBIcon
-            [20] = function()
-                if not db.minimap then
-                    db.minimap = {}
-                end
-            end,
+            -- [20] Clean up minimap from profile (now in AceDB global)
+            -- Note: DeepCopyDefault re-adds minimap from code defaults, so the
+            -- canonical cleanup is after DeepCopyDefault (below), not here.
+            [20] = function() end,
 
             -- [21] Enable delve food by default (was opt-in, now opt-out)
             [21] = function()
@@ -3342,6 +3385,10 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
 
         -- Deep copy defaults for non-defaults tables
         DeepCopyDefault(defaults, db)
+
+        -- minimap lives in AceDB global, not per-profile; DeepCopyDefault re-adds it
+        -- from the code defaults table, so clean it up after every DeepCopy.
+        db.minimap = nil
 
         -- Migration: textSize was 12 in defaults but never used (font size was derived from
         -- iconSize * 0.32). Now nil means "auto-derive from iconSize". Clean up the old value
@@ -3445,7 +3492,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                     end
                 end,
             })
-            LDBIcon:Register("BuffReminders", dataObj, db.minimap)
+            LDBIcon:Register("BuffReminders", dataObj, BR.aceDB.global.minimap)
             LDBIcon:AddButtonToCompartment("BuffReminders")
             BR.MinimapButton = { Icon = LDBIcon, DataObj = dataObj }
         end
@@ -3465,7 +3512,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
             InitializeFrames()
             -- Initialize action buttons for categories with clickable enabled
             for _, cat in ipairs(CATEGORIES) do
-                local cs = BuffRemindersDB.categorySettings and BuffRemindersDB.categorySettings[cat]
+                local cs = BR.profile.categorySettings and BR.profile.categorySettings[cat]
                 if (cs and cs.clickable) or cat == "custom" then
                     BR.SecureButtons.UpdateActionButtons(cat)
                 end
@@ -3480,7 +3527,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         C_Timer.After(0.5, SetDirty)
         -- Refresh custom buff icons after spell data is fully loaded (talent-modified icons)
         C_Timer.After(1.5, function()
-            for key, def in pairs(BuffRemindersDB.customBuffs or {}) do
+            for key, def in pairs(BR.profile.customBuffs or {}) do
                 local frame = buffFrames[key]
                 if frame and def.spellID then
                     local texture = GetBuffTexture(def.spellID)

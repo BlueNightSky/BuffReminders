@@ -55,14 +55,14 @@ local function ExportSettings()
 
     -- Only export fields that exist in defaults
     for key in pairs(defaults) do
-        if BuffRemindersDB[key] ~= nil then
-            export[key] = DeepCopy(BuffRemindersDB[key])
+        if BR.profile[key] ~= nil then
+            export[key] = DeepCopy(BR.profile[key])
         end
     end
 
     -- Also include custom buffs
-    if BuffRemindersDB.customBuffs then
-        export.customBuffs = DeepCopy(BuffRemindersDB.customBuffs)
+    if BR.profile.customBuffs then
+        export.customBuffs = DeepCopy(BR.profile.customBuffs)
     end
 
     local result = SerializeTable(export)
@@ -72,7 +72,7 @@ local function ExportSettings()
     return result
 end
 
--- Import settings from a serialized string
+-- Import settings from a serialized string (full replacement of exported keys)
 local function ImportSettings(str)
     local defaults = BR.Display.defaults
     local data, err = DeserializeTable(str)
@@ -80,15 +80,27 @@ local function ImportSettings(str)
         return false, err
     end
 
-    -- Deep merge imported data into BuffRemindersDB
+    -- Wipe all exportable keys first so import is a full replacement, not a merge.
+    -- This ensures keys present in the current profile but absent from the import
+    -- string are cleared (e.g. old customBuffs, disabled enabledBuffs entries).
+    for key in pairs(defaults) do
+        if key ~= "minimap" then
+            BR.profile[key] = nil
+        end
+    end
+    BR.profile.customBuffs = nil
+
+    -- Apply imported data
     for k, v in pairs(data) do
-        BuffRemindersDB[k] = DeepCopy(v)
+        BR.profile[k] = DeepCopy(v)
     end
 
-    -- Re-apply metatable on defaults (DeepCopy produces a plain table)
-    if BuffRemindersDB.defaults then
-        setmetatable(BuffRemindersDB.defaults, { __index = defaults.defaults })
+    -- Ensure defaults sub-table exists and has the metatable (DeepCopy produces
+    -- a plain table, and old export strings may not include a defaults key at all).
+    if not BR.profile.defaults then
+        BR.profile.defaults = {}
     end
+    setmetatable(BR.profile.defaults, { __index = defaults.defaults })
 
     return true
 end
@@ -99,7 +111,7 @@ end
 
 --- PUBLIC API — used by Wago UI and other external addons. Do not remove or rename.
 --- Export settings to a prefixed string that can be imported by other addons
---- @param profileKey string|nil Optional profile name (ignored - BuffReminders uses single profile)
+--- @param profileKey string|nil Optional profile name (ignored - exports the active profile)
 --- @return string|nil Encoded settings string with !BR_ prefix, or nil on error
 --- @return string|nil Error message if export failed
 function BuffReminders:Export(profileKey)
@@ -113,7 +125,7 @@ end
 --- PUBLIC API — used by Wago UI and other external addons. Do not remove or rename.
 --- Import settings from a prefixed string
 --- @param importString string The encoded settings string (must start with !BR_)
---- @param profileKey string|nil Optional profile name (ignored - BuffReminders uses single profile)
+--- @param profileKey string|nil Optional profile name (ignored - imports into the active profile)
 --- @return boolean success Whether the import succeeded
 --- @return string|nil error Error message if import failed
 function BuffReminders:Import(importString, profileKey)

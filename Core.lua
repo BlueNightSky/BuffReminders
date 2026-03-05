@@ -351,7 +351,7 @@ local RefreshType = {
 ---@param path string Dot-separated path like "categorySettings.main.iconSize" or "enabledBuffs.intellect"
 ---@param value any The new value
 function BR.Config.Set(path, value)
-    local db = BuffRemindersDB
+    local db = BR.profile
     if not db then
         return
     end
@@ -416,7 +416,7 @@ end
 ---@param default? any Default value if not found
 ---@return any
 function BR.Config.Get(path, default)
-    local db = BuffRemindersDB
+    local db = BR.profile
     if not db then
         return default
     end
@@ -438,7 +438,7 @@ end
 ---Set multiple config values at once (batched, single refresh)
 ---@param changes table<string, any> Map of path -> value
 function BR.Config.SetMulti(changes)
-    local db = BuffRemindersDB
+    local db = BR.profile
     if not db then
         return
     end
@@ -528,7 +528,7 @@ local AppearanceKeys = {
 ---@param key string Setting key (iconSize, showBuffReminder, etc.)
 ---@return any value The effective value for this setting
 function BR.Config.GetCategorySetting(category, key)
-    local db = BuffRemindersDB
+    local db = BR.profile
     if not db then
         return nil
     end
@@ -561,7 +561,7 @@ end
 ---@param category string
 ---@return boolean
 function BR.Config.HasCustomAppearance(category)
-    local db = BuffRemindersDB
+    local db = BR.profile
     if not db or not db.categorySettings or not db.categorySettings[category] then
         return false
     end
