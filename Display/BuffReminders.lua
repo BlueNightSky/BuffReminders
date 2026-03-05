@@ -849,7 +849,21 @@ local function UpdateIconStyling(frame, catSettings)
     -- Always apply base inset to crop texture edge artifacts; zoom adds on top
     local additionalZoom = (catSettings.iconZoom or DEFAULT_ICON_ZOOM) / 100
     local inset = TEXCOORD_INSET + additionalZoom
-    frame.icon:SetTexCoord(inset, 1 - inset, inset, 1 - inset)
+    -- Aspect-ratio-aware crop: when width ≠ height, crop the longer texture axis
+    -- more so the icon isn't stretched/distorted (shows a centered slice instead)
+    local iconHeight = catSettings.iconSize or 64
+    local iconWidth = GetEffectiveWidth(catSettings.iconWidth, iconHeight)
+    local aspectRatio = iconWidth / iconHeight
+    local xInset = inset
+    local yInset = inset
+    if aspectRatio > 1 then
+        -- Wider than tall: crop top/bottom more
+        yInset = inset + (1 - 1 / aspectRatio) * (0.5 - inset)
+    elseif aspectRatio < 1 then
+        -- Taller than wide: crop left/right more
+        xInset = inset + (1 - aspectRatio) * (0.5 - inset)
+    end
+    frame.icon:SetTexCoord(xInset, 1 - xInset, yInset, 1 - yInset)
     local borderSize = catSettings.borderSize or DEFAULT_BORDER_SIZE
     if borderSize > 0 then
         frame.border:ClearAllPoints()
