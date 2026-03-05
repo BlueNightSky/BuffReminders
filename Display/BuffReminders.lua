@@ -123,6 +123,7 @@ local tinsert, tremove, tsort, tconcat = table.insert, table.remove, table.sort,
 -- Shared constants (from Core.lua)
 local DEFAULT_BORDER_SIZE = BR.DEFAULT_BORDER_SIZE
 local DEFAULT_ICON_ZOOM = BR.DEFAULT_ICON_ZOOM
+local TEXCOORD_INSET = BR.TEXCOORD_INSET
 
 -- LibSharedMedia for font resolution
 local LSM = LibStub("LibSharedMedia-3.0")
@@ -272,7 +273,7 @@ local defaults = {
         textAlpha = 1,
         textColor = { 1, 1, 1 },
         spacing = 0.2, -- multiplier of iconSize
-        iconZoom = 8, -- percentage
+        iconZoom = 0, -- percentage (additional zoom on top of base TEXCOORD_INSET crop)
         borderSize = 2,
         growDirection = "CENTER", -- "LEFT", "CENTER", "RIGHT", "UP", "DOWN"
         -- Behavior (glow settings)
@@ -504,7 +505,7 @@ local function GetCategorySettings(category)
             textAlpha = globalDefaults.textAlpha or 1,
             textColor = globalDefaults.textColor or { 1, 1, 1 },
             spacing = globalDefaults.spacing or 0.2,
-            iconZoom = globalDefaults.iconZoom or 8,
+            iconZoom = globalDefaults.iconZoom or 0,
             borderSize = globalDefaults.borderSize or 2,
             growDirection = globalDefaults.growDirection or "CENTER",
             showBuffReminder = false, -- main uses per-frame logic based on buff's actual category
@@ -535,7 +536,7 @@ local function GetCategorySettings(category)
         result.textAlpha = (catSettings and catSettings.textAlpha) or 1
         result.textColor = (catSettings and catSettings.textColor) or { 1, 1, 1 }
         result.spacing = (catSettings and catSettings.spacing) or 0.2
-        result.iconZoom = (catSettings and catSettings.iconZoom) or 8
+        result.iconZoom = (catSettings and catSettings.iconZoom) or 0
         result.borderSize = (catSettings and catSettings.borderSize) or 2
         result.growDirection = (catSettings and catSettings.growDirection) or "CENTER"
         result.glowType = (catSettings and catSettings.glowType) or 1
@@ -551,7 +552,7 @@ local function GetCategorySettings(category)
         result.textAlpha = globalDefaults.textAlpha or 1
         result.textColor = globalDefaults.textColor or { 1, 1, 1 }
         result.spacing = globalDefaults.spacing or 0.2
-        result.iconZoom = globalDefaults.iconZoom or 8
+        result.iconZoom = globalDefaults.iconZoom or 0
         result.borderSize = globalDefaults.borderSize or 2
         result.growDirection = globalDefaults.growDirection or "CENTER"
         result.glowType = globalDefaults.glowType or 1
@@ -844,13 +845,19 @@ local function UpdateIconStyling(frame, catSettings)
     frame.border:SetDrawLayer("BACKGROUND")
     frame.border:SetAlpha(1)
     frame.border:SetColorTexture(0, 0, 0, 1)
-    local zoom = (catSettings.iconZoom or DEFAULT_ICON_ZOOM) / 100
-    frame.icon:SetTexCoord(zoom, 1 - zoom, zoom, 1 - zoom)
+    -- Always apply base inset to crop texture edge artifacts; zoom adds on top
+    local additionalZoom = (catSettings.iconZoom or DEFAULT_ICON_ZOOM) / 100
+    local inset = TEXCOORD_INSET + additionalZoom
+    frame.icon:SetTexCoord(inset, 1 - inset, inset, 1 - inset)
     local borderSize = catSettings.borderSize or DEFAULT_BORDER_SIZE
-    frame.border:ClearAllPoints()
-    frame.border:SetPoint("TOPLEFT", -borderSize, borderSize)
-    frame.border:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
-    frame.border:Show()
+    if borderSize > 0 then
+        frame.border:ClearAllPoints()
+        frame.border:SetPoint("TOPLEFT", -borderSize, borderSize)
+        frame.border:SetPoint("BOTTOMRIGHT", borderSize, -borderSize)
+        frame.border:Show()
+    else
+        frame.border:Hide()
+    end
 end
 
 -- Map buff key → consumable category (used by display to detect consumable buffs with bag items)
@@ -2768,7 +2775,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 22
+        local DB_VERSION = 23
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3286,6 +3293,20 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
             [22] = function()
                 if db.defaults and db.defaults.delveFoodOnly == false then
                     db.defaults.delveFoodOnly = true
+                end
+            end,
+
+            -- [23] Decouple zoom from base texcoord inset: subtract old base (8) from stored values
+            [23] = function()
+                if db.defaults and db.defaults.iconZoom then
+                    db.defaults.iconZoom = max(0, db.defaults.iconZoom - 8)
+                end
+                if db.categorySettings then
+                    for _, catSettings in pairs(db.categorySettings) do
+                        if catSettings.iconZoom then
+                            catSettings.iconZoom = max(0, catSettings.iconZoom - 8)
+                        end
+                    end
                 end
             end,
         }
