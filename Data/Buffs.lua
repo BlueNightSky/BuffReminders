@@ -438,6 +438,7 @@ BR.BUFF_TABLES = {
             class = "PRIEST",
             missingText = "NO\nFORM",
             buffIdOverride = { 232698, 194249 },
+            noExpirationGlow = true, -- Voidform (short duration) replaces Shadowform; don't warn
         },
         -- Shaman weapon imbues (alphabetical: Earthliving, Flametongue, Windfury)
         {

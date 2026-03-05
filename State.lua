@@ -1391,7 +1391,13 @@ function BuffState.Refresh()
             if shouldShow then
                 SetEntryMissing(entry, buff.missingText, selfGlowMissing)
                 entry.iconByRole = buff.iconByRole
-            elseif shouldShow == false and selfGlow and not buff.enchantID and not hideExpiring then
+            elseif
+                shouldShow == false
+                and selfGlow
+                and not buff.enchantID
+                and not buff.noExpirationGlow
+                and not hideExpiring
+            then
                 -- Buff present but maybe expiring (enchants don't track expiration here)
                 local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
                 TrySetEntryExpiring(entry, remaining, selfGlowThreshold)
