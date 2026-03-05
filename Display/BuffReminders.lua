@@ -726,11 +726,11 @@ local ResetLayoutSignatures
 local SetExpirationGlow = BR.Glow.SetExpiration
 
 -- Per-render-cycle cache for glow settings (avoids repeated BR.Config.GetCategorySetting calls)
-local glowSettingsCache = {} ---@type table<string, {typeIndex: number, color: number[], size: number}>
+local glowSettingsCache = {} ---@type table<string, {typeIndex: number, color: number[], size: number, borderSize: number}>
 
 ---Get cached glow settings for a category (populated once per render cycle)
 ---@param category string
----@return {typeIndex: number, color: number[], size: number}
+---@return {typeIndex: number, color: number[], size: number, borderSize: number}
 local function GetCachedGlowSettings(category)
     local cached = glowSettingsCache[category]
     if cached then
@@ -741,6 +741,7 @@ local function GetCachedGlowSettings(category)
         color = BR.Config.GetCategorySetting(category, "glowColor") or BR.Glow.DEFAULT_COLOR,
         useCustomColor = BR.Config.GetCategorySetting(category, "useCustomGlowColor") or false,
         size = BR.Config.GetCategorySetting(category, "glowSize") or 2,
+        borderSize = BR.Config.GetCategorySetting(category, "borderSize") or DEFAULT_BORDER_SIZE,
     }
     glowSettingsCache[category] = cached
     return cached

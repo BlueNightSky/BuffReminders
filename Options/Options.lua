@@ -2463,7 +2463,7 @@ ShowGlowDemo = function()
         border:SetColorTexture(0, 0, 0, 1)
 
         local demoSize = BR.Config.Get("defaults.glowSize", 2)
-        Glow.Start(iconFrame, i, color, "BR_demo_" .. i, demoSize)
+        Glow.Start(iconFrame, i, color, "BR_demo_" .. i, demoSize, DEFAULT_BORDER_SIZE, DEFAULT_BORDER_SIZE)
         demoFrames[i] = iconFrame
 
         local typeLabel = demoPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
