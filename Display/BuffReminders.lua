@@ -284,7 +284,7 @@ local defaults = {
         useCustomGlowColor = false,
         glowSize = 2,
         showConsumablesWithoutItems = false,
-        delveFoodOnly = false,
+        delveFoodOnly = true,
         consumableDisplayMode = "sub_icons",
         showConsumableTooltips = false,
         petDisplayMode = "generic", -- "generic" or "expanded"
@@ -311,6 +311,10 @@ local defaults = {
             scenario = true,
             raid = true,
             housing = false,
+            scenarioDifficulty = {
+                delves = true,
+                others = false,
+            },
             dungeonDifficulty = {
                 normal = false,
                 heroic = false,
@@ -2764,7 +2768,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 21
+        local DB_VERSION = 22
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3275,6 +3279,13 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
             [21] = function()
                 if db.enabledBuffs and db.enabledBuffs.delveFood == false then
                     db.enabledBuffs.delveFood = nil
+                end
+            end,
+
+            -- [22] Default delveFoodOnly to true (show only delve food in delves)
+            [22] = function()
+                if db.defaults and db.defaults.delveFoodOnly == false then
+                    db.defaults.delveFoodOnly = true
                 end
             end,
         }

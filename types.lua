@@ -48,5 +48,6 @@
 ---@field housing? boolean
 ---@field readyCheckOnly? boolean
 ---@field levelFilter? "maxLevel"|"belowMaxLevel"
+---@field scenarioDifficulty? table<string, boolean>
 ---@field dungeonDifficulty? table<string, boolean>
 ---@field raidDifficulty? table<string, boolean>

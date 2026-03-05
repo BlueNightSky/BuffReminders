@@ -31,12 +31,17 @@ local _, BR = ...
 ---@field heroic? boolean
 ---@field mythic? boolean
 
+---@class ScenarioDifficulty
+---@field delves? boolean
+---@field others? boolean
+
 ---@class ContentVisibility
 ---@field openWorld boolean
 ---@field dungeon boolean
 ---@field scenario boolean
 ---@field raid boolean
 ---@field housing boolean
+---@field scenarioDifficulty? ScenarioDifficulty
 ---@field dungeonDifficulty? DungeonDifficulty
 ---@field raidDifficulty? RaidDifficulty
 
