@@ -16,7 +16,6 @@ local addonName, BR = ...
 ---@field borderSize number
 ---@field growDirection string
 ---@field showExpirationGlow boolean
----@field glowWhenMissing boolean
 ---@field expirationThreshold number
 ---@field glowType number
 ---@field glowColor number[]
@@ -47,7 +46,6 @@ local addonName, BR = ...
 ---@field iconZoom? number
 ---@field borderSize? number
 ---@field showExpirationGlow? boolean
----@field glowWhenMissing? boolean
 ---@field expirationThreshold? number
 ---@field glowType? number
 ---@field glowColor? number[]
@@ -278,7 +276,6 @@ local defaults = {
         growDirection = "CENTER", -- "LEFT", "CENTER", "RIGHT", "UP", "DOWN"
         -- Behavior (glow settings)
         showExpirationGlow = true,
-        glowWhenMissing = true,
         expirationThreshold = 15, -- minutes
         glowType = 1, -- 1=Pixel, 2=AutoCast, 3=Border, 4=Proc
         glowColor = BR.Glow.DEFAULT_COLOR,
@@ -1332,9 +1329,9 @@ local function GenerateTestEntries()
     local raidIndex = 1
 
     for _, category in ipairs(CATEGORIES) do
-        -- Per-category glow settings (same pattern as State.lua:GetCategoryGlow)
+        -- Per-category glow settings (same pattern as State.lua:GetCategoryGlowSettings)
         local glowEnabled = BR.Config.GetCategorySetting(category, "showExpirationGlow") ~= false
-        local glowWhenMissing = glowEnabled and BR.Config.GetCategorySetting(category, "glowWhenMissing") ~= false
+        local threshold = BR.Config.GetCategorySetting(category, "expirationThreshold") or 15
         local expiringShown = false
 
         local buffTable = BUFF_TABLES[category]
@@ -1359,23 +1356,23 @@ local function GenerateTestEntries()
                 entry.visible = true
 
                 if category == "raid" then
-                    if glowEnabled and not expiringShown then
+                    if threshold > 0 and not expiringShown then
                         entry.displayType = "expiring"
                         entry.countText = FormatRemainingTime(testModeData.fakeRemaining)
-                        entry.shouldGlow = true
+                        entry.shouldGlow = glowEnabled
                         expiringShown = true
                     else
                         entry.displayType = "count"
                         local fakeBuffed = testModeData.fakeTotal - testModeData.fakeMissing[raidIndex]
                         entry.countText = fakeBuffed .. "/" .. testModeData.fakeTotal
-                        entry.shouldGlow = glowWhenMissing
+                        entry.shouldGlow = glowEnabled
                     end
                     raidIndex = raidIndex + 1
                 elseif category == "pet" then
                     entry.displayType = "missing"
                     entry.missingText = buff.missingText
                     entry.iconByRole = buff.iconByRole
-                    entry.shouldGlow = glowWhenMissing
+                    entry.shouldGlow = glowEnabled
                     if buff.groupId == "pets" and BR.PetHelpers then
                         local actions = BR.PetHelpers.GetPetActions(playerClass)
                         if actions and #actions > 0 then
@@ -1387,13 +1384,13 @@ local function GenerateTestEntries()
                     entry.displayType = "missing"
                     entry.missingText = buff.missingText
                     entry.iconByRole = buff.iconByRole
-                    entry.shouldGlow = glowWhenMissing
+                    entry.shouldGlow = glowEnabled
 
-                    -- Show first buff as expiring to preview expiration glow
-                    if glowEnabled and not buff.noExpirationGlow and not expiringShown then
+                    -- Show first buff as expiring to preview expiration countdown
+                    if threshold > 0 and not buff.noExpirationGlow and not expiringShown then
                         entry.displayType = "expiring"
                         entry.countText = FormatRemainingTime(testModeData.fakeRemaining)
-                        entry.shouldGlow = true
+                        entry.shouldGlow = glowEnabled
                         expiringShown = true
                     end
                 end
@@ -1759,7 +1756,7 @@ local function RenderVisibleEntry(frame, entry)
         frame.count:SetText(entry.countText or "")
         frame.count:Show()
         frame:Show()
-        SetExpirationGlow(frame, true, entry.category, cachedGlow)
+        SetExpirationGlow(frame, entry.shouldGlow, entry.category, cachedGlow)
         -- Show food stat label for expiring food (resolve from cached items)
         if frame.key == "food" then
             local items = frame._cachedItems
@@ -3395,6 +3392,20 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- so users get the auto behavior instead of a hardcoded 12.
         if db.defaults and db.defaults.textSize == 12 then
             db.defaults.textSize = nil
+        end
+
+        -- Migration: glowWhenMissing removed (glow is now all-or-nothing).
+        -- Clean up the old key from defaults and per-category settings.
+        if db.defaults then
+            db.defaults.glowWhenMissing = nil
+            db.defaults.showExpirationReminder = nil
+        end
+        for _, cat in ipairs(CATEGORIES) do
+            local catSettings = db.categorySettings and db.categorySettings[cat]
+            if catSettings then
+                catSettings.glowWhenMissing = nil
+                catSettings.showExpirationReminder = nil
+            end
         end
 
         -- Initialize custom buffs storage and populate BUFF_TABLES.custom

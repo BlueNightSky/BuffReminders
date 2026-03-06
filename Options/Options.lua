@@ -832,8 +832,29 @@ local function CreateOptionsPanel()
     })
     displayBehaviorLayout:Add(defDirHolder, nil, COMPONENT_GAP + DROPDOWN_EXTRA)
 
-    -- Expiration Glow section
-    LayoutSectionHeader(displayBehaviorLayout, displayBehaviorContent, "Expiration Glow")
+    -- Expiration Reminder section
+    LayoutSectionHeader(displayBehaviorLayout, displayBehaviorContent, "Expiration Reminder")
+    displayBehaviorLayout:Space(COMPONENT_GAP)
+
+    local defThresholdHolder = Components.Slider(displayBehaviorContent, {
+        label = "Threshold",
+        min = 0,
+        max = 45,
+        step = 5,
+        get = function()
+            return BR.profile.defaults and BR.profile.defaults.expirationThreshold or 15
+        end,
+        formatValue = function(val)
+            return val == 0 and "Off" or (val .. " min")
+        end,
+        onChange = function(val)
+            BR.Config.Set("defaults.expirationThreshold", val)
+        end,
+    })
+    displayBehaviorLayout:Add(defThresholdHolder, nil, COMPONENT_GAP)
+
+    -- Glow section
+    LayoutSectionHeader(displayBehaviorLayout, displayBehaviorContent, "Glow")
     displayBehaviorLayout:Space(COMPONENT_GAP)
 
     local previewBtn = CreateButton(displayBehaviorContent, "Preview", function()
@@ -856,21 +877,6 @@ local function CreateOptionsPanel()
         return BR.profile.defaults and BR.profile.defaults.showExpirationGlow ~= false
     end
 
-    local defThresholdHolder = Components.Slider(displayBehaviorContent, {
-        min = 1,
-        max = 45,
-        step = 5,
-        get = function()
-            return BR.profile.defaults and BR.profile.defaults.expirationThreshold or 15
-        end,
-        enabled = isExpirationGlowEnabled,
-        suffix = " min",
-        onChange = function(val)
-            BR.Config.Set("defaults.expirationThreshold", val)
-        end,
-    })
-    defThresholdHolder:SetPoint("LEFT", defGlowHolder.checkbox, "RIGHT", 40, 0)
-
     local typeOptions = {}
     for i, gt in ipairs(GlowTypes) do
         typeOptions[i] = { label = gt.name, value = i }
@@ -889,7 +895,7 @@ local function CreateOptionsPanel()
             BR.Config.Set("defaults.glowType", val)
         end,
     }, "BuffRemindersDefGlowTypeDropdown")
-    defTypeHolder:SetPoint("LEFT", defThresholdHolder, "RIGHT", 8, 0)
+    defTypeHolder:SetPoint("LEFT", defGlowHolder.checkbox, "RIGHT", 40, 0)
 
     local defUseCustomColorHolder = Components.Checkbox(displayBehaviorContent, {
         label = "Color",
@@ -933,25 +939,10 @@ local function CreateOptionsPanel()
             BR.Config.Set("defaults.glowSize", val)
         end,
     })
-    displayBehaviorLayout:Add(defGlowHolder, nil, COMPONENT_GAP + DROPDOWN_EXTRA)
-
-    local defGlowWhenMissingHolder = Components.Checkbox(displayBehaviorContent, {
-        label = "Also when missing",
-        tooltip = "Show glow on buff icons that are completely missing, not just expiring.",
-        get = function()
-            return BR.profile.defaults and BR.profile.defaults.glowWhenMissing ~= false
-        end,
-        enabled = isExpirationGlowEnabled,
-        onChange = function(checked)
-            BR.Config.Set("defaults.glowWhenMissing", checked)
-        end,
-    })
-    defGlowWhenMissingHolder:SetPoint("TOPLEFT", defGlowHolder, "BOTTOMLEFT", 20, -COMPONENT_GAP)
-    defGlowSizeHolder:SetPoint("LEFT", defTypeHolder, "LEFT", 0, 0)
-    defGlowSizeHolder:SetPoint("TOP", defGlowWhenMissingHolder, "TOP")
+    defGlowSizeHolder:SetPoint("LEFT", defTypeHolder, "RIGHT", 8, 0)
     defUseCustomColorHolder:SetPoint("LEFT", defGlowSizeHolder, "RIGHT", 6, 0)
     defGlowColorHolder:SetPoint("LEFT", defUseCustomColorHolder.label, "RIGHT", 4, 0)
-    displayBehaviorLayout:Space(20 + COMPONENT_GAP)
+    displayBehaviorLayout:Add(defGlowHolder, nil, COMPONENT_GAP + DROPDOWN_EXTRA)
 
     -- Per-Category Customization section
     LayoutSectionHeader(displayBehaviorLayout, displayBehaviorContent, "Per-Category Customization")
@@ -1823,7 +1814,6 @@ local function CreateOptionsPanel()
         end
 
         local CAT_LW = 50 -- Shared label width for glow rows
-        local CAT_COL2 = 240 -- Column 2 offset for glow rows
 
         local function isCatDimensionsLinked()
             local cs = db.categorySettings and db.categorySettings[category]
@@ -1866,20 +1856,16 @@ local function CreateOptionsPanel()
         local glowRowY = -catGrid.height
         local gridHeight
         if category == "pet" then
-            -- Pets don't expire — single "Glow when missing" checkbox
-            -- (sets both showExpirationGlow and glowWhenMissing under the hood)
+            -- Pets don't expire — single "Glow" checkbox
             local catPetGlowHolder = Components.Checkbox(appFrame, {
-                label = "Glow when missing",
+                label = "Glow",
                 get = function()
                     return getCatOwnValue("showExpirationGlow", true) ~= false
-                        and getCatOwnValue("glowWhenMissing", true) ~= false
                 end,
                 enabled = isCustomAppearanceEnabled,
                 onChange = function(checked)
-                    BR.Config.SetMulti({
-                        ["categorySettings." .. category .. ".showExpirationGlow"] = checked,
-                        ["categorySettings." .. category .. ".glowWhenMissing"] = checked,
-                    })
+                    BR.Config.Set("categorySettings." .. category .. ".showExpirationGlow", checked)
+                    Components.RefreshAll()
                 end,
             })
             catPetGlowHolder:SetPoint("TOPLEFT", 0, glowRowY)
@@ -1890,9 +1876,7 @@ local function CreateOptionsPanel()
             end
 
             local function isPetGlowEnabled()
-                return isCustomAppearanceEnabled()
-                    and getCatOwnValue("showExpirationGlow", true) ~= false
-                    and getCatOwnValue("glowWhenMissing", true) ~= false
+                return isCustomAppearanceEnabled() and getCatOwnValue("showExpirationGlow", true) ~= false
             end
 
             local catGlowTypeHolder = Components.Dropdown(appFrame, {
@@ -1908,7 +1892,7 @@ local function CreateOptionsPanel()
                     BR.Config.Set("categorySettings." .. category .. ".glowType", val)
                 end,
             }, "BuffReminders_" .. category .. "_GlowTypeDropdown")
-            catGlowTypeHolder:SetPoint("TOPLEFT", CAT_COL2, glowRowY)
+            catGlowTypeHolder:SetPoint("LEFT", catPetGlowHolder.checkbox, "RIGHT", 40, 0)
 
             local catUseCustomColorHolder = Components.Checkbox(appFrame, {
                 label = "Color",
@@ -1950,15 +1934,32 @@ local function CreateOptionsPanel()
                     BR.Config.Set("categorySettings." .. category .. ".glowSize", val)
                 end,
             })
-            catGlowSizeHolder:SetPoint("TOPLEFT", CAT_COL2, glowRowY - 24)
+            catGlowSizeHolder:SetPoint("LEFT", catGlowTypeHolder, "RIGHT", 8, 0)
             catUseCustomColorHolder:SetPoint("LEFT", catGlowSizeHolder, "RIGHT", 3, 0)
             catGlowColorHolder:SetPoint("LEFT", catUseCustomColorHolder.label, "RIGHT", 2, 0)
 
-            gridHeight = catGrid.height + 48
+            gridHeight = catGrid.height + 24
         else
             local function isGlowEnabled()
                 return isCustomAppearanceEnabled() and getCatOwnValue("showExpirationGlow", true) ~= false
             end
+
+            local catGlowThresholdHolder = Components.Slider(appFrame, {
+                min = 0,
+                max = 45,
+                step = 5,
+                formatValue = function(val)
+                    return val == 0 and "Off" or (val .. " min")
+                end,
+                get = function()
+                    return getCatOwnValue("expirationThreshold", 15)
+                end,
+                enabled = isCustomAppearanceEnabled,
+                onChange = function(val)
+                    BR.Config.Set("categorySettings." .. category .. ".expirationThreshold", val)
+                end,
+            })
+            catGlowThresholdHolder:SetPoint("TOPLEFT", 0, glowRowY)
 
             local catGlowCheckHolder = Components.Checkbox(appFrame, {
                 label = "Glow",
@@ -1971,22 +1972,7 @@ local function CreateOptionsPanel()
                     Components.RefreshAll()
                 end,
             })
-            catGlowCheckHolder:SetPoint("TOPLEFT", 0, glowRowY)
-
-            local catGlowThresholdHolder = Components.Slider(appFrame, {
-                min = 1,
-                max = 45,
-                step = 5,
-                suffix = " min",
-                get = function()
-                    return getCatOwnValue("expirationThreshold", 15)
-                end,
-                enabled = isGlowEnabled,
-                onChange = function(val)
-                    BR.Config.Set("categorySettings." .. category .. ".expirationThreshold", val)
-                end,
-            })
-            catGlowThresholdHolder:SetPoint("LEFT", catGlowCheckHolder.checkbox, "RIGHT", 40, 0)
+            catGlowCheckHolder:SetPoint("TOPLEFT", 0, glowRowY - 24)
 
             local catGlowTypeOptions = {}
             for gi, gt in ipairs(GlowTypes) do
@@ -2006,7 +1992,7 @@ local function CreateOptionsPanel()
                     BR.Config.Set("categorySettings." .. category .. ".glowType", val)
                 end,
             }, "BuffReminders_" .. category .. "_GlowTypeDropdown")
-            catGlowTypeHolder:SetPoint("TOPLEFT", CAT_COL2, glowRowY)
+            catGlowTypeHolder:SetPoint("LEFT", catGlowCheckHolder.checkbox, "RIGHT", 40, 0)
 
             local catUseCustomColorHolder = Components.Checkbox(appFrame, {
                 label = "Color",
@@ -2049,20 +2035,7 @@ local function CreateOptionsPanel()
                     BR.Config.Set("categorySettings." .. category .. ".glowSize", val)
                 end,
             })
-
-            local catGlowWhenMissingHolder = Components.Checkbox(appFrame, {
-                label = "Also when missing",
-                tooltip = "Show glow on buff icons that are completely missing, not just expiring.",
-                get = function()
-                    return getCatOwnValue("glowWhenMissing", true) ~= false
-                end,
-                enabled = isGlowEnabled,
-                onChange = function(checked)
-                    BR.Config.Set("categorySettings." .. category .. ".glowWhenMissing", checked)
-                end,
-            })
-            catGlowWhenMissingHolder:SetPoint("TOPLEFT", 20, glowRowY - 24)
-            catGlowSizeHolder:SetPoint("TOPLEFT", CAT_COL2, glowRowY - 24)
+            catGlowSizeHolder:SetPoint("LEFT", catGlowTypeHolder, "RIGHT", 8, 0)
             catUseCustomColorHolder:SetPoint("LEFT", catGlowSizeHolder, "RIGHT", 3, 0)
             catGlowColorHolder:SetPoint("LEFT", catUseCustomColorHolder.label, "RIGHT", 2, 0)
 

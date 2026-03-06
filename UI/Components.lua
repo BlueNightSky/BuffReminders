@@ -223,6 +223,7 @@ end
 ---@field get? fun(): number Getter for initial value and refresh (preferred over value)
 ---@field enabled? fun(): boolean Getter for enabled state, evaluated on Refresh()
 ---@field suffix? string Value suffix (e.g., "px", "%")
+---@field formatValue? fun(val: number): string Custom value formatter (overrides suffix)
 ---@field onChange fun(val: number) Callback when value changes
 ---@field tooltip? string|{title: string, desc?: string} Tooltip shown on hover (string or {title, desc} table)
 ---@field labelWidth? number Width of label (default 70)
@@ -312,6 +313,13 @@ function Components.Slider(parent, config)
     local sliderWidth = config.sliderWidth or 100
     local step = config.step or 1
     local suffix = config.suffix or ""
+    local formatValue = config.formatValue
+    local function displayText(val)
+        if formatValue then
+            return formatValue(val)
+        end
+        return floor(val) .. suffix
+    end
     local TRACK_HEIGHT = 4
     local THUMB_WIDTH = 8
     local THUMB_HEIGHT = 14
@@ -375,7 +383,7 @@ function Components.Slider(parent, config)
     local valueText = valueBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     valueText:SetAllPoints()
     valueText:SetJustifyH("LEFT")
-    valueText:SetText(floor(currentValue) .. suffix)
+    valueText:SetText(displayText(currentValue))
     holder.valueText = valueText
 
     local function ValueToPosition(val)
@@ -451,7 +459,7 @@ function Components.Slider(parent, config)
             local newVal = PositionToValue(localX)
             if newVal ~= currentValue then
                 currentValue = newVal
-                valueText:SetText(floor(currentValue) .. suffix)
+                valueText:SetText(displayText(currentValue))
                 UpdateThumbPosition()
                 config.onChange(floor(currentValue))
             end
@@ -468,7 +476,7 @@ function Components.Slider(parent, config)
             local localX = (mouseX - frameLeft) / scale - THUMB_WIDTH / 2
             local newVal = PositionToValue(localX)
             currentValue = newVal
-            valueText:SetText(floor(currentValue) .. suffix)
+            valueText:SetText(displayText(currentValue))
             UpdateVisual()
             config.onChange(floor(currentValue))
             isDragging = true
@@ -495,7 +503,7 @@ function Components.Slider(parent, config)
         if num then
             num = max(config.min, min(config.max, num))
             currentValue = num
-            valueText:SetText(floor(currentValue) .. suffix)
+            valueText:SetText(displayText(currentValue))
             UpdateVisual()
             config.onChange(floor(currentValue))
         end
@@ -545,7 +553,7 @@ function Components.Slider(parent, config)
             end
             newVal = max(config.min, min(config.max, newVal))
             currentValue = newVal
-            valueText:SetText(floor(currentValue) .. suffix)
+            valueText:SetText(displayText(currentValue))
             UpdateVisual()
             config.onChange(floor(currentValue))
         end
@@ -593,7 +601,7 @@ function Components.Slider(parent, config)
     -- Public methods
     function holder:SetValue(val)
         currentValue = val
-        valueText:SetText(floor(currentValue) .. suffix)
+        valueText:SetText(displayText(currentValue))
         UpdateVisual()
     end
 
@@ -618,7 +626,7 @@ function Components.Slider(parent, config)
     function holder:Refresh()
         if config.get then
             currentValue = config.get()
-            valueText:SetText(floor(currentValue) .. suffix)
+            valueText:SetText(displayText(currentValue))
             UpdateVisual()
         end
         if config.enabled then
