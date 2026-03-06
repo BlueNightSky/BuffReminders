@@ -2832,7 +2832,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 23
+        local DB_VERSION = 24
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3364,6 +3364,21 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                     end
                 end
             end,
+
+            -- [24] Remove glowWhenMissing (glow is now all-or-nothing) and stale showExpirationReminder
+            [24] = function()
+                if db.defaults then
+                    db.defaults.glowWhenMissing = nil
+                    db.defaults.showExpirationReminder = nil
+                end
+                for _, cat in ipairs(CATEGORIES) do
+                    local catSettings = db.categorySettings and db.categorySettings[cat]
+                    if catSettings then
+                        catSettings.glowWhenMissing = nil
+                        catSettings.showExpirationReminder = nil
+                    end
+                end
+            end,
         }
 
         -- Run pending migrations
@@ -3392,20 +3407,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         -- so users get the auto behavior instead of a hardcoded 12.
         if db.defaults and db.defaults.textSize == 12 then
             db.defaults.textSize = nil
-        end
-
-        -- Migration: glowWhenMissing removed (glow is now all-or-nothing).
-        -- Clean up the old key from defaults and per-category settings.
-        if db.defaults then
-            db.defaults.glowWhenMissing = nil
-            db.defaults.showExpirationReminder = nil
-        end
-        for _, cat in ipairs(CATEGORIES) do
-            local catSettings = db.categorySettings and db.categorySettings[cat]
-            if catSettings then
-                catSettings.glowWhenMissing = nil
-                catSettings.showExpirationReminder = nil
-            end
         end
 
         -- Initialize custom buffs storage and populate BUFF_TABLES.custom
