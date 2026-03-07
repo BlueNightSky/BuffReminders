@@ -123,7 +123,7 @@ local function CreateOptionsPanel()
 
     -- Forward declarations for banner system
     local UpdateBannerLayout
-    local masqueBanner, readyCheckBanner
+    local masqueBanner
 
     -- Track all EditBoxes so we can clear focus when panel hides
     local panelEditBoxes = {}
@@ -281,7 +281,6 @@ local function CreateOptionsPanel()
         end
         if masqueBanner then
             masqueBanner:Refresh()
-            readyCheckBanner:Refresh()
             UpdateBannerLayout()
         end
     end
@@ -332,7 +331,6 @@ local function CreateOptionsPanel()
     -- ========== BANNERS ==========
     local BANNER_HEIGHT = 28
     local BANNER_TOP_GAP = 6
-    local BANNER_BETWEEN_GAP = 4
     local BANNER_BOTTOM_GAP = 0
 
     masqueBanner = Components.Banner(panel, {
@@ -344,14 +342,6 @@ local function CreateOptionsPanel()
         end,
     })
 
-    readyCheckBanner = Components.Banner(panel, {
-        text = '"Show only on ready check" moved to per-category settings',
-        color = "orange",
-        visible = function()
-            return activeTabName == "settings"
-        end,
-    })
-
     UpdateBannerLayout = function()
         local bannerY = -30 - TAB_HEIGHT - BANNER_TOP_GAP
         local bannerOffset = 0
@@ -360,18 +350,7 @@ local function CreateOptionsPanel()
             masqueBanner:ClearAllPoints()
             masqueBanner:SetPoint("TOPLEFT", panel, "TOPLEFT", COL_PADDING, bannerY)
             masqueBanner:SetPoint("RIGHT", panel, "RIGHT", -COL_PADDING, 0)
-            bannerY = bannerY - BANNER_HEIGHT - BANNER_BETWEEN_GAP
-            bannerOffset = bannerOffset + BANNER_HEIGHT + BANNER_BETWEEN_GAP
-        end
-
-        if readyCheckBanner:IsShown() then
-            readyCheckBanner:ClearAllPoints()
-            readyCheckBanner:SetPoint("TOPLEFT", panel, "TOPLEFT", COL_PADDING, bannerY)
-            readyCheckBanner:SetPoint("RIGHT", panel, "RIGHT", -COL_PADDING, 0)
             bannerOffset = bannerOffset + BANNER_HEIGHT + BANNER_BOTTOM_GAP
-        elseif bannerOffset > 0 then
-            -- Replace the between-gap with a bottom-gap after the last visible banner
-            bannerOffset = bannerOffset - BANNER_BETWEEN_GAP + BANNER_BOTTOM_GAP
         end
 
         local newTop = CONTENT_TOP - bannerOffset
