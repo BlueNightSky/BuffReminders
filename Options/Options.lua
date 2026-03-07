@@ -2195,6 +2195,22 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(vehicleHolder, nil, COMPONENT_GAP)
 
+    local mountedHolder = Components.Checkbox(settingsContent, {
+        label = "Hide while mounted",
+        tooltip = {
+            title = "Hide while mounted",
+            desc = "Hide all buff reminders while mounted. Overrides the per-category pet mount hiding setting",
+        },
+        get = function()
+            return BR.profile.hideWhileMounted == true
+        end,
+        onChange = function(checked)
+            BR.profile.hideWhileMounted = checked
+            UpdateDisplay()
+        end,
+    })
+    setLayout:Add(mountedHolder, nil, COMPONENT_GAP)
+
     local trackingModeHolder = Components.Dropdown(settingsContent, {
         label = "Buff tracking",
         width = 200,

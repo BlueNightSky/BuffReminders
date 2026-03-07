@@ -253,6 +253,7 @@ local defaults = {
     buffTrackingMode = "all",
     hidePetWhileMounted = true,
     hideAllInVehicle = false,
+    hideWhileMounted = false,
     petPassiveOnlyInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
@@ -2157,6 +2158,11 @@ UpdateDisplay = function()
         end
 
         if db.hideAllInVehicle and BR.BuffState.GetInVehicle() then
+            HideAllDisplayFrames()
+            return
+        end
+
+        if db.hideWhileMounted and IsMounted() then
             HideAllDisplayFrames()
             return
         end
