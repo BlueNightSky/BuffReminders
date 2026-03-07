@@ -564,8 +564,8 @@ local function IsCategoryVisibleForContent(category)
     if diffKey then
         local diffDbKey = CONTENT_DIFF_DB_KEYS[contentType]
         local diffTable = diffDbKey and visibility[diffDbKey]
-        if diffTable then
-            return diffTable[diffKey] ~= false
+        if diffTable and diffTable[diffKey] == false then
+            return false
         end
     end
     -- Per-category ready check filter
@@ -598,8 +598,8 @@ local function IsCustomBuffVisibleForContent(buff)
     if diffKey then
         local diffDbKey = CONTENT_DIFF_DB_KEYS[contentType]
         local diffTable = diffDbKey and lc[diffDbKey]
-        if diffTable then
-            return diffTable[diffKey] ~= false
+        if diffTable and diffTable[diffKey] == false then
+            return false
         end
     end
 
