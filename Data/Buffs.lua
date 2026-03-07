@@ -71,6 +71,7 @@ local min = math.min
 ---@field iconByRole? table<RoleType, number>
 ---@field infoTooltip? string
 ---@field customCheck? fun(): boolean?
+---@field getPetActions? fun(): PetAction[]?  -- Override pet actions (e.g., wrong pet → Felguard only)
 
 ---@class ConsumableBuff
 ---@field spellID? SpellID
@@ -561,6 +562,26 @@ BR.BUFF_TABLES = {
             groupId = "pets",
             customCheck = function()
                 return not UnitExists("pet")
+            end,
+        },
+        {
+            key = "warlockWrongPet",
+            name = "Wrong Demon",
+            class = "WARLOCK",
+            missingText = "WRONG\nPET",
+            displayIcon = 136216, -- Felguard icon
+            excludeSpellID = 108503, -- Grimoire of Sacrifice: pet intentionally sacrificed
+            requireSpecId = 266, -- Demonology only
+            groupId = "pets",
+            customCheck = function()
+                if not UnitExists("pet") then
+                    return false
+                end
+                local name, familyID = UnitCreatureFamily("pet")
+                return familyID ~= 29 and name ~= "Felguard"
+            end,
+            getPetActions = function()
+                return BR.PetHelpers.GetFelguardAction()
             end,
         },
         {

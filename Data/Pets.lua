@@ -170,6 +170,29 @@ local function BuildSingleAction(spellID)
     }
 end
 
+---Build a single Felguard summon action for "wrong pet" click-to-cast
+---@return PetAction[]?
+local function BuildFelguardAction()
+    local spellID = 30146
+    if not IsPlayerSpell(spellID) then
+        return nil
+    end
+    local info = C_Spell.GetSpellInfo(spellID)
+    if not info then
+        return nil
+    end
+    return {
+        {
+            key = "pet_action_" .. spellID,
+            spellID = spellID,
+            spellName = info.name,
+            icon = info.iconID,
+            label = "Felguard",
+            sortOrder = 1,
+        },
+    }
+end
+
 -- Cached pet actions (rebuilt on spec/talent/stable changes, not every refresh)
 local cachedActions = nil
 local cacheValid = false
@@ -209,5 +232,6 @@ end
 BR.PetHelpers = {
     REVIVE_PET_ID = REVIVE_PET,
     GetPetActions = GetPetActions,
+    GetFelguardAction = BuildFelguardAction,
     InvalidatePetActions = InvalidatePetActions,
 }

@@ -74,6 +74,7 @@ read_globals = {
 	"UnitAffectingCombat",
 	"UnitCanAssist",
 	"UnitClass",
+	"UnitCreatureFamily",
 	"UnitExists",
 	"UnitGroupRolesAssigned",
 	"UnitIsConnected",
