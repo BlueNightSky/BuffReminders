@@ -667,6 +667,7 @@ BR.BUFF_TABLES = {
                 1235108, -- Flask of the Magisters (Mastery)
                 1235110, -- Flask of the Blood Knights (Haste)
                 1235111, -- Flask of the Shattered Sun (Critical Strike)
+                1239355, -- Vicious Thalassian Flask of Honor
             },
             displaySpells = {
                 -- Show only TWW flask icons in UI
