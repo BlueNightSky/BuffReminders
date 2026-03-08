@@ -61,6 +61,10 @@ local playerClass = nil
 -- Ready check state (set via SetReadyCheckState)
 local inReadyCheck = false
 
+-- Instance entry state (set via SetInstanceEntryState)
+-- Briefly shows buffs with showOnInstanceEntry when zoning into a dungeon/raid
+local inInstanceEntry = false
+
 -- Vehicle state (set via SetInVehicle)
 local inVehicle = false
 
@@ -1138,12 +1142,16 @@ local function PassesPreChecks(buff, presentClasses, db)
         return false
     end
 
-    -- Ready check only (can be overridden per-buff via readyCheckOnlyOverrides)
-    if buff.readyCheckOnly and not inReadyCheck then
-        local overrides = db.readyCheckOnlyOverrides
-        local settingKey = buff.groupId or buff.key
-        if not overrides or overrides[settingKey] ~= false then
-            return false
+    -- Visibility gates: instance entry and ready check are independent
+    if
+        not (buff.showOnInstanceEntry and inInstanceEntry and (not buff.casterClass or buff.casterClass == playerClass))
+    then
+        if buff.readyCheckOnly and not inReadyCheck then
+            local overrides = db.readyCheckOnlyOverrides
+            local settingKey = buff.groupId or buff.key
+            if not overrides or overrides[settingKey] ~= false then
+                return false
+            end
         end
     end
 
@@ -1350,13 +1358,16 @@ function BuffState.Refresh()
             HasCasterForBuff(buff.class, buff.levelRequired),
             buff.castOnOthers
         )
+        local instanceEntryOk = buff.showOnInstanceEntry
+            and inInstanceEntry
+            and (not buff.casterClass or buff.casterClass == playerClass)
         local readyCheckOk = not buff.readyCheckOnly or inReadyCheck
-        if not readyCheckOk then
+        if not readyCheckOk and not instanceEntryOk then
             local overrides = db.readyCheckOnlyOverrides
             local overrideKey = buff.groupId or buff.key
             readyCheckOk = overrides and overrides[overrideKey] == false
         end
-        local showBuff = presenceVisible and readyCheckOk and scope.show
+        local showBuff = presenceVisible and (readyCheckOk or instanceEntryOk) and scope.show
         local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
         if (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet) and IsBuffEnabled(buff.key) and showBuff then
             if useGlowDet then
@@ -1525,7 +1536,8 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "consumable", i)
         local settingKey = buff.groupId or buff.key
 
-        local hasCaster = not buff.class or HasCasterForBuff(buff.class, buff.levelRequired)
+        local requiredClass = buff.class or buff.casterClass
+        local hasCaster = not requiredClass or HasCasterForBuff(requiredClass, buff.levelRequired)
         local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
         if
             (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet)
@@ -1674,6 +1686,23 @@ end
 ---@return boolean
 function BuffState.GetReadyCheckState()
     return inReadyCheck
+end
+
+---Set the instance entry state (briefly shows showOnInstanceEntry buffs)
+---@param state boolean
+function BuffState.SetInstanceEntryState(state)
+    inInstanceEntry = state
+end
+
+---Check if the current zone qualifies for instance entry triggers
+---(dungeon or raid, but not M+ keystones)
+---@return boolean
+function BuffState.ShouldTriggerInstanceEntry()
+    local contentType = GetCurrentContentType()
+    if contentType ~= "dungeon" and contentType ~= "raid" then
+        return false
+    end
+    return GetCurrentDifficultyKey() ~= "mythicPlus"
 end
 
 ---Set the vehicle state

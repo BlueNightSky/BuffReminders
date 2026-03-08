@@ -407,6 +407,7 @@ local mainFrame
 local buffFrames = {}
 local updateTicker
 local readyCheckTimer = nil
+local instanceEntryTimer = nil
 local testMode = false
 local eventFrame -- forward declaration; created later in file, referenced by StartUpdates
 
@@ -3547,6 +3548,28 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
         end
         -- Delayed update to catch glow events that fire after reload
         C_Timer.After(0.5, SetDirty)
+        -- Show showOnInstanceEntry buffs briefly when entering a dungeon/raid (not M+)
+        C_Timer.After(1, function()
+            if BR.BuffState.ShouldTriggerInstanceEntry() then
+                if instanceEntryTimer then
+                    instanceEntryTimer:Cancel()
+                end
+                BR.BuffState.SetInstanceEntryState(true)
+                UpdateDisplay()
+                instanceEntryTimer = C_Timer.NewTimer(30, function()
+                    BR.BuffState.SetInstanceEntryState(false)
+                    instanceEntryTimer = nil
+                    UpdateDisplay()
+                end)
+            else
+                -- Clear instance entry state when leaving an instance
+                if instanceEntryTimer then
+                    instanceEntryTimer:Cancel()
+                    instanceEntryTimer = nil
+                end
+                BR.BuffState.SetInstanceEntryState(false)
+            end
+        end)
         -- Refresh custom buff icons after spell data is fully loaded (talent-modified icons)
         C_Timer.After(1.5, function()
             for key, def in pairs(BR.profile.customBuffs or {}) do

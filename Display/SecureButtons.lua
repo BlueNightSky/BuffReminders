@@ -11,6 +11,7 @@ local _, BR = ...
 local floor, max, min = math.floor, math.max, math.min
 local tsort = table.sort
 
+local _, playerClass = UnitClass("player")
 local GetCategorySettings = BR.Helpers.GetCategorySettings
 local IsCategorySplit = BR.Helpers.IsCategorySplit
 
@@ -960,7 +961,11 @@ local function UpdateActionButtons(category)
                             mainBtn:SetAttribute("item", "item:" .. item.itemID)
                         end
                         mainBtn:EnableMouse(true)
-                    elseif frame.buffDef and frame.buffDef.clickMacro then
+                    elseif
+                        frame.buffDef
+                        and frame.buffDef.clickMacro
+                        and (not frame.buffDef.casterClass or frame.buffDef.casterClass == playerClass)
+                    then
                         -- No consumable in bags but has clickMacro — cast the creation spell
                         local castableID = frame.buffDef.castSpellID or frame.buffDef.spellID
                         mainBtn._br_has_action = true
@@ -970,7 +975,11 @@ local function UpdateActionButtons(category)
                         mainBtn:SetAttribute("type", "macro")
                         mainBtn:SetAttribute("macrotext", frame.buffDef.clickMacro(castableID))
                         mainBtn:EnableMouse(true)
-                    elseif frame.buffDef and frame.buffDef.castSpellID then
+                    elseif
+                        frame.buffDef
+                        and frame.buffDef.castSpellID
+                        and (not frame.buffDef.casterClass or frame.buffDef.casterClass == playerClass)
+                    then
                         -- No consumable in bags but has castSpellID — cast the creation spell
                         mainBtn._br_has_action = true
                         mainBtn.itemID = nil

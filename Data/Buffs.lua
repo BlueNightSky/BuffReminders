@@ -34,6 +34,7 @@ local min = math.min
 ---@field infoTooltip? string
 ---@field noExpirationGlow? boolean
 ---@field readyCheckOnly? boolean Only show during ready checks
+---@field showOnInstanceEntry? boolean Also show when entering an instance (not M+)
 ---@field castOnOthers? boolean Buff exists on the target, not the caster (e.g., Soulstone)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 
@@ -90,6 +91,8 @@ local min = math.min
 ---@field displayIcon? number|number[] Icon texture ID(s) to use instead of spell icon
 ---@field itemID? number|number[] Check if player has this item in inventory
 ---@field readyCheckOnly? boolean Only show during ready checks
+---@field showOnInstanceEntry? boolean Also show when entering an instance (not M+)
+---@field casterClass? ClassName Require this class in group, but show reminder to everyone
 ---@field infoTooltip? string Tooltip text shown on hover (pipe-separated: title|description)
 ---@field visibilityCondition? fun(): boolean Custom function that gates visibility (return false to hide)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
@@ -747,19 +750,20 @@ BR.BUFF_TABLES = {
                 return BR.BuffState.HasOffHandWeapon()
             end,
         },
-        -- Healthstone (ready check only - checks inventory)
+        -- Healthstone (shows on ready check + instance entry - checks inventory)
         {
             itemID = { 5512, 224464 }, -- Healthstone, Demonic Healthstone
             castSpellID = 29893, -- Create Soulwell
             key = "healthstone",
             name = "Healthstone",
-            class = "WARLOCK",
+            casterClass = "WARLOCK",
             missingText = "NO\nSTONE",
             groupId = "healthstone",
             displayIcon = 538745, -- Healthstone icon
             readyCheckOnly = true,
+            showOnInstanceEntry = true,
             clickMacro = function()
-                local spellID = GetNumGroupMembers() > 0 and 29893 or 6201
+                local spellID = (GetNumGroupMembers() > 0 and IsInInstance()) and 29893 or 6201
                 local name = BR.GetSpellName(spellID)
                 return "/cast " .. (name or "")
             end,
