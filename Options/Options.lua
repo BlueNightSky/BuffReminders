@@ -1205,6 +1205,25 @@ local function CreateOptionsPanel()
             })
             catLayout:Add(passiveCombatHolder, nil, COMPONENT_GAP)
 
+            local felDomHolder = Components.Checkbox(catContent, {
+                label = "Use Fel Domination before summoning",
+                get = function()
+                    return BR.Config.Get("defaults.useFelDomination", false)
+                end,
+                tooltip = {
+                    title = "Fel Domination",
+                    desc = "Automatically cast Fel Domination before summoning a demon via click-to-cast. If Fel Domination is on cooldown, the summon proceeds normally. Requires the Fel Domination talent.",
+                },
+                enabled = function()
+                    local _, class = UnitClass("player")
+                    return class == "WARLOCK"
+                end,
+                onChange = function(checked)
+                    BR.Config.Set("defaults.useFelDomination", checked)
+                end,
+            })
+            catLayout:Add(felDomHolder, nil, COMPONENT_GAP)
+
             local updatePetDisplayModePreview -- forward declaration for preview update
             local petDisplayModeHolder = Components.Dropdown(catContent, {
                 label = "Pet display",

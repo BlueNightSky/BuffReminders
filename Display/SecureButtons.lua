@@ -36,6 +36,16 @@ local function GetCastableSpellID(spellIDs)
     return nil
 end
 
+local FEL_DOMINATION_ID = 333889
+
+local function GetFelDomPetMacro(petSpellID)
+    local spellName = C_Spell.GetSpellName(petSpellID)
+    if not spellName then
+        return nil
+    end
+    return "/cast Fel Domination\n/cast " .. spellName
+end
+
 -- Pre-filter a buff's spell by talent/spec requirements, then find a castable spell ID.
 -- Checks excludeSpellID, requiresSpellID, and requireSpecId before delegating
 -- to GetCastableSpellID. Returns nil if the buff is filtered out or no spell is castable.
@@ -1076,6 +1086,23 @@ local function UpdateActionButtons(category)
                             overlay._br_clickMacroSpellID = castableID
                             overlay:SetAttribute("type", "macro")
                             overlay:SetAttribute("macrotext", frame.buffDef.clickMacro(castableID))
+                        elseif
+                            frame._br_pet_spell
+                            and (db.defaults or {}).useFelDomination
+                            and IsPlayerSpell(FEL_DOMINATION_ID)
+                        then
+                            local macro = GetFelDomPetMacro(castableID)
+                            if macro then
+                                overlay._br_clickMacroFn = nil
+                                overlay._br_clickMacroSpellID = nil
+                                overlay:SetAttribute("type", "macro")
+                                overlay:SetAttribute("macrotext", macro)
+                            else
+                                overlay._br_clickMacroFn = nil
+                                overlay._br_clickMacroSpellID = nil
+                                overlay:SetAttribute("type", "spell")
+                                overlay:SetAttribute("spell", castableID)
+                            end
                         else
                             overlay._br_clickMacroFn = nil
                             overlay._br_clickMacroSpellID = nil
@@ -1104,8 +1131,16 @@ local function UpdateActionButtons(category)
                                 if not extra.clickOverlay then
                                     CreateClickOverlay(extra)
                                 end
-                                extra.clickOverlay:SetAttribute("type", "spell")
-                                extra.clickOverlay:SetAttribute("spell", extra._br_pet_spell)
+                                local felMacro = (db.defaults or {}).useFelDomination
+                                    and IsPlayerSpell(FEL_DOMINATION_ID)
+                                    and GetFelDomPetMacro(extra._br_pet_spell)
+                                if felMacro then
+                                    extra.clickOverlay:SetAttribute("type", "macro")
+                                    extra.clickOverlay:SetAttribute("macrotext", felMacro)
+                                else
+                                    extra.clickOverlay:SetAttribute("type", "spell")
+                                    extra.clickOverlay:SetAttribute("spell", extra._br_pet_spell)
+                                end
                                 extra.clickOverlay:EnableMouse(true)
                                 if extra.clickOverlay.highlight then
                                     extra.clickOverlay.highlight:SetShown(frameHighlight)

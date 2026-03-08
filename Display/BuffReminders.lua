@@ -295,6 +295,7 @@ local defaults = {
             DEATHKNIGHT = true,
             MAGE = true,
         },
+        useFelDomination = false,
     },
 
     ---@type CategoryVisibility
