@@ -49,7 +49,7 @@ local min = math.min
 ---@field displayIcon? number
 ---@field requireSpecId? number
 ---@field infoTooltip? string
----@field clickMacro? fun(spellID: number): string
+---@field clickMacro? fun(spellID: number?): string
 ---@field casterBuffId? number Check this buff on the caster instead of scanning group
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 
@@ -63,7 +63,7 @@ local min = math.min
 ---@field enchantID? number
 ---@field requiresBuffWithEnchant? boolean -- When true, require both enchant AND buff to be present (for Paladin Rites)
 ---@field castSpellID? number           -- Spell ID used for click-to-cast when different from spellID
----@field clickMacro? fun(spellID: number): string -- Macro text override for click-to-cast, receives castable spell ID
+---@field clickMacro? fun(spellID: number?): string -- Macro text override for click-to-cast, receives castable spell ID
 ---@field buffIdOverride? number|number[]
 ---@field requireSpecId? number        -- Only show if player's current spec matches (WoW spec ID)
 ---@field requiresSpellID? number
@@ -744,7 +744,7 @@ BR.BUFF_TABLES = {
         -- Healthstone (ready check only - checks inventory)
         {
             itemID = { 5512, 224464 }, -- Healthstone, Demonic Healthstone
-            castSpellID = 298393, -- Create Soulwell
+            castSpellID = 29893, -- Create Soulwell
             key = "healthstone",
             name = "Healthstone",
             class = "WARLOCK",
@@ -752,6 +752,11 @@ BR.BUFF_TABLES = {
             groupId = "healthstone",
             displayIcon = 538745, -- Healthstone icon
             readyCheckOnly = true,
+            clickMacro = function()
+                local spellID = GetNumGroupMembers() > 0 and 29893 or 6201
+                local name = C_Spell.GetSpellName(spellID)
+                return "/cast " .. (name or "")
+            end,
         },
     },
 }

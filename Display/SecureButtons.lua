@@ -955,6 +955,8 @@ local function UpdateActionButtons(category)
                         local item = actionItems[1]
                         mainBtn._br_has_action = true
                         mainBtn.itemID = item.itemID
+                        mainBtn._br_clickMacroFn = nil
+                        mainBtn._br_clickMacroSpellID = nil
                         if frame.key == "weaponBuff" or frame.key == "weaponBuffOH" then
                             local slot = frame.key == "weaponBuffOH" and 17 or 16
                             mainBtn:SetAttribute("type", "macro")
@@ -964,9 +966,30 @@ local function UpdateActionButtons(category)
                             mainBtn:SetAttribute("item", "item:" .. item.itemID)
                         end
                         mainBtn:EnableMouse(true)
+                    elseif frame.buffDef and frame.buffDef.clickMacro then
+                        -- No consumable in bags but has clickMacro — cast the creation spell
+                        local castableID = frame.buffDef.castSpellID or frame.buffDef.spellID
+                        mainBtn._br_has_action = true
+                        mainBtn.itemID = nil
+                        mainBtn._br_clickMacroFn = frame.buffDef.clickMacro
+                        mainBtn._br_clickMacroSpellID = castableID
+                        mainBtn:SetAttribute("type", "macro")
+                        mainBtn:SetAttribute("macrotext", frame.buffDef.clickMacro(castableID))
+                        mainBtn:EnableMouse(true)
+                    elseif frame.buffDef and frame.buffDef.castSpellID then
+                        -- No consumable in bags but has castSpellID — cast the creation spell
+                        mainBtn._br_has_action = true
+                        mainBtn.itemID = nil
+                        mainBtn._br_clickMacroFn = nil
+                        mainBtn._br_clickMacroSpellID = nil
+                        mainBtn:SetAttribute("type", "spell")
+                        mainBtn:SetAttribute("spell", frame.buffDef.castSpellID)
+                        mainBtn:EnableMouse(true)
                     else
                         mainBtn._br_has_action = false
                         mainBtn.itemID = nil
+                        mainBtn._br_clickMacroFn = nil
+                        mainBtn._br_clickMacroSpellID = nil
                         mainBtn:EnableMouse(false)
                     end
                     -- Update clickability on existing sub-icon buttons
