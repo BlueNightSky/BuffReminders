@@ -791,6 +791,13 @@ local DIRECTION_ANCHORS = {
 }
 BR.DIRECTION_ANCHORS = DIRECTION_ANCHORS
 
+local DIRECTION_LAYOUT = {
+    LEFT = { anchor = "RIGHT", xMult = -1, yMult = 0 },
+    RIGHT = { anchor = "LEFT", xMult = 1, yMult = 0 },
+    UP = { anchor = "BOTTOM", xMult = 0, yMult = 1 },
+    DOWN = { anchor = "TOP", xMult = 0, yMult = -1 },
+}
+
 -- Create a category frame for grouped display mode
 local function CreateCategoryFrame(category)
     local db = BR.profile
@@ -1049,18 +1056,13 @@ local function PositionFramesInContainer(container, frames, iconWidth, iconHeigh
         return
     end
 
+    local layout = DIRECTION_LAYOUT[direction]
     for i, frame in ipairs(frames) do
         frame:ClearAllPoints()
-        if direction == "LEFT" then
-            -- Grow left: first icon at right edge, subsequent icons to the left
-            frame:SetPoint("RIGHT", container, "RIGHT", -((i - 1) * (iconWidth + spacing)), 0)
-        elseif direction == "RIGHT" then
-            -- Grow right: first icon at left edge, subsequent icons to the right
-            frame:SetPoint("LEFT", container, "LEFT", (i - 1) * (iconWidth + spacing), 0)
-        elseif direction == "UP" then
-            frame:SetPoint("BOTTOM", container, "BOTTOM", 0, (i - 1) * (iconHeight + spacing))
-        elseif direction == "DOWN" then
-            frame:SetPoint("TOP", container, "TOP", 0, -((i - 1) * (iconHeight + spacing)))
+        if layout then
+            local isVertical = layout.yMult ~= 0
+            local step = (i - 1) * ((isVertical and iconHeight or iconWidth) + spacing)
+            frame:SetPoint(layout.anchor, container, layout.anchor, layout.xMult * step, layout.yMult * step)
         else -- CENTER (horizontal)
             local totalWidth = count * iconWidth + (count - 1) * spacing
             local startX = -totalWidth / 2 + iconWidth / 2
@@ -1131,6 +1133,7 @@ local function PositionFramesVariable(container, frames, widths, heights, spacin
     -- so smaller frames are automatically centered — no manual offset needed.
     local offset = 0
     local isVertical = direction == "UP" or direction == "DOWN"
+    local layout = DIRECTION_LAYOUT[direction]
     -- Hoist container width for CENTER mode (constant across iterations)
     local containerWidth = (direction == "CENTER") and container:GetWidth() or 0
 
@@ -1138,14 +1141,8 @@ local function PositionFramesVariable(container, frames, widths, heights, spacin
         local mainSize = isVertical and heights[i] or widths[i]
 
         frame:ClearAllPoints()
-        if direction == "LEFT" then
-            frame:SetPoint("RIGHT", container, "RIGHT", -offset, 0)
-        elseif direction == "RIGHT" then
-            frame:SetPoint("LEFT", container, "LEFT", offset, 0)
-        elseif direction == "UP" then
-            frame:SetPoint("BOTTOM", container, "BOTTOM", 0, offset)
-        elseif direction == "DOWN" then
-            frame:SetPoint("TOP", container, "TOP", 0, -offset)
+        if layout then
+            frame:SetPoint(layout.anchor, container, layout.anchor, layout.xMult * offset, layout.yMult * offset)
         else -- CENTER (horizontal)
             local startX = -containerWidth / 2 + offset
             frame:SetPoint("CENTER", container, "CENTER", startX + widths[i] / 2, 0)

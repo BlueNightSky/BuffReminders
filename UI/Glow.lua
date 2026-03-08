@@ -124,6 +124,31 @@ BR.Glow.Types = {
     { name = "Proc" },
 }
 
+local GLOW_START = {
+    function(f, color, key, size, xOff, yOff)
+        LCG.PixelGlow_Start(f, color, nil, nil, 10, size, xOff, yOff, false, key)
+    end,
+    function(f, color, key, size, xOff, yOff)
+        LCG.AutoCastGlow_Start(f, color, nil, nil, size / 2, xOff, yOff, key)
+    end,
+    function(f, color, key, size, xOff, yOff)
+        BR.Glow.PulsingBorderStart(f, key, color, size, xOff, yOff)
+    end,
+    function(f, color, key, _, xOff, yOff)
+        LCG.ProcGlow_Start(
+            f,
+            { color = color, key = key, duration = 1, startAnim = false, xOffset = xOff, yOffset = yOff }
+        )
+    end,
+}
+
+local GLOW_STOP = {
+    LCG.PixelGlow_Stop,
+    LCG.AutoCastGlow_Stop,
+    BR.Glow.PulsingBorderStop,
+    LCG.ProcGlow_Stop,
+}
+
 ---Start a glow by type index
 ---@param frame table
 ---@param typeIndex number 1=Pixel, 2=AutoCast, 3=Border, 4=Proc
@@ -136,21 +161,9 @@ function BR.Glow.Start(frame, typeIndex, color, key, size, xOffset, yOffset)
     size = size or 2
     xOffset = xOffset or 0
     yOffset = yOffset or 0
-    if typeIndex == 1 then
-        LCG.PixelGlow_Start(frame, color, nil, nil, 10, size, xOffset, yOffset, false, key)
-    elseif typeIndex == 2 then
-        LCG.AutoCastGlow_Start(frame, color, nil, nil, size / 2, xOffset, yOffset, key)
-    elseif typeIndex == 3 then
-        BR.Glow.PulsingBorderStart(frame, key, color, size, xOffset, yOffset)
-    elseif typeIndex == 4 then
-        LCG.ProcGlow_Start(frame, {
-            color = color,
-            key = key,
-            duration = 1,
-            startAnim = false,
-            xOffset = xOffset,
-            yOffset = yOffset,
-        })
+    local fn = GLOW_START[typeIndex]
+    if fn then
+        fn(frame, color, key, size, xOffset, yOffset)
     end
 end
 
@@ -159,14 +172,9 @@ end
 ---@param typeIndex number 1=Pixel, 2=AutoCast, 3=Border
 ---@param key string Must match the key used in Start
 function BR.Glow.Stop(frame, typeIndex, key)
-    if typeIndex == 1 then
-        LCG.PixelGlow_Stop(frame, key)
-    elseif typeIndex == 2 then
-        LCG.AutoCastGlow_Stop(frame, key)
-    elseif typeIndex == 3 then
-        BR.Glow.PulsingBorderStop(frame, key)
-    elseif typeIndex == 4 then
-        LCG.ProcGlow_Stop(frame, key)
+    local fn = GLOW_STOP[typeIndex]
+    if fn then
+        fn(frame, key)
     end
 end
 

@@ -105,6 +105,12 @@ local RAID_DIFFICULTY_KEYS = {
     [16] = "mythic", -- Mythic
 }
 
+-- Maps content type to its difficulty-key lookup table
+local CONTENT_DIFFICULTY_TABLES = {
+    dungeon = DUNGEON_DIFFICULTY_KEYS,
+    raid = RAID_DIFFICULTY_KEYS,
+}
+
 -- Maps content type to the DB key holding its difficulty sub-filter
 local CONTENT_DIFF_DB_KEYS = {
     scenario = "scenarioDifficulty",
@@ -520,14 +526,9 @@ local function GetCurrentDifficultyKey()
     end
     local difficultyID = select(3, GetInstanceInfo())
     local contentType = GetCurrentContentType()
-    if contentType == "dungeon" then
-        local key = DUNGEON_DIFFICULTY_KEYS[difficultyID]
-        if key then
-            cachedDifficultyKey = key
-        end
-        return key
-    elseif contentType == "raid" then
-        local key = RAID_DIFFICULTY_KEYS[difficultyID]
+    local diffTable = CONTENT_DIFFICULTY_TABLES[contentType]
+    if diffTable then
+        local key = diffTable[difficultyID]
         if key then
             cachedDifficultyKey = key
         end

@@ -197,6 +197,18 @@ end
 local cachedActions = nil
 local cacheValid = false
 
+-- Maps pet class to its action-list builder function
+local CLASS_PET_BUILDERS = {
+    HUNTER = BuildHunterActions,
+    WARLOCK = BuildWarlockActions,
+    DEATHKNIGHT = function()
+        return BuildSingleAction(46584)
+    end, -- Raise Dead
+    MAGE = function()
+        return BuildSingleAction(31687)
+    end, -- Summon Water Elemental
+}
+
 ---Build and cache the list of pet summon actions for the given class.
 ---Returns cached result on subsequent calls until invalidated.
 ---@param class ClassName
@@ -206,17 +218,8 @@ local function GetPetActions(class)
         return cachedActions
     end
 
-    if class == "HUNTER" then
-        cachedActions = BuildHunterActions()
-    elseif class == "WARLOCK" then
-        cachedActions = BuildWarlockActions()
-    elseif class == "DEATHKNIGHT" then
-        cachedActions = BuildSingleAction(46584) -- Raise Dead
-    elseif class == "MAGE" then
-        cachedActions = BuildSingleAction(31687) -- Summon Water Elemental
-    else
-        cachedActions = nil
-    end
+    local builder = CLASS_PET_BUILDERS[class]
+    cachedActions = builder and builder() or nil
 
     cacheValid = true
     return cachedActions
