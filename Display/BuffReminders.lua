@@ -874,14 +874,8 @@ local function UpdateIconStyling(frame, catSettings)
     end
 end
 
--- Map buff key → consumable category (used by display to detect consumable buffs with bag items)
-local BUFF_KEY_TO_CATEGORY = {
-    flask = "flask",
-    food = "food",
-    rune = "rune",
-    weaponBuff = "weapon",
-    weaponBuffOH = "weapon",
-}
+-- Map buff key → consumable category (derived from buff definitions in Data/Buffs.lua)
+local BUFF_KEY_TO_CATEGORY = BR.BUFF_KEY_TO_CATEGORY
 
 -- Create icon frame for a buff
 local function CreateBuffFrame(buff, category)

@@ -506,14 +506,8 @@ local function RefreshConsumableCache()
     end
 end
 
--- Map buff key → CONSUMABLE_ITEMS category key
-local BUFF_KEY_TO_CATEGORY = {
-    flask = "flask",
-    food = "food",
-    rune = "rune",
-    weaponBuff = "weapon",
-    weaponBuffOH = "weapon",
-}
+-- Map buff key → CONSUMABLE_ITEMS category key (derived from buff definitions in Data/Buffs.lua)
+local BUFF_KEY_TO_CATEGORY = BR.BUFF_KEY_TO_CATEGORY
 
 ---Get cached consumable items for a buff definition.
 ---@param buff table The buff definition table

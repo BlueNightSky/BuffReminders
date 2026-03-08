@@ -1050,16 +1050,13 @@ local function GetEatingExpirationTime()
 end
 
 ---Check if player is missing a consumable buff, weapon enchant, or inventory item (returns true if missing)
----@param spellIDs? SpellID
----@param buffIconID? number
----@param checkWeaponEnchant? boolean
----@param itemID? number|number[]
+---@param buff table Consumable buff definition
 ---@return boolean shouldShow
 ---@return number? remainingTime seconds remaining if buff is present and has a duration
-local function ShouldShowConsumableBuff(spellIDs, buffIconID, checkWeaponEnchant, checkWeaponEnchantOH, itemID)
+local function ShouldShowConsumableBuff(buff)
     -- Check buff auras by spell ID
-    if spellIDs then
-        local spellList = type(spellIDs) == "table" and spellIDs or { spellIDs }
+    if buff.spellID then
+        local spellList = type(buff.spellID) == "table" and buff.spellID or { buff.spellID }
         for _, id in ipairs(spellList) do
             local hasBuff, remaining = UnitHasBuff("player", id)
             if hasBuff then
@@ -1069,12 +1066,12 @@ local function ShouldShowConsumableBuff(spellIDs, buffIconID, checkWeaponEnchant
     end
 
     -- Check buff auras by icon ID (e.g., food buffs all use icon 136000)
-    if buffIconID then
+    if buff.buffIconID then
         local i = 1
         local auraData = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
         while auraData do
             local success, iconMatches = pcall(function()
-                return auraData.icon == buffIconID
+                return auraData.icon == buff.buffIconID
             end)
             if success and iconMatches then
                 local remaining = nil
@@ -1089,7 +1086,7 @@ local function ShouldShowConsumableBuff(spellIDs, buffIconID, checkWeaponEnchant
     end
 
     -- Check if any weapon enchant exists (oils, stones, shaman imbues, etc.)
-    if checkWeaponEnchant then
+    if buff.checkWeaponEnchant then
         if currentWeaponEnchants.hasMainHand then
             local remaining = currentWeaponEnchants.mainHandExpiration
                     and (currentWeaponEnchants.mainHandExpiration / 1000)
@@ -1099,7 +1096,7 @@ local function ShouldShowConsumableBuff(spellIDs, buffIconID, checkWeaponEnchant
     end
 
     -- Check if off-hand weapon enchant exists
-    if checkWeaponEnchantOH then
+    if buff.checkWeaponEnchantOH then
         if currentWeaponEnchants.hasOffHand then
             local remaining = currentWeaponEnchants.offHandExpiration
                     and (currentWeaponEnchants.offHandExpiration / 1000)
@@ -1109,8 +1106,8 @@ local function ShouldShowConsumableBuff(spellIDs, buffIconID, checkWeaponEnchant
     end
 
     -- Check inventory for item
-    if itemID then
-        local itemList = type(itemID) == "table" and itemID or { itemID }
+    if buff.itemID then
+        local itemList = type(buff.itemID) == "table" and buff.itemID or { buff.itemID }
         for _, id in ipairs(itemList) do
             local ok, count = pcall(C_Item.GetItemCount, id, false, true)
             if ok and count and count > 0 then
@@ -1120,7 +1117,13 @@ local function ShouldShowConsumableBuff(spellIDs, buffIconID, checkWeaponEnchant
     end
 
     -- If we have nothing to check, return false
-    if not spellIDs and not buffIconID and not checkWeaponEnchant and not checkWeaponEnchantOH and not itemID then
+    if
+        not buff.spellID
+        and not buff.buffIconID
+        and not buff.checkWeaponEnchant
+        and not buff.checkWeaponEnchantOH
+        and not buff.itemID
+    then
         return false, nil
     end
 
@@ -1544,13 +1547,7 @@ function BuffState.Refresh()
                     SetEntryMissing(entry, buff.missingText, consGlow)
                 end
             else
-                local shouldShow, remainingTime = ShouldShowConsumableBuff(
-                    buff.spellID,
-                    buff.buffIconID,
-                    buff.checkWeaponEnchant,
-                    buff.checkWeaponEnchantOH,
-                    buff.itemID
-                )
+                local shouldShow, remainingTime = ShouldShowConsumableBuff(buff)
                 if shouldShow then
                     SetEntryMissing(entry, buff.missingText, consGlow)
                 elseif not buff.noExpirationGlow and not hideExpiring then

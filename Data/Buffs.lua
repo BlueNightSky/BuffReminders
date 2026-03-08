@@ -93,6 +93,7 @@ local min = math.min
 ---@field infoTooltip? string Tooltip text shown on hover (pipe-separated: title|description)
 ---@field visibilityCondition? fun(): boolean Custom function that gates visibility (return false to hide)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
+---@field consumableCategory? string Category key in BR.CONSUMABLE_ITEMS for bag scanning (only set when items exist)
 
 ---@class BuffGroup
 ---@field displayName string
@@ -652,6 +653,7 @@ BR.BUFF_TABLES = {
             name = "Rune",
             missingText = "NO\nRUNE",
             groupId = "rune",
+            consumableCategory = "rune",
         },
         -- Flasks (The War Within + Midnight)
         {
@@ -681,6 +683,7 @@ BR.BUFF_TABLES = {
             name = "Flask",
             missingText = "NO\nFLASK",
             groupId = "flask",
+            consumableCategory = "flask",
         },
         -- Food (all expansions - detected by icon ID)
         {
@@ -689,6 +692,7 @@ BR.BUFF_TABLES = {
             name = "Food",
             missingText = "NO\nFOOD",
             groupId = "food",
+            consumableCategory = "food",
             displayIcon = 136000,
         },
         -- Delve Food (only when inside a delve with Brann or Valeera)
@@ -710,6 +714,7 @@ BR.BUFF_TABLES = {
             missingText = "NO\nWEAPON\nBUFF",
             groupId = "weaponBuff",
             displayIcon = { 609892, 3622195, 3622196 }, -- Oil, Whetstone, Weightstone/Razorstone
+            consumableCategory = "weapon",
             excludeIfSpellKnown = {
                 -- Shaman imbues
                 382021, -- Earthliving Weapon
@@ -728,6 +733,7 @@ BR.BUFF_TABLES = {
             missingText = "NO\nWEAPON\nBUFF",
             groupId = "weaponBuff",
             displayIcon = { 609892, 3622195, 3622196 }, -- Oil, Whetstone, Weightstone/Razorstone
+            consumableCategory = "weapon",
             excludeIfSpellKnown = {
                 -- Shaman imbues
                 382021, -- Earthliving Weapon
@@ -760,6 +766,15 @@ BR.BUFF_TABLES = {
         },
     },
 }
+
+-- Derive buff key → consumable category mapping from data
+local buffKeyToCategory = {}
+for _, buff in ipairs(BR.BUFF_TABLES.consumable) do
+    if buff.consumableCategory then
+        buffKeyToCategory[buff.key] = buff.consumableCategory
+    end
+end
+BR.BUFF_KEY_TO_CATEGORY = buffKeyToCategory
 
 ---@type table<string, BuffGroup>
 BR.BuffGroups = {
