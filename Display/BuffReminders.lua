@@ -719,7 +719,8 @@ end
 
 -- Forward declarations
 local UpdateDisplay, ToggleTestMode
-local UpdateFallbackDisplay, RenderPetEntries
+-- TODO: Blizzard will re-restrict aura APIs in PvP; uncomment fallback display when that happens
+-- local UpdateFallbackDisplay, RenderPetEntries
 local ResetLayoutSignatures
 
 -- Local alias for glow module
@@ -1497,104 +1498,105 @@ end
 
 -- Update the fallback display (shows tracked buffs via action bar glow during PvP/Arena)
 -- Shows glow-based frames + pet frames, then collects ALL visible frames for unified positioning
-UpdateFallbackDisplay = function()
-    if not mainFrame then
-        return
-    end
-
-    -- Show frames for any glowing spells (skip whenNotGlowing buffs — handled in second pass)
-    local seenKeys = {}
-    local GetPlayerSpecId = BR.StateHelpers.GetPlayerSpecId
-    for spellID, _ in pairs(glowingSpells) do
-        local entry = glowSpellToBuff[spellID]
-        if entry then
-            local buff = entry.buff
-            local mode = buff.glowMode or "whenGlowing"
-            if mode == "whenGlowing" and (not buff.class or buff.class == playerClass) and not seenKeys[buff.key] then
-                -- Skip targeted buffs when solo (they require a group target)
-                local skipSolo = entry.category == "targeted" and GetNumGroupMembers() == 0
-                -- Skip buffs requiring a specific spec
-                local skipSpec = buff.requireSpecId and GetPlayerSpecId() ~= buff.requireSpecId
-                if not skipSolo and not skipSpec then
-                    seenKeys[buff.key] = true
-                    local frame = buffFrames[buff.key]
-                    if frame and IsBuffEnabled(buff.key) then
-                        ShowMissingFrame(frame, buff.missingText)
-                    end
-                end
-            end
-        end
-    end
-
-    -- Second pass: show whenNotGlowing buffs where NONE of their spells are glowing
-    local invertedHasGlow = {}
-    for spellID, _ in pairs(glowingSpells) do
-        local entry = glowSpellToBuff[spellID]
-        if entry and (entry.buff.glowMode == "whenNotGlowing") then
-            invertedHasGlow[entry.buff.key] = true
-        end
-    end
-    for _, entry in pairs(glowSpellToBuff) do
-        local buff = entry.buff
-        if buff.glowMode == "whenNotGlowing" and not seenKeys[buff.key] and not invertedHasGlow[buff.key] then
-            seenKeys[buff.key] = true
-            if not buff.class or buff.class == playerClass then
-                local skipSpec = buff.requireSpecId and GetPlayerSpecId() ~= buff.requireSpecId
-                if not skipSpec then
-                    local frame = buffFrames[buff.key]
-                    if frame and IsBuffEnabled(buff.key) then
-                        ShowMissingFrame(frame, buff.missingText)
-                    end
-                end
-            end
-        end
-    end
-
-    -- Pet frames are non-secure and customCheck works in all contexts
-    BR.BuffState.Refresh()
-    RenderPetEntries()
-
-    -- Collect ALL visible frames (glow + pet + pet extra frames) for unified positioning
-    local shownByCategory = {}
-    local mainFrameBuffs = {}
-    for _, frame in pairs(buffFrames) do
-        if frame:IsShown() and frame.buffCategory then
-            local category = frame.buffCategory
-            if IsCategorySplit(category) then
-                if not shownByCategory[category] then
-                    shownByCategory[category] = {}
-                end
-                shownByCategory[category][#shownByCategory[category] + 1] = frame
-            else
-                mainFrameBuffs[#mainFrameBuffs + 1] = frame
-            end
-            -- Include expanded pet extra frames in the same list
-            if frame.extraFrames then
-                for _, extra in ipairs(frame.extraFrames) do
-                    if extra:IsShown() then
-                        if IsCategorySplit(category) then
-                            shownByCategory[category][#shownByCategory[category] + 1] = extra
-                        else
-                            mainFrameBuffs[#mainFrameBuffs + 1] = extra
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    if #mainFrameBuffs > 0 or next(shownByCategory) then
-        for category, frames in pairs(shownByCategory) do
-            PositionSplitCategory(category, frames)
-        end
-        if #mainFrameBuffs > 0 then
-            PositionMainContainer(mainFrameBuffs)
-        end
-        BR.Movers.UpdateAnchor()
-    else
-        HideAllDisplayFrames()
-    end
-end
+-- TODO: Blizzard will re-restrict aura APIs in PvP; uncomment when fallback display is needed again
+-- UpdateFallbackDisplay = function()
+--     if not mainFrame then
+--         return
+--     end
+--
+--     -- Show frames for any glowing spells (skip whenNotGlowing buffs — handled in second pass)
+--     local seenKeys = {}
+--     local GetPlayerSpecId = BR.StateHelpers.GetPlayerSpecId
+--     for spellID, _ in pairs(glowingSpells) do
+--         local entry = glowSpellToBuff[spellID]
+--         if entry then
+--             local buff = entry.buff
+--             local mode = buff.glowMode or "whenGlowing"
+--             if mode == "whenGlowing" and (not buff.class or buff.class == playerClass) and not seenKeys[buff.key] then
+--                 -- Skip targeted buffs when solo (they require a group target)
+--                 local skipSolo = entry.category == "targeted" and GetNumGroupMembers() == 0
+--                 -- Skip buffs requiring a specific spec
+--                 local skipSpec = buff.requireSpecId and GetPlayerSpecId() ~= buff.requireSpecId
+--                 if not skipSolo and not skipSpec then
+--                     seenKeys[buff.key] = true
+--                     local frame = buffFrames[buff.key]
+--                     if frame and IsBuffEnabled(buff.key) then
+--                         ShowMissingFrame(frame, buff.missingText)
+--                     end
+--                 end
+--             end
+--         end
+--     end
+--
+--     -- Second pass: show whenNotGlowing buffs where NONE of their spells are glowing
+--     local invertedHasGlow = {}
+--     for spellID, _ in pairs(glowingSpells) do
+--         local entry = glowSpellToBuff[spellID]
+--         if entry and (entry.buff.glowMode == "whenNotGlowing") then
+--             invertedHasGlow[entry.buff.key] = true
+--         end
+--     end
+--     for _, entry in pairs(glowSpellToBuff) do
+--         local buff = entry.buff
+--         if buff.glowMode == "whenNotGlowing" and not seenKeys[buff.key] and not invertedHasGlow[buff.key] then
+--             seenKeys[buff.key] = true
+--             if not buff.class or buff.class == playerClass then
+--                 local skipSpec = buff.requireSpecId and GetPlayerSpecId() ~= buff.requireSpecId
+--                 if not skipSpec then
+--                     local frame = buffFrames[buff.key]
+--                     if frame and IsBuffEnabled(buff.key) then
+--                         ShowMissingFrame(frame, buff.missingText)
+--                     end
+--                 end
+--             end
+--         end
+--     end
+--
+--     -- Pet frames are non-secure and customCheck works in all contexts
+--     BR.BuffState.Refresh()
+--     RenderPetEntries()
+--
+--     -- Collect ALL visible frames (glow + pet + pet extra frames) for unified positioning
+--     local shownByCategory = {}
+--     local mainFrameBuffs = {}
+--     for _, frame in pairs(buffFrames) do
+--         if frame:IsShown() and frame.buffCategory then
+--             local category = frame.buffCategory
+--             if IsCategorySplit(category) then
+--                 if not shownByCategory[category] then
+--                     shownByCategory[category] = {}
+--                 end
+--                 shownByCategory[category][#shownByCategory[category] + 1] = frame
+--             else
+--                 mainFrameBuffs[#mainFrameBuffs + 1] = frame
+--             end
+--             -- Include expanded pet extra frames in the same list
+--             if frame.extraFrames then
+--                 for _, extra in ipairs(frame.extraFrames) do
+--                     if extra:IsShown() then
+--                         if IsCategorySplit(category) then
+--                             shownByCategory[category][#shownByCategory[category] + 1] = extra
+--                         else
+--                             mainFrameBuffs[#mainFrameBuffs + 1] = extra
+--                         end
+--                     end
+--                 end
+--             end
+--         end
+--     end
+--
+--     if #mainFrameBuffs > 0 or next(shownByCategory) then
+--         for category, frames in pairs(shownByCategory) do
+--             PositionSplitCategory(category, frames)
+--         end
+--         if #mainFrameBuffs > 0 then
+--             PositionMainContainer(mainFrameBuffs)
+--         end
+--         BR.Movers.UpdateAnchor()
+--     else
+--         HideAllDisplayFrames()
+--     end
+-- end
 
 -- Eating icon texture ID (from State.lua, matches the eating channel aura icon)
 local EATING_ICON = BR.EATING_AURA_ICON
@@ -2089,24 +2091,25 @@ local function ApplyPetDisplayMode(frame, entry, frameList)
 end
 
 -- Render pet category entries (pet frames are non-secure and customCheck works in all contexts)
-RenderPetEntries = function()
-    local petEntries = BR.BuffState.visibleByCategory.pet
-    if not petEntries or #petEntries == 0 then
-        return
-    end
-    if not petEntries._sorted then
-        tsort(petEntries, function(a, b)
-            return a.sortOrder < b.sortOrder
-        end)
-    end
-    for _, entry in ipairs(petEntries) do
-        local frame = buffFrames[entry.key]
-        if frame then
-            RenderVisibleEntry(frame, entry)
-            ApplyPetDisplayMode(frame, entry)
-        end
-    end
-end
+-- TODO: Blizzard will re-restrict aura APIs in PvP; uncomment when fallback display is needed again
+-- RenderPetEntries = function()
+--     local petEntries = BR.BuffState.visibleByCategory.pet
+--     if not petEntries or #petEntries == 0 then
+--         return
+--     end
+--     if not petEntries._sorted then
+--         tsort(petEntries, function(a, b)
+--             return a.sortOrder < b.sortOrder
+--         end)
+--     end
+--     for _, entry in ipairs(petEntries) do
+--         local frame = buffFrames[entry.key]
+--         if frame then
+--             RenderVisibleEntry(frame, entry)
+--             ApplyPetDisplayMode(frame, entry)
+--         end
+--     end
+-- end
 
 -- Update the display
 UpdateDisplay = function()
@@ -2160,15 +2163,8 @@ UpdateDisplay = function()
             return
         end
 
-        -- PvP/Arena: still use fallback (not affected by Blizzard's non-secret change)
-        local _, instanceType = IsInInstance()
-        if instanceType == "pvp" or instanceType == "arena" then
-            HideAllDisplayFrames()
-            UpdateFallbackDisplay()
-            BR.SecureButtons.ScheduleSecureSync()
-            return
-        end
-        -- M+ and combat: fall through to normal display path (most tracked buffs are now non-secret)
+        -- PvP/Arena and M+: aura API is restricted but we use the normal display path
+        -- (State.lua treats PvP the same as M+ for aura restriction purposes)
 
         -- Refresh buff state
         BR.BuffState.Refresh()

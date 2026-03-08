@@ -90,6 +90,9 @@ local inCombat = false
 -- Content type cache (invalidated on PLAYER_ENTERING_WORLD)
 local cachedContentType = nil
 
+-- PvP instance flag (set alongside content type cache)
+local isPvPInstance = false
+
 -- Difficulty cache (invalidated alongside content type)
 local cachedDifficultyKey = nil
 
@@ -518,7 +521,11 @@ local function GetCurrentContentType()
     elseif instanceType == "scenario" then
         cachedContentType = "scenario"
     else
+        -- pvp and arena instance types map to "dungeon" for content visibility
         cachedContentType = "dungeon"
+        if instanceType == "pvp" or instanceType == "arena" then
+            isPvPInstance = true
+        end
     end
 
     return cachedContentType
@@ -1308,9 +1315,9 @@ function BuffState.Refresh()
     currentWeaponEnchants.offHandExpiration = offExp
 
     local trackingMode = db.buffTrackingMode
-    -- Aura API is restricted in combat/encounters (inCombat set by Display layer)
-    -- and during M+ keystones (always restricted regardless of combat state).
-    local isAuraRestricted = inCombat or GetCurrentDifficultyKey() == "mythicPlus"
+    -- Aura API is restricted in combat/encounters (inCombat set by Display layer),
+    -- during M+ keystones, and in PvP instances (always restricted regardless of combat state).
+    local isAuraRestricted = inCombat or GetCurrentDifficultyKey() == "mythicPlus" or isPvPInstance
     local hideExpiring = isAuraRestricted and db.hideExpiringInCombat ~= false
 
     -- Per-category glow/expiration settings (inherits from defaults via GetCategorySetting)
@@ -1702,7 +1709,7 @@ function BuffState.ShouldTriggerInstanceEntry()
     if contentType ~= "dungeon" and contentType ~= "raid" then
         return false
     end
-    return GetCurrentDifficultyKey() ~= "mythicPlus"
+    return GetCurrentDifficultyKey() ~= "mythicPlus" and not isPvPInstance
 end
 
 ---Set the vehicle state
@@ -1732,6 +1739,7 @@ end
 function BuffState.InvalidateContentTypeCache()
     cachedContentType = nil
     cachedDifficultyKey = nil
+    isPvPInstance = false
 end
 
 ---Invalidate spec ID cache (call on PLAYER_ENTERING_WORLD, PLAYER_SPECIALIZATION_CHANGED)
