@@ -42,9 +42,6 @@ end
 ---@param buff table The buff definition table
 ---@return number?
 local function GetActionSpellID(buff)
-    if buff.castOnOthers then
-        return nil
-    end
     if buff.excludeSpellID and IsPlayerSpell(buff.excludeSpellID) then
         return nil
     end
@@ -225,7 +222,7 @@ local function CreateClickOverlay(frame)
     overlay.highlight:SetColorTexture(1, 1, 1, 0.2)
     -- Tooltip: show last target name for targeted buffs, or item tooltip for consumables
     overlay:HookScript("OnEnter", function()
-        if frame.buffCategory == "targeted" and frame.buffDef then
+        if frame.buffDef and (frame.buffCategory == "targeted" or frame.buffDef.castOnOthers) then
             local name, class = BR.StateHelpers.GetLastTarget(frame.buffDef.key)
             if name then
                 ShowLastTargetTooltip(overlay, name, class)

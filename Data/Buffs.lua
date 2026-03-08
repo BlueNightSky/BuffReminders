@@ -217,6 +217,36 @@ BR.BUFF_TABLES = {
             readyCheckOnly = true,
             castOnOthers = true,
             noExpirationGlow = true,
+            clickMacro = function(spellID)
+                local name = C_Spell.GetSpellName(spellID)
+                -- Priority: sticky last target > first living healer > mouseover > target > self
+                local lastTarget = BR.StateHelpers and BR.StateHelpers.GetLastTarget("soulstone")
+                if lastTarget then
+                    return "/cast [@"
+                        .. lastTarget
+                        .. ",help,nodead][@mouseover,help,nodead][@target,help,nodead][@player] "
+                        .. name
+                end
+                local numMembers = GetNumGroupMembers()
+                if numMembers > 0 then
+                    local prefix = IsInRaid() and "raid" or "party"
+                    for i = 1, numMembers do
+                        local unitId = prefix .. i
+                        if UnitExists(unitId) and not UnitIsDeadOrGhost(unitId) then
+                            if UnitGroupRolesAssigned(unitId) == "HEALER" then
+                                local healerName = GetUnitName(unitId, true)
+                                if healerName then
+                                    return "/cast [@"
+                                        .. healerName
+                                        .. ",help,nodead][@mouseover,help,nodead][@target,help,nodead][@player] "
+                                        .. name
+                                end
+                            end
+                        end
+                    end
+                end
+                return "/cast [@mouseover,help,nodead][@target,help,nodead][@player] " .. name
+            end,
         },
     },
     ---@type TargetedBuff[]
@@ -713,6 +743,7 @@ BR.BUFF_TABLES = {
         -- Healthstone (ready check only - checks inventory)
         {
             itemID = { 5512, 224464 }, -- Healthstone, Demonic Healthstone
+            castSpellID = 298393, -- Create Soulwell
             key = "healthstone",
             name = "Healthstone",
             class = "WARLOCK",

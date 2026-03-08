@@ -731,14 +731,16 @@ end
 ---@param playerOnly? boolean Only check the player, not the group
 ---@return boolean hasBuff
 ---@return number? minRemaining
+---@return string? targetUnit First non-player unit that has the buff (for castOnOthers tracking)
 local function HasPresenceBuff(spellIDs, playerOnly)
     if playerOnly or #currentValidUnits <= 1 then
         local hasBuff, remaining = UnitHasBuff("player", spellIDs)
-        return hasBuff, remaining
+        return hasBuff, remaining, nil
     end
 
     local minRemaining = nil
     local found = false
+    local targetUnit = nil
 
     for _, data in ipairs(currentValidUnits) do
         -- Skip NPCs in content where they can't receive player buffs
@@ -746,18 +748,21 @@ local function HasPresenceBuff(spellIDs, playerOnly)
             local hasBuff, remaining = UnitHasBuff(data.unit, spellIDs)
             if hasBuff then
                 found = true
+                if not targetUnit and not UnitIsUnit(data.unit, "player") then
+                    targetUnit = data.unit
+                end
                 if remaining then
                     if not minRemaining or remaining < minRemaining then
                         minRemaining = remaining
                     end
                 else
-                    return true, nil -- no expiration, no need to keep scanning
+                    return true, nil, targetUnit -- no expiration, no need to keep scanning
                 end
             end
         end
     end
 
-    return found, minRemaining
+    return found, minRemaining, targetUnit
 end
 
 ---Check if player's buff is active on anyone in the group
@@ -1359,11 +1364,30 @@ function BuffState.Refresh()
                     SetEntryMissing(entry, buff.missingText, presGlow)
                 end
             else
-                local hasBuff, minRemaining = HasPresenceBuff(buff.spellID, scope.playerOnly)
+                local hasBuff, minRemaining, targetUnit = HasPresenceBuff(buff.spellID, scope.playerOnly)
                 if not hasBuff then
                     SetEntryMissing(entry, buff.missingText, presGlow)
                 elseif not buff.noExpirationGlow and not hideExpiring then
                     TrySetEntryExpiring(entry, minRemaining, presThreshold, presGlow)
+                end
+                -- Track who has castOnOthers buffs for sticky click-to-cast targeting
+                if buff.castOnOthers and hasBuff and not inCombat then
+                    if targetUnit then
+                        local tName = GetUnitName(targetUnit, true)
+                        if tName then
+                            local _, tClass = UnitClass(targetUnit)
+                            local existing = lastTargets[buff.key]
+                            if existing then
+                                existing.name = tName
+                                existing.class = tClass
+                            else
+                                lastTargets[buff.key] = { name = tName, class = tClass }
+                            end
+                        end
+                    else
+                        lastTargets[buff.key] = nil
+                    end
+                    -- If not active, keep old last target so macro still targets them
                 end
             end
         end
