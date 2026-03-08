@@ -69,7 +69,7 @@ local function BuildHunterActions()
                 actions[#actions + 1] = {
                     key = "pet_action_" .. spellID,
                     spellID = spellID,
-                    spellName = C_Spell.GetSpellName(spellID),
+                    spellName = BR.GetSpellName(spellID),
                     icon = info.icon,
                     label = info.name,
                     sortOrder = order,
@@ -89,7 +89,7 @@ local function BuildHunterActions()
             actions[#actions + 1] = {
                 key = "pet_action_" .. REVIVE_PET,
                 spellID = REVIVE_PET,
-                spellName = C_Spell.GetSpellName(REVIVE_PET),
+                spellName = BR.GetSpellName(REVIVE_PET),
                 icon = icon,
                 label = "Revive Pet",
                 sortOrder = order,

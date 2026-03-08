@@ -145,8 +145,8 @@ local currentWeaponEnchants = {
 }
 
 -- Valid group members for current refresh cycle (set once per BuffState.Refresh())
--- Each entry: { unit = "raid1", class = "WARRIOR", isPlayer = true }
----@type {unit: string, class: string, isPlayer: boolean}[]
+-- Each entry: { unit = "raid1", class = "WARRIOR", isPlayer = true, name = "PlayerName" }
+---@type {unit: string, class: string, isPlayer: boolean, name: string?}[]
 local currentValidUnits = {}
 
 -- Whether NPCs should be included in buff counting for the current refresh cycle.
@@ -222,7 +222,7 @@ local function GetLastTarget(buffKey)
 end
 
 -- Pool of reusable unit entry tables (avoids creating new tables each refresh)
----@type {unit: string, class: string, isPlayer: boolean}[]
+---@type {unit: string, class: string, isPlayer: boolean, name: string?}[]
 local unitEntryPool = {}
 local unitEntryPoolSize = 0
 
@@ -230,8 +230,9 @@ local unitEntryPoolSize = 0
 ---@param unit string
 ---@param class string
 ---@param isPlayer boolean
----@return {unit: string, class: string, isPlayer: boolean}
-local function AcquireUnitEntry(unit, class, isPlayer)
+---@param name string?
+---@return {unit: string, class: string, isPlayer: boolean, name: string?}
+local function AcquireUnitEntry(unit, class, isPlayer, name)
     local entry
     if unitEntryPoolSize > 0 then
         entry = unitEntryPool[unitEntryPoolSize]
@@ -240,8 +241,9 @@ local function AcquireUnitEntry(unit, class, isPlayer)
         entry.unit = unit
         entry.class = class
         entry.isPlayer = isPlayer
+        entry.name = name
     else
-        entry = { unit = unit, class = class, isPlayer = isPlayer }
+        entry = { unit = unit, class = class, isPlayer = isPlayer, name = name }
     end
     return entry
 end
@@ -360,7 +362,8 @@ local function BuildValidUnitCache()
     if groupSize == 0 then
         -- Solo player
         local _, class = UnitClass("player")
-        currentValidUnits[1] = AcquireUnitEntry("player", class, true)
+        local name = GetUnitName("player", true)
+        currentValidUnits[1] = AcquireUnitEntry("player", class, true, name)
         classMaxLevels[class] = UnitLevel("player")
         return
     end
@@ -380,7 +383,8 @@ local function BuildValidUnitCache()
         if IsValidGroupMember(unit) then
             local _, class = UnitClass(unit)
             local isPlayer = UnitIsPlayer(unit)
-            currentValidUnits[#currentValidUnits + 1] = AcquireUnitEntry(unit, class, isPlayer)
+            local name = GetUnitName(unit, true)
+            currentValidUnits[#currentValidUnits + 1] = AcquireUnitEntry(unit, class, isPlayer, name)
             -- Track max level per class (players only, for buff caster checks)
             if isPlayer and class then
                 local level = UnitLevel(unit)
@@ -395,7 +399,7 @@ local function BuildValidUnitCache()
     for buffKey, entry in pairs(lastTargets) do
         local found = false
         for _, data in ipairs(currentValidUnits) do
-            if GetUnitName(data.unit, true) == entry.name then
+            if data.name == entry.name then
                 found = true
                 break
             end
@@ -732,7 +736,7 @@ end
 ---@param playerOnly? boolean Only check the player, not the group
 ---@return boolean hasBuff
 ---@return number? minRemaining
----@return string? targetUnit First non-player unit that has the buff (for castOnOthers tracking)
+---@return table? targetEntry First non-player unit entry that has the buff (for castOnOthers tracking)
 local function HasPresenceBuff(spellIDs, playerOnly)
     if playerOnly or #currentValidUnits <= 1 then
         local hasBuff, remaining = UnitHasBuff("player", spellIDs)
@@ -741,7 +745,7 @@ local function HasPresenceBuff(spellIDs, playerOnly)
 
     local minRemaining = nil
     local found = false
-    local targetUnit = nil
+    local targetEntry = nil
 
     for _, data in ipairs(currentValidUnits) do
         -- Skip NPCs in content where they can't receive player buffs
@@ -749,21 +753,21 @@ local function HasPresenceBuff(spellIDs, playerOnly)
             local hasBuff, remaining = UnitHasBuff(data.unit, spellIDs)
             if hasBuff then
                 found = true
-                if not targetUnit and not UnitIsUnit(data.unit, "player") then
-                    targetUnit = data.unit
+                if not targetEntry and not UnitIsUnit(data.unit, "player") then
+                    targetEntry = data
                 end
                 if remaining then
                     if not minRemaining or remaining < minRemaining then
                         minRemaining = remaining
                     end
                 else
-                    return true, nil, targetUnit -- no expiration, no need to keep scanning
+                    return true, nil, targetEntry -- no expiration, no need to keep scanning
                 end
             end
         end
     end
 
-    return found, minRemaining, targetUnit
+    return found, minRemaining, targetEntry
 end
 
 ---Check if player's buff is active on anyone in the group
@@ -772,10 +776,10 @@ end
 ---@param role? RoleType Only check units with this role
 ---@return boolean
 ---@return number? minRemaining
----@return string? targetUnit Unit ID of a non-player target with the buff (for last target cache)
+---@return table? targetEntry Unit entry of a non-player target with the buff (for last target cache)
 local function IsPlayerBuffActive(spellID, role)
     local minRemaining = nil
-    local targetUnit = nil
+    local targetEntry = nil
     for _, data in ipairs(currentValidUnits) do
         -- Skip NPCs in content where they can't receive player buffs
         if data.isPlayer or includeNPCsInCounting then
@@ -783,11 +787,11 @@ local function IsPlayerBuffActive(spellID, role)
                 local hasBuff, remaining, sourceUnit = UnitHasBuff(data.unit, spellID)
                 if hasBuff and sourceUnit and UnitIsUnit(sourceUnit, "player") then
                     -- Track first non-player target for last target cache
-                    if not targetUnit and not UnitIsUnit(data.unit, "player") then
-                        targetUnit = data.unit
+                    if not targetEntry and not UnitIsUnit(data.unit, "player") then
+                        targetEntry = data
                     end
                     if not remaining then
-                        return true, nil, targetUnit
+                        return true, nil, targetEntry
                     end
                     if not minRemaining or remaining < minRemaining then
                         minRemaining = remaining
@@ -796,7 +800,7 @@ local function IsPlayerBuffActive(spellID, role)
             end
         end
     end
-    return minRemaining ~= nil, minRemaining, targetUnit
+    return minRemaining ~= nil, minRemaining, targetEntry
 end
 
 ---Check if player should cast their targeted buff (returns true if a beneficiary needs it)
@@ -837,20 +841,16 @@ local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, 
                 for _, data in ipairs(currentValidUnits) do
                     if not UnitIsUnit(data.unit, "player") then
                         local targetHas = UnitHasBuff(data.unit, spellIDs)
-                        if targetHas then
-                            local name = GetUnitName(data.unit, true)
-                            if name then
-                                local _, class = UnitClass(data.unit)
-                                local existing = lastTargets[buffKey]
-                                if existing then
-                                    existing.name = name
-                                    existing.class = class
-                                else
-                                    lastTargets[buffKey] = { name = name, class = class }
-                                end
-                                foundTarget = true
-                                break
+                        if targetHas and data.name then
+                            local existing = lastTargets[buffKey]
+                            if existing then
+                                existing.name = data.name
+                                existing.class = data.class
+                            else
+                                lastTargets[buffKey] = { name = data.name, class = data.class }
                             end
+                            foundTarget = true
+                            break
                         end
                     end
                 end
@@ -863,21 +863,17 @@ local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, 
         return not hasBuff, remaining
     end
 
-    local isActive, remaining, targetUnit = IsPlayerBuffActive(spellID, beneficiaryRole)
+    local isActive, remaining, targetEntry = IsPlayerBuffActive(spellID, beneficiaryRole)
 
     -- Update last target cache
     if buffKey then
-        if targetUnit then
-            local name = GetUnitName(targetUnit, true) -- include realm
-            if name then
-                local _, class = UnitClass(targetUnit)
-                local existing = lastTargets[buffKey]
-                if existing then
-                    existing.name = name
-                    existing.class = class
-                else
-                    lastTargets[buffKey] = { name = name, class = class }
-                end
+        if targetEntry and targetEntry.name then
+            local existing = lastTargets[buffKey]
+            if existing then
+                existing.name = targetEntry.name
+                existing.class = targetEntry.class
+            else
+                lastTargets[buffKey] = { name = targetEntry.name, class = targetEntry.class }
             end
         elseif isActive then
             -- Buff found but only on player — clear last target
@@ -1368,7 +1364,7 @@ function BuffState.Refresh()
                     SetEntryMissing(entry, buff.missingText, presGlow)
                 end
             else
-                local hasBuff, minRemaining, targetUnit = HasPresenceBuff(buff.spellID, scope.playerOnly)
+                local hasBuff, minRemaining, targetEntry = HasPresenceBuff(buff.spellID, scope.playerOnly)
                 if not hasBuff then
                     SetEntryMissing(entry, buff.missingText, presGlow)
                 elseif not buff.noExpirationGlow and not hideExpiring then
@@ -1376,17 +1372,13 @@ function BuffState.Refresh()
                 end
                 -- Track who has castOnOthers buffs for sticky click-to-cast targeting
                 if buff.castOnOthers and hasBuff and not inCombat then
-                    if targetUnit then
-                        local tName = GetUnitName(targetUnit, true)
-                        if tName then
-                            local _, tClass = UnitClass(targetUnit)
-                            local existing = lastTargets[buff.key]
-                            if existing then
-                                existing.name = tName
-                                existing.class = tClass
-                            else
-                                lastTargets[buff.key] = { name = tName, class = tClass }
-                            end
+                    if targetEntry and targetEntry.name then
+                        local existing = lastTargets[buff.key]
+                        if existing then
+                            existing.name = targetEntry.name
+                            existing.class = targetEntry.class
+                        else
+                            lastTargets[buff.key] = { name = targetEntry.name, class = targetEntry.class }
                         end
                     else
                         lastTargets[buff.key] = nil

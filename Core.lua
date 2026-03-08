@@ -674,6 +674,26 @@ for token, classID in pairs(CLASS_IDS) do
     BR.CLASS_SPEC_OPTIONS[token] = opts
 end
 
+-- ============================================================================
+-- SPELL NAME CACHE
+-- ============================================================================
+-- Spell names are immutable for a given spellID within a session.
+-- Cache them to avoid repeated C_Spell.GetSpellName API calls.
+
+local spellNameCache = {}
+
+---Get spell name with caching (immutable per session)
+---@param spellID number
+---@return string?
+function BR.GetSpellName(spellID)
+    local name = spellNameCache[spellID]
+    if name == nil then
+        name = C_Spell.GetSpellName(spellID) or false
+        spellNameCache[spellID] = name
+    end
+    return name or nil
+end
+
 ---Create a buff icon texture with standard formatting
 ---@param parent table
 ---@param size number

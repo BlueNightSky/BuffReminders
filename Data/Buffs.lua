@@ -143,7 +143,7 @@ end
 ---@return fun(spellID: number): string
 local function TargetedClickMacro(buffKey)
     return function(spellID)
-        local name = C_Spell.GetSpellName(spellID)
+        local name = BR.GetSpellName(spellID) or ""
         local lastTarget = BR.StateHelpers and BR.StateHelpers.GetLastTarget(buffKey)
         if lastTarget then
             return "/cast [@" .. lastTarget .. ",help,nodead][@mouseover,help,nodead][@target,help,nodead][] " .. name
@@ -219,7 +219,7 @@ BR.BUFF_TABLES = {
             castOnOthers = true,
             noExpirationGlow = true,
             clickMacro = function(spellID)
-                local name = C_Spell.GetSpellName(spellID)
+                local name = BR.GetSpellName(spellID) or ""
                 -- Priority: sticky last target > first living healer > mouseover > target > self
                 local lastTarget = BR.StateHelpers and BR.StateHelpers.GetLastTarget("soulstone")
                 if lastTarget then
@@ -350,7 +350,7 @@ BR.BUFF_TABLES = {
             buffIdOverride = 433584, -- Actual buff ID on player
             requiresBuffWithEnchant = true,
             clickMacro = function(spellID)
-                return "/cast " .. C_Spell.GetSpellName(spellID) .. "\n/use 16"
+                return "/cast " .. (BR.GetSpellName(spellID) or "") .. "\n/use 16"
             end,
             groupId = "paladinRites",
         },
@@ -364,7 +364,7 @@ BR.BUFF_TABLES = {
             buffIdOverride = 433550, -- Actual buff ID on player
             requiresBuffWithEnchant = true,
             clickMacro = function(spellID)
-                return "/cast " .. C_Spell.GetSpellName(spellID) .. "\n/use 16"
+                return "/cast " .. (BR.GetSpellName(spellID) or "") .. "\n/use 16"
             end,
             groupId = "paladinRites",
         },
@@ -463,7 +463,7 @@ BR.BUFF_TABLES = {
                 end
 
                 if castID then
-                    return "/cast " .. C_Spell.GetSpellName(castID)
+                    return "/cast " .. (BR.GetSpellName(castID) or "")
                 end
                 return ""
             end,
@@ -760,7 +760,7 @@ BR.BUFF_TABLES = {
             readyCheckOnly = true,
             clickMacro = function()
                 local spellID = GetNumGroupMembers() > 0 and 29893 or 6201
-                local name = C_Spell.GetSpellName(spellID)
+                local name = BR.GetSpellName(spellID)
                 return "/cast " .. (name or "")
             end,
         },

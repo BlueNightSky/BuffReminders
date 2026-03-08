@@ -39,7 +39,7 @@ end
 local FEL_DOMINATION_ID = 333889
 
 local function GetFelDomPetMacro(petSpellID)
-    local spellName = C_Spell.GetSpellName(petSpellID)
+    local spellName = BR.GetSpellName(petSpellID)
     if not spellName then
         return nil
     end
