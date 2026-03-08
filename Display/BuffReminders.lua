@@ -1502,7 +1502,7 @@ local function HideAllDisplayFrames()
     end
 end
 
--- Update the fallback display (shows tracked buffs via action bar glow during M+/PvP/combat)
+-- Update the fallback display (shows tracked buffs via action bar glow during PvP/Arena)
 -- Shows glow-based frames + pet frames, then collects ALL visible frames for unified positioning
 UpdateFallbackDisplay = function()
     if not mainFrame then
@@ -2682,6 +2682,9 @@ BR.Display.IsTestMode = function()
 end
 BR.Display.ResetCategoryFramePosition = function(category, x, y)
     BR.Movers.SavePosition(category, x or 0, y or 0)
+end
+BR.Display.IsSpellGlowing = function(spellID)
+    return glowingSpells[spellID] == true
 end
 
 -- Export Masque state for Options.lua

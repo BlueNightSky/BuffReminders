@@ -35,6 +35,7 @@ local min = math.min
 ---@field noExpirationGlow? boolean
 ---@field readyCheckOnly? boolean Only show during ready checks
 ---@field castOnOthers? boolean Buff exists on the target, not the caster (e.g., Soulstone)
+---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 
 ---@class TargetedBuff
 ---@field spellID SpellID
@@ -50,6 +51,7 @@ local min = math.min
 ---@field infoTooltip? string
 ---@field clickMacro? fun(spellID: number): string
 ---@field casterBuffId? number Check this buff on the caster instead of scanning group
+---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 
 ---@class SelfBuff
 ---@field spellID? SpellID
@@ -72,6 +74,7 @@ local min = math.min
 ---@field infoTooltip? string
 ---@field customCheck? fun(): boolean?
 ---@field getPetActions? fun(): PetAction[]?  -- Override pet actions (e.g., wrong pet → Felguard only)
+---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 
 ---@class ConsumableBuff
 ---@field spellID? SpellID
@@ -89,6 +92,7 @@ local min = math.min
 ---@field readyCheckOnly? boolean Only show during ready checks
 ---@field infoTooltip? string Tooltip text shown on hover (pipe-separated: title|description)
 ---@field visibilityCondition? fun(): boolean Custom function that gates visibility (return false to hide)
+---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 
 ---@class BuffGroup
 ---@field displayName string
@@ -226,6 +230,7 @@ BR.BUFF_TABLES = {
             missingText = "NO\nFAITH",
             groupId = "beacons",
             requireSpecId = 65, -- Holy only
+            glowDetectable = true,
             clickMacro = TargetedClickMacro("beaconOfFaith"),
         },
         {
@@ -236,6 +241,7 @@ BR.BUFF_TABLES = {
             missingText = "NO\nLIGHT",
             groupId = "beacons",
             requireSpecId = 65, -- Holy only
+            glowDetectable = true,
             excludeSpellID = 200025, -- Hide when Beacon of Virtue is known
             displayIcon = 236247, -- Force original icon (talents replace the texture)
             clickMacro = TargetedClickMacro("beaconOfLight"),
