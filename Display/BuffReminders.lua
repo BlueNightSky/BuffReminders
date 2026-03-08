@@ -257,6 +257,7 @@ local defaults = {
     petPassiveOnlyInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
+    instanceEntryReminder = true,
     minimap = {
         hide = true,
     },
@@ -408,6 +409,8 @@ local buffFrames = {}
 local updateTicker
 local readyCheckTimer = nil
 local instanceEntryTimer = nil
+local SOULWELL_SPELL_IDS = { [29893] = true, [6201] = true } -- Create Soulwell, Create Healthstone
+local ClearInstanceEntryState -- forward declaration
 local testMode = false
 local eventFrame -- forward declaration; created later in file, referenced by StartUpdates
 
@@ -2750,7 +2753,16 @@ eventFrame:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
 eventFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
 eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 
-eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
+ClearInstanceEntryState = function()
+    if instanceEntryTimer then
+        instanceEntryTimer:Cancel()
+        instanceEntryTimer = nil
+    end
+    BR.BuffState.SetInstanceEntryState(false)
+    eventFrame:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+end
+
+eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if event == "ADDON_LOADED" and arg1 == addonName then
         _, playerClass = UnitClass("player")
         BR.BuffState.SetPlayerClass(playerClass)
@@ -3554,19 +3566,14 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
                     instanceEntryTimer:Cancel()
                 end
                 BR.BuffState.SetInstanceEntryState(true)
+                eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
                 UpdateDisplay()
                 instanceEntryTimer = C_Timer.NewTimer(30, function()
-                    BR.BuffState.SetInstanceEntryState(false)
-                    instanceEntryTimer = nil
+                    ClearInstanceEntryState()
                     UpdateDisplay()
                 end)
             else
-                -- Clear instance entry state when leaving an instance
-                if instanceEntryTimer then
-                    instanceEntryTimer:Cancel()
-                    instanceEntryTimer = nil
-                end
-                BR.BuffState.SetInstanceEntryState(false)
+                ClearInstanceEntryState()
             end
         end)
         -- Refresh custom buff icons after spell data is fully loaded (talent-modified icons)
@@ -3695,6 +3702,11 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "UNIT_ENTERED_VEHICLE" or event == "UNIT_EXITED_VEHICLE" then
         if arg1 == "player" then
             BR.BuffState.SetInVehicle(event == "UNIT_ENTERED_VEHICLE")
+            UpdateDisplay()
+        end
+    elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+        if SOULWELL_SPELL_IDS[arg3] then
+            ClearInstanceEntryState()
             UpdateDisplay()
         end
     end

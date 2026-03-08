@@ -1173,7 +1173,12 @@ local function PassesPreChecks(buff, presentClasses, db)
 
     -- Visibility gates: instance entry and ready check are independent
     if
-        not (buff.showOnInstanceEntry and inInstanceEntry and (not buff.casterClass or buff.casterClass == playerClass))
+        not (
+            buff.showOnInstanceEntry
+            and inInstanceEntry
+            and (not buff.casterClass or buff.casterClass == playerClass)
+            and db.instanceEntryReminder ~= false
+        )
     then
         if buff.readyCheckOnly and not inReadyCheck then
             local overrides = db.readyCheckOnlyOverrides
@@ -1393,6 +1398,7 @@ function BuffState.Refresh()
         local instanceEntryOk = buff.showOnInstanceEntry
             and inInstanceEntry
             and (not buff.casterClass or buff.casterClass == playerClass)
+            and db.instanceEntryReminder ~= false
         local readyCheckOk = not buff.readyCheckOnly or inReadyCheck
         if not readyCheckOk and not instanceEntryOk then
             local overrides = db.readyCheckOnlyOverrides
@@ -1584,17 +1590,27 @@ function BuffState.Refresh()
                     SetEntryMissing(entry, buff.missingText, consGlow)
                 end
             else
-                local shouldShow, remainingTime = ShouldShowConsumableBuff(buff)
-                if shouldShow then
+                -- Instance entry: skip item check for caster class (e.g., remind warlock to drop Soul Well)
+                if
+                    inInstanceEntry
+                    and buff.showOnInstanceEntry
+                    and buff.casterClass == playerClass
+                    and db.instanceEntryReminder ~= false
+                then
                     SetEntryMissing(entry, buff.missingText, consGlow)
-                elseif not buff.noExpirationGlow and not hideExpiring then
-                    TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow)
-                end
-                -- Eating state for food entries (display uses this for icon override + countdown)
-                if entry.visible and buff.key == "food" then
-                    entry.isEating = IsPlayerEating()
-                    if entry.isEating then
-                        entry.eatingExpirationTime = GetEatingExpirationTime()
+                else
+                    local shouldShow, remainingTime = ShouldShowConsumableBuff(buff)
+                    if shouldShow then
+                        SetEntryMissing(entry, buff.missingText, consGlow)
+                    elseif not buff.noExpirationGlow and not hideExpiring then
+                        TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow)
+                    end
+                    -- Eating state for food entries (display uses this for icon override + countdown)
+                    if entry.visible and buff.key == "food" then
+                        entry.isEating = IsPlayerEating()
+                        if entry.isEating then
+                            entry.eatingExpirationTime = GetEatingExpirationTime()
+                        end
                     end
                 end
             end
@@ -1727,9 +1743,12 @@ function BuffState.SetInstanceEntryState(state)
 end
 
 ---Check if the current zone qualifies for instance entry triggers
----(dungeon or raid, but not M+ keystones)
+---(dungeon or raid, in a group, but not M+ keystones)
 ---@return boolean
 function BuffState.ShouldTriggerInstanceEntry()
+    if GetNumGroupMembers() <= 1 then
+        return false
+    end
     local contentType = GetCurrentContentType()
     if contentType ~= "dungeon" and contentType ~= "raid" then
         return false

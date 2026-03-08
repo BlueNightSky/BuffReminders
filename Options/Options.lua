@@ -2100,6 +2100,18 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(loginMsgHolder, nil, COMPONENT_GAP)
 
+    local instanceEntryHolder = Components.Checkbox(settingsContent, {
+        label = "Remind on instance entry",
+        tooltip = "Show a reminder when entering a dungeon or raid\n(e.g., remind warlocks to drop a Soul Well)",
+        get = function()
+            return BR.profile.instanceEntryReminder ~= false
+        end,
+        onChange = function(checked)
+            BR.profile.instanceEntryReminder = checked
+        end,
+    })
+    setLayout:Add(instanceEntryHolder, nil, COMPONENT_GAP)
+
     local minimapHolder = Components.Checkbox(settingsContent, {
         label = "Show minimap button",
         get = function()
