@@ -437,26 +437,32 @@ end
 ---@return number? remainingTime
 ---@return string? sourceUnit
 local function UnitHasBuff(unit, spellIDs)
-    if type(spellIDs) ~= "table" then
-        spellIDs = { spellIDs }
+    -- Fast path: single numeric spellID (most common case, avoids table allocation)
+    if type(spellIDs) == "number" then
+        local auraData = C_UnitAuras.GetUnitAuraBySpellID(unit, spellIDs)
+        if auraData then
+            local remaining
+            if auraData.expirationTime and auraData.expirationTime > 0 then
+                remaining = auraData.expirationTime - GetTime()
+            end
+            return true, remaining, auraData.sourceUnit
+        end
+        return false, nil, nil
     end
 
-    local hasBuff, remaining, source
-    pcall(function()
-        for _, id in ipairs(spellIDs) do
-            local auraData = C_UnitAuras.GetUnitAuraBySpellID(unit, id)
-            if auraData then
-                hasBuff = true
-                if auraData.expirationTime and auraData.expirationTime > 0 then
-                    remaining = auraData.expirationTime - GetTime()
-                end
-                source = auraData.sourceUnit
-                return
+    -- Table path: multiple spellIDs
+    for _, id in ipairs(spellIDs) do
+        local auraData = C_UnitAuras.GetUnitAuraBySpellID(unit, id)
+        if auraData then
+            local remaining
+            if auraData.expirationTime and auraData.expirationTime > 0 then
+                remaining = auraData.expirationTime - GetTime()
             end
+            return true, remaining, auraData.sourceUnit
         end
-    end)
+    end
 
-    return hasBuff or false, remaining, source
+    return false, nil, nil
 end
 
 ---Format remaining time in seconds to a short string (e.g., "5m" or "30s")
@@ -638,6 +644,11 @@ local function IsCustomBuffVisibleForContent(buff)
     return true
 end
 
+-- Pre-allocated scope objects for GetTrackingScope (callers only read, never mutate)
+local SCOPE_HIDDEN = { show = false, playerOnly = false }
+local SCOPE_PLAYER_ONLY = { show = true, playerOnly = true }
+local SCOPE_GROUP = { show = true, playerOnly = false }
+
 ---Determine visibility and scan scope for a buff based on tracking mode.
 ---Raid buffs go on everyone, so "scan group" means showing coverage numbers.
 ---Presence buffs live on the caster, so "scan group" means finding if anyone has the aura.
@@ -649,37 +660,49 @@ end
 ---@return { show: boolean, playerOnly: boolean }
 local function GetTrackingScope(trackingMode, buffClass, category, hasCaster, castOnOthers)
     if not hasCaster then
-        return { show = false, playerOnly = false }
+        return SCOPE_HIDDEN
     end
     if trackingMode == "my_buffs" and buffClass ~= playerClass then
-        return { show = false, playerOnly = false }
+        return SCOPE_HIDDEN
     end
 
     if trackingMode == "personal" then
         -- Presence buffs from other classes exist only on the caster, not on you.
         -- castOnOthers buffs (Soulstone) are someone else's responsibility in personal mode.
         if category == "presence" and (buffClass ~= playerClass or castOnOthers) then
-            return { show = false, playerOnly = false }
+            return SCOPE_HIDDEN
         end
-        return { show = true, playerOnly = true }
+        return SCOPE_PLAYER_ONLY
     elseif trackingMode == "smart" then
         local isMyClass = buffClass == playerClass
         -- Raid: scan group if I'm the caster (show coverage), just check me otherwise
         -- Presence: just check me if I'm the caster, scan group to find other casters
         --   castOnOthers: always scan group (the buff is on the target, not on me)
         if category == "raid" then
-            return { show = true, playerOnly = not isMyClass }
+            if isMyClass then
+                return SCOPE_GROUP
+            else
+                return SCOPE_PLAYER_ONLY
+            end
         else
-            return { show = true, playerOnly = isMyClass and not castOnOthers }
+            if isMyClass and not castOnOthers then
+                return SCOPE_PLAYER_ONLY
+            else
+                return SCOPE_GROUP
+            end
         end
     elseif trackingMode == "my_buffs" then
         -- Raid: scan group to show coverage numbers
         -- Presence: just check if my own aura is active
         --   castOnOthers: scan group (the buff is on someone else)
-        return { show = true, playerOnly = category == "presence" and not castOnOthers }
+        if category == "presence" and not castOnOthers then
+            return SCOPE_PLAYER_ONLY
+        else
+            return SCOPE_GROUP
+        end
     else
         -- "all" mode: always scan the full group
-        return { show = true, playerOnly = false }
+        return SCOPE_GROUP
     end
 end
 
@@ -947,22 +970,21 @@ local function ShouldShowSelfBuff(
     -- For buffs with multiple spellIDs (like shields), check if player knows ANY of them
     -- Skip for custom buffs (they track received buffs, not cast buffs)
     if not skipSpellKnownCheck then
-        ---@type number[]
-        local spellIDs
-        if type(spellID) == "table" then
-            spellIDs = spellID
-        else
-            spellIDs = { spellID }
-        end
-        local knowsAnySpell = false
-        for _, id in ipairs(spellIDs) do
-            if IsPlayerSpellCached(id) then
-                knowsAnySpell = true
-                break
+        if type(spellID) == "number" then
+            if not IsPlayerSpellCached(spellID) then
+                return nil
             end
-        end
-        if not knowsAnySpell then
-            return nil
+        else
+            local knowsAnySpell = false
+            for _, id in ipairs(spellID) do
+                if IsPlayerSpellCached(id) then
+                    knowsAnySpell = true
+                    break
+                end
+            end
+            if not knowsAnySpell then
+                return nil
+            end
         end
     end
 
@@ -1236,6 +1258,16 @@ local function SetEntryMissing(entry, missingText, glowEnabled)
     entry.shouldGlow = glowEnabled
 end
 
+---Get glow settings for a category (hoisted to module level to avoid closure allocation)
+---@param cat CategoryName
+---@return boolean glowEnabled
+---@return number threshold
+local function GetCategoryGlowSettings(cat)
+    local glowEnabled = BR.Config.GetCategorySetting(cat, "showExpirationGlow") ~= false
+    local threshold = (BR.Config.GetCategorySetting(cat, "expirationThreshold") or 15) * 60
+    return glowEnabled, threshold
+end
+
 ---If remaining time is below threshold, mark entry as visible+expiring with glow.
 ---@param entry BuffStateEntry
 ---@param remaining? number
@@ -1319,13 +1351,6 @@ function BuffState.Refresh()
     -- during M+ keystones, and in PvP instances (always restricted regardless of combat state).
     local isAuraRestricted = inCombat or GetCurrentDifficultyKey() == "mythicPlus" or isPvPInstance
     local hideExpiring = isAuraRestricted and db.hideExpiringInCombat ~= false
-
-    -- Per-category glow/expiration settings (inherits from defaults via GetCategorySetting)
-    local function GetCategoryGlowSettings(cat)
-        local glowEnabled = BR.Config.GetCategorySetting(cat, "showExpirationGlow") ~= false
-        local threshold = (BR.Config.GetCategorySetting(cat, "expirationThreshold") or 15) * 60
-        return glowEnabled, threshold
-    end
 
     -- Process raid buffs (coverage - need everyone to have them)
     local raidVisible = IsCategoryVisibleForContent("raid")

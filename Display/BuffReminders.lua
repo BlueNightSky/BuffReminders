@@ -723,6 +723,13 @@ local UpdateDisplay, ToggleTestMode
 -- local UpdateFallbackDisplay, RenderPetEntries
 local ResetLayoutSignatures
 
+-- Reusable tables for UpdateDisplay (wiped each cycle to avoid per-call allocation)
+local reusableVisibleKeys = {} ---@type table<string, boolean>
+local reusableMainBuffs = {}
+local sortComparator = function(a, b)
+    return a.sortOrder < b.sortOrder
+end
+
 -- Local alias for glow module
 local SetExpirationGlow = BR.Glow.SetExpiration
 
@@ -2173,14 +2180,12 @@ UpdateDisplay = function()
     local visibleByCategory = BR.BuffState.visibleByCategory
     local anyVisible = false
 
-    -- Track which keys are visible this cycle (for selective hiding)
-    local currentlyVisibleKeys = {} ---@type table<string, boolean>
+    -- Reuse module-level tables (wiped to avoid per-call allocation)
+    wipe(reusableVisibleKeys)
+    wipe(reusableMainBuffs)
 
     -- Build sorted category list by priority
     local sortedCategories = GetSortedCategories()
-
-    -- Collect frames for main container (non-split) in priority order
-    local mainFrameBuffs = {}
 
     for _, catEntry in ipairs(sortedCategories) do
         local category = catEntry.name
@@ -2188,9 +2193,7 @@ UpdateDisplay = function()
 
         if entries and #entries > 0 then
             if not entries._sorted then
-                tsort(entries, function(a, b)
-                    return a.sortOrder < b.sortOrder
-                end)
+                tsort(entries, sortComparator)
             end
             anyVisible = true
 
@@ -2203,7 +2206,7 @@ UpdateDisplay = function()
                         local shown = RenderVisibleEntry(frame, entry)
                         if shown then
                             frames[#frames + 1] = frame
-                            currentlyVisibleKeys[entry.key] = true
+                            reusableVisibleKeys[entry.key] = true
                         end
                         -- Category-specific post-processing
                         if category == "consumable" then
@@ -2221,14 +2224,14 @@ UpdateDisplay = function()
                     if frame then
                         local shown = RenderVisibleEntry(frame, entry)
                         if shown then
-                            mainFrameBuffs[#mainFrameBuffs + 1] = frame
-                            currentlyVisibleKeys[entry.key] = true
+                            reusableMainBuffs[#reusableMainBuffs + 1] = frame
+                            reusableVisibleKeys[entry.key] = true
                         end
                         -- Category-specific post-processing
                         if category == "consumable" then
-                            ApplyConsumableDisplayMode(frame, entry, mainFrameBuffs, mainFrame)
+                            ApplyConsumableDisplayMode(frame, entry, reusableMainBuffs, mainFrame)
                         elseif category == "pet" then
-                            ApplyPetDisplayMode(frame, entry, mainFrameBuffs)
+                            ApplyPetDisplayMode(frame, entry, reusableMainBuffs)
                         end
                     end
                 end
@@ -2238,7 +2241,7 @@ UpdateDisplay = function()
 
     -- Selectively hide frames that were visible last cycle but aren't now
     for key in pairs(previouslyVisibleKeys) do
-        if not currentlyVisibleKeys[key] then
+        if not reusableVisibleKeys[key] then
             local frame = buffFrames[key]
             if frame then
                 HideFrame(frame)
@@ -2255,12 +2258,12 @@ UpdateDisplay = function()
     end
     -- Update tracking set
     wipe(previouslyVisibleKeys)
-    for key in pairs(currentlyVisibleKeys) do
+    for key in pairs(reusableVisibleKeys) do
         previouslyVisibleKeys[key] = true
     end
 
     -- Position main container
-    PositionMainContainer(mainFrameBuffs)
+    PositionMainContainer(reusableMainBuffs)
 
     -- Handle split category frames with no visible buffs
     PositionSplitCategories(visibleByCategory)
