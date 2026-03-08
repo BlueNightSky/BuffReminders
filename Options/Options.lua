@@ -2133,8 +2133,16 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(groupHolder, nil, COMPONENT_GAP)
 
+    -- "Hide when:" sub-label with indented checkboxes
+    local hideWhenLabel = settingsContent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    hideWhenLabel:SetText("Hide when:")
+    setLayout:AddText(hideWhenLabel, 12, COMPONENT_GAP)
+
+    local HIDE_INDENT = 16
+    setLayout:SetX(setX + HIDE_INDENT)
+
     local restingHolder = Components.Checkbox(settingsContent, {
-        label = "Hide while resting",
+        label = "Resting",
         get = function()
             return BR.profile.hideWhileResting == true
         end,
@@ -2147,21 +2155,22 @@ local function CreateOptionsPanel()
     setLayout:Add(restingHolder, nil, COMPONENT_GAP)
 
     local combatHolder = Components.Checkbox(settingsContent, {
-        label = "Hide in combat",
+        label = "In combat",
         get = function()
             return BR.profile.hideInCombat == true
         end,
         onChange = function(checked)
             BR.profile.hideInCombat = checked
             UpdateDisplay()
+            Components.RefreshAll()
         end,
     })
     setLayout:Add(combatHolder, nil, COMPONENT_GAP)
 
     local combatExpiringHolder = Components.Checkbox(settingsContent, {
-        label = "Hide expiring buffs in combat",
+        label = "Only expiring buffs in combat",
         tooltip = {
-            title = "Hide expiring buffs in combat",
+            title = "Hide only expiring buffs in combat",
             desc = "During combat, hide buffs that are expiring soon and only show completely missing ones",
         },
         get = function()
@@ -2178,7 +2187,7 @@ local function CreateOptionsPanel()
     setLayout:Add(combatExpiringHolder, nil, COMPONENT_GAP)
 
     local vehicleHolder = Components.Checkbox(settingsContent, {
-        label = "Hide in vehicle",
+        label = "In vehicle",
         tooltip = {
             title = "Hide in vehicle",
             desc = "Hide all buff reminders while in a quest vehicle. When disabled, raid and presence buffs still show",
@@ -2194,7 +2203,7 @@ local function CreateOptionsPanel()
     setLayout:Add(vehicleHolder, nil, COMPONENT_GAP)
 
     local mountedHolder = Components.Checkbox(settingsContent, {
-        label = "Hide while mounted",
+        label = "While mounted",
         tooltip = {
             title = "Hide while mounted",
             desc = "Hide all buff reminders while mounted. Overrides the per-category pet mount hiding setting",
@@ -2208,6 +2217,8 @@ local function CreateOptionsPanel()
         end,
     })
     setLayout:Add(mountedHolder, nil, COMPONENT_GAP)
+
+    setLayout:SetX(setX)
 
     local trackingModeHolder = Components.Dropdown(settingsContent, {
         label = "Buff tracking",
