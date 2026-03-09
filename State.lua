@@ -1171,16 +1171,12 @@ local function PassesPreChecks(buff, presentClasses, db)
         return false
     end
 
-    -- Visibility gates: instance entry and ready check are independent
-    if
-        not (buff.showOnInstanceEntry and inInstanceEntry and (not buff.casterClass or buff.casterClass == playerClass))
-    then
-        if buff.readyCheckOnly and not inReadyCheck then
-            local overrides = db.readyCheckOnlyOverrides
-            local settingKey = buff.groupId or buff.key
-            if not overrides or overrides[settingKey] ~= false then
-                return false
-            end
+    -- Ready check gate
+    if buff.readyCheckOnly and not inReadyCheck then
+        local overrides = db.readyCheckOnlyOverrides
+        local settingKey = buff.groupId or buff.key
+        if not overrides or overrides[settingKey] ~= false then
+            return false
         end
     end
 
@@ -1476,42 +1472,56 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "self", i)
         local settingKey = buff.groupId or buff.key
 
-        local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
-        if
-            (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet)
-            and IsBuffEnabled(settingKey)
-            and selfVisible
-        then
-            if useGlowDet then
-                if IsAnySpellGlowing(buff) then
-                    SetEntryMissing(entry, buff.missingText, selfGlow)
-                    entry.iconByRole = buff.iconByRole
-                end
-            else
-                local shouldShow = ShouldShowSelfBuff(
-                    buff.spellID,
-                    buff.class,
-                    buff.enchantID,
-                    buff.requiresSpellID,
-                    buff.excludeSpellID,
-                    buff.buffIdOverride,
-                    buff.customCheck,
-                    buff.requireSpecId,
-                    nil, -- skipSpellKnownCheck
-                    buff.requiresBuffWithEnchant
-                )
-                if shouldShow then
-                    SetEntryMissing(entry, buff.missingText, selfGlow)
-                    entry.iconByRole = buff.iconByRole
-                elseif
-                    shouldShow == false
-                    and not buff.enchantID
-                    and not buff.noExpirationGlow
-                    and not hideExpiring
-                then
-                    -- Buff present but maybe expiring (enchants don't track expiration here)
-                    local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
-                    TrySetEntryExpiring(entry, remaining, selfThreshold, selfGlow)
+        if buff.showOnInstanceEntry then
+            -- Instance entry only buff (e.g., soulwell reminder) — no normal buff checks
+            -- Gate on cheap checks first; customCheck (API call) only when everything else passes
+            if
+                inInstanceEntry
+                and selfVisible
+                and (not buff.class or buff.class == playerClass)
+                and IsBuffEnabled(settingKey)
+                and (not buff.customCheck or buff.customCheck())
+            then
+                SetEntryMissing(entry, buff.missingText, selfGlow)
+            end
+        else
+            local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
+            if
+                (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet)
+                and IsBuffEnabled(settingKey)
+                and selfVisible
+            then
+                if useGlowDet then
+                    if IsAnySpellGlowing(buff) then
+                        SetEntryMissing(entry, buff.missingText, selfGlow)
+                        entry.iconByRole = buff.iconByRole
+                    end
+                else
+                    local shouldShow = ShouldShowSelfBuff(
+                        buff.spellID,
+                        buff.class,
+                        buff.enchantID,
+                        buff.requiresSpellID,
+                        buff.excludeSpellID,
+                        buff.buffIdOverride,
+                        buff.customCheck,
+                        buff.requireSpecId,
+                        nil, -- skipSpellKnownCheck
+                        buff.requiresBuffWithEnchant
+                    )
+                    if shouldShow then
+                        SetEntryMissing(entry, buff.missingText, selfGlow)
+                        entry.iconByRole = buff.iconByRole
+                    elseif
+                        shouldShow == false
+                        and not buff.enchantID
+                        and not buff.noExpirationGlow
+                        and not hideExpiring
+                    then
+                        -- Buff present but maybe expiring (enchants don't track expiration here)
+                        local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
+                        TrySetEntryExpiring(entry, remaining, selfThreshold, selfGlow)
+                    end
                 end
             end
         end
@@ -1584,22 +1594,17 @@ function BuffState.Refresh()
                     SetEntryMissing(entry, buff.missingText, consGlow)
                 end
             else
-                -- Instance entry: skip item check for caster class (e.g., remind warlock to drop Soul Well)
-                if inInstanceEntry and buff.showOnInstanceEntry and buff.casterClass == playerClass then
+                local shouldShow, remainingTime = ShouldShowConsumableBuff(buff)
+                if shouldShow then
                     SetEntryMissing(entry, buff.missingText, consGlow)
-                else
-                    local shouldShow, remainingTime = ShouldShowConsumableBuff(buff)
-                    if shouldShow then
-                        SetEntryMissing(entry, buff.missingText, consGlow)
-                    elseif not buff.noExpirationGlow and not hideExpiring then
-                        TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow)
-                    end
-                    -- Eating state for food entries (display uses this for icon override + countdown)
-                    if entry.visible and buff.key == "food" then
-                        entry.isEating = IsPlayerEating()
-                        if entry.isEating then
-                            entry.eatingExpirationTime = GetEatingExpirationTime()
-                        end
+                elseif not buff.noExpirationGlow and not hideExpiring then
+                    TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow)
+                end
+                -- Eating state for food entries (display uses this for icon override + countdown)
+                if entry.visible and buff.key == "food" then
+                    entry.isEating = IsPlayerEating()
+                    if entry.isEating then
+                        entry.eatingExpirationTime = GetEatingExpirationTime()
                     end
                 end
             end
@@ -1742,7 +1747,7 @@ function BuffState.ShouldTriggerInstanceEntry()
         return false
     end
     local diffKey = GetCurrentDifficultyKey()
-    return diffKey ~= "mythicPlus" and diffKey ~= "follower" and not isPvPInstance
+    return diffKey ~= "mythicPlus" and diffKey ~= "follower"
 end
 
 ---Set the vehicle state

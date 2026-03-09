@@ -76,6 +76,7 @@ local min = math.min
 ---@field customCheck? fun(): boolean?
 ---@field getPetActions? fun(): PetAction[]?  -- Override pet actions (e.g., wrong pet → Felguard only)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
+---@field showOnInstanceEntry? boolean Only show when entering an instance (not M+), skip normal buff checks
 
 ---@class ConsumableBuff
 ---@field spellID? SpellID
@@ -91,7 +92,6 @@ local min = math.min
 ---@field displayIcon? number|number[] Icon texture ID(s) to use instead of spell icon
 ---@field itemID? number|number[] Check if player has this item in inventory
 ---@field readyCheckOnly? boolean Only show during ready checks
----@field showOnInstanceEntry? boolean Also show when entering an instance (not M+)
 ---@field casterClass? ClassName Require this class in group, but show reminder to everyone
 ---@field infoTooltip? string Tooltip text shown on hover (pipe-separated: title|description)
 ---@field visibilityCondition? fun(): boolean Custom function that gates visibility (return false to hide)
@@ -330,6 +330,21 @@ BR.BUFF_TABLES = {
             name = "Arcane Familiar",
             class = "MAGE",
             missingText = "NO\nFAMILIAR",
+        },
+        -- Soulwell reminder (warlock only, instance entry only)
+        {
+            spellID = 29893, -- Create Soulwell (used for icon resolution)
+            castSpellID = 29893, -- Click-to-cast: Create Soulwell
+            key = "soulwell",
+            name = "Create Soulwell",
+            class = "WARLOCK",
+            missingText = "DROP\nWELL",
+            showOnInstanceEntry = true, -- Only shows on instance entry
+            infoTooltip = "Instance Entry Reminder|Briefly shown when entering a dungeon or raid as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds.",
+            customCheck = function()
+                local info = C_Spell.GetSpellCooldown(29893)
+                return not info or info.duration == 0
+            end,
         },
         -- Warlock Grimoire of Sacrifice
         {
@@ -751,7 +766,7 @@ BR.BUFF_TABLES = {
                 return BR.BuffState.HasOffHandWeapon()
             end,
         },
-        -- Healthstone (shows on ready check + instance entry - checks inventory)
+        -- Healthstone (shows on ready check - checks inventory)
         {
             itemID = { 5512, 224464 }, -- Healthstone, Demonic Healthstone
             castSpellID = 29893, -- Create Soulwell
@@ -762,7 +777,6 @@ BR.BUFF_TABLES = {
             groupId = "healthstone",
             displayIcon = 538745, -- Healthstone icon
             readyCheckOnly = true,
-            showOnInstanceEntry = true,
             clickMacro = function()
                 local spellID = (GetNumGroupMembers() > 0 and IsInInstance()) and 29893 or 6201
                 local name = BR.GetSpellName(spellID)
