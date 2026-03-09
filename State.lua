@@ -1517,8 +1517,9 @@ function BuffState.Refresh()
                         and not buff.enchantID
                         and not buff.noExpirationGlow
                         and not hideExpiring
+                        and (buff.buffIdOverride or buff.spellID)
                     then
-                        -- Buff present but maybe expiring (enchants don't track expiration here)
+                        -- Buff present but maybe expiring (enchants/customCheck-only buffs don't track expiration here)
                         local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
                         TrySetEntryExpiring(entry, remaining, selfThreshold, selfGlow)
                     end
@@ -1671,7 +1672,13 @@ function BuffState.Refresh()
             local show = (wantPresent and shouldShow == false) or (not wantPresent and shouldShow)
             if show then
                 SetEntryText(entry, buff.overlayText, customGlow)
-            elseif not show and shouldShow ~= nil and not buff.enchantID and not hideExpiring then
+            elseif
+                not show
+                and shouldShow ~= nil
+                and not buff.enchantID
+                and not hideExpiring
+                and (buff.buffIdOverride or buff.spellID)
+            then
                 -- Buff is present (not missing), check if expiring
                 local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
                 TrySetEntryExpiring(entry, remaining, customThreshold, customGlow)
