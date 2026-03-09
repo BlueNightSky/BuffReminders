@@ -5,6 +5,7 @@ local _, BR = ...
 -- Food items may use a table with `label` (stat abbreviation) and `hearty` (boolean) fields.
 BR.CONSUMABLE_ITEMS = {
     food = {
+        -- TWW 11.0.0
         [222702] = { label = "Lo 2nd" }, -- Skewered Fillet
         [222703] = { label = "Lo 2nd" }, -- Simple Stew
         [222704] = { label = "Lo 2nd" }, -- Unseasoned Field Steak
@@ -77,16 +78,20 @@ BR.CONSUMABLE_ITEMS = {
         [223967] = { label = "Lo 2nd" }, -- Protein Slurp
         [223968] = { label = "Lo 2nd" }, -- Spongey Scramble
         [225592] = { label = "Speed" }, -- Exquisitely Eviscerated Muscle
+
+        -- TWW 11.1.0
         [235805] = { label = "Hi 2nd" }, -- Authentic Undermine Clam Chowder
         [235853] = { label = "Hi 2nd", hearty = true }, -- Hearty Authentic Undermine Clam Chowder
+
+        -- Midnight 12.0.0
         [242272] = { label = "Hi 2nd" }, -- Quel'dorei Medley
         [242273] = { label = "Hi 2nd" }, -- Blooming Feast
         [242274] = { label = "Hi 2nd" }, -- Champion's Bento
-        [242275] = { label = "Feast" }, -- Royal Roast
+        [242275] = { label = "Hi 1st" }, -- Royal Roast
         [242276] = { label = "V" }, -- Braised Blood Hunter
         [242277] = { label = "H" }, -- Crimson Calamari
         [242278] = { label = "Crit" }, -- Tasty Smoked Tetra
-        [242279] = { label = "Feast" }, -- Baked Lucky Loa
+        [242279] = { label = "Mid 1st" }, -- Baked Lucky Loa
         [242280] = { label = "V" }, -- Buttered Root Crab
         [242281] = { label = "M" }, -- Glitter Skewers
         [242282] = { label = "H" }, -- Null and Void Plate
@@ -95,8 +100,8 @@ BR.CONSUMABLE_ITEMS = {
         [242285] = { label = "M" }, -- Warped Wise Wings
         [242286] = { label = "H" }, -- Fel-Kissed Filet
         [242287] = { label = "Crit" }, -- Arcano Cutlets
-        [242288] = { label = "Feast" }, -- Twilight Angler's Medley
-        [242289] = { label = "Feast" }, -- Spellfire Filet
+        [242288] = { label = "Mid 1st" }, -- Twilight Angler's Medley
+        [242289] = { label = "Mid 1st" }, -- Spellfire Filet
         [242290] = { label = "Crit/V" }, -- Wise Tails
         [242291] = { label = "M/V" }, -- Fried Bloomtail
         [242292] = { label = "M/Crit" }, -- Eversong Pudding
@@ -104,22 +109,23 @@ BR.CONSUMABLE_ITEMS = {
         [242294] = { label = "V" }, -- Felberry Figs
         [242295] = { label = "H/Crit" }, -- Hearthflame Supper
         [242296] = { label = "M/H" }, -- Bloodthistle-wrapped Cutlets
-        [242302] = { label = "Feast" }, -- Bloom Skewers
-        [242303] = { label = "Feast" }, -- Mana-Infused Stew
+        [242302] = { label = "Lo 1st" }, -- Bloom Skewers
+        [242303] = { label = "Lo 1st" }, -- Mana-Infused Stew
         [242304] = { label = "Crit/V" }, -- Spiced Biscuits
         [242305] = { label = "M/V" }, -- Silvermoon Standard
         [242306] = { label = "M/Crit" }, -- Forager's Medley
         [242307] = { label = "H/V" }, -- Quick Sandwich
         [242308] = { label = "H/Crit" }, -- Portable Snack
         [242309] = { label = "M/H" }, -- Farstrider Rations
+        [242532] = { label = "Lo 1st" }, -- [PH] Vegetarian Recipe
         [242744] = { label = "Hi 2nd", hearty = true }, -- Hearty Quel'dorei Medley
         [242745] = { label = "Hi 2nd", hearty = true }, -- Hearty Blooming Feast
         [242746] = { label = "Hi 2nd", hearty = true }, -- Hearty Champion's Bento
-        [242747] = { label = "Feast", hearty = true }, -- Hearty Royal Roast
+        [242747] = { label = "Hi 1st", hearty = true }, -- Hearty Royal Roast
         [242748] = { label = "V", hearty = true }, -- Hearty Braised Blood Hunter
         [242749] = { label = "H", hearty = true }, -- Hearty Crimson Calamari
         [242750] = { label = "Crit", hearty = true }, -- Hearty Tasty Smoked Tetra
-        [242751] = { label = "Feast", hearty = true }, -- Hearty Rootland Surprise
+        [242751] = { label = "Mid 1st", hearty = true }, -- Hearty Rootland Surprise
         [242752] = { label = "V", hearty = true }, -- Hearty Buttered Root Crab
         [242753] = { label = "M", hearty = true }, -- Hearty Glitter Skewers
         [242754] = { label = "H", hearty = true }, -- Hearty Null and Void Plate
@@ -128,8 +134,8 @@ BR.CONSUMABLE_ITEMS = {
         [242757] = { label = "M", hearty = true }, -- Hearty Warped Wise Wings
         [242758] = { label = "H", hearty = true }, -- Hearty Fel-Kissed Filet
         [242759] = { label = "Crit", hearty = true }, -- Hearty Arcano Cutlets
-        [242760] = { label = "Feast", hearty = true }, -- Hearty Twilight Angler's Medley
-        [242761] = { label = "Feast", hearty = true }, -- Hearty Spellfire Filet
+        [242760] = { label = "Mid 1st", hearty = true }, -- Hearty Twilight Angler's Medley
+        [242761] = { label = "Mid 1st", hearty = true }, -- Hearty Spellfire Filet
         [242762] = { label = "Crit/V", hearty = true }, -- Hearty Wise Tails
         [242763] = { label = "M/V", hearty = true }, -- Hearty Fried Bloomtail
         [242764] = { label = "M/Crit", hearty = true }, -- Hearty Eversong Pudding
@@ -137,8 +143,8 @@ BR.CONSUMABLE_ITEMS = {
         [242766] = { label = "V", hearty = true }, -- Hearty Felberry Figs
         [242767] = { label = "H/Crit", hearty = true }, -- Hearty Hearthflame Supper
         [242768] = { label = "M/H", hearty = true }, -- Hearty Bloodthistle-Wrapped Cutlets
-        [242769] = { label = "Feast", hearty = true }, -- Hearty Bloom Skewers
-        [242770] = { label = "Feast", hearty = true }, -- Hearty Mana-Infused Stew
+        [242769] = { label = "Lo 1st", hearty = true }, -- Hearty Bloom Skewers
+        [242770] = { label = "Lo 1st", hearty = true }, -- Hearty Mana-Infused Stew
         [242771] = { label = "Crit/V", hearty = true }, -- Hearty Spiced Biscuits
         [242772] = { label = "M/V", hearty = true }, -- Hearty Silvermoon Standard
         [242773] = { label = "M/Crit", hearty = true }, -- Hearty Forager's Medley
@@ -147,21 +153,21 @@ BR.CONSUMABLE_ITEMS = {
         [242776] = { label = "M/H", hearty = true }, -- Hearty Farstrider Rations
         [255845] = { label = "Feast" }, -- Silvermoon Parade
         [255846] = { label = "Feast" }, -- Harandar Celebration
-        [255847] = { label = "Feast" }, -- Impossibly Royal Roast
+        [255847] = { label = "Hi 1st" }, -- Impossibly Royal Roast
         [255848] = { label = "Hi 2nd" }, -- Flora Frenzy
         [266985] = { label = "Feast", hearty = true }, -- Hearty Silvermoon Parade
         [266986] = { label = "Hi 2nd", hearty = true }, -- Hearty Quel'dorei Medley
         [266996] = { label = "Feast", hearty = true }, -- Hearty Harandar Celebration
         [267000] = { label = "Hi 2nd", hearty = true }, -- Hearty Flora Frenzy
-        [268679] = { label = "Feast", hearty = true }, -- Hearty Impossibly Royal Roast
+        [268679] = { label = "Hi 1st", hearty = true }, -- Hearty Impossibly Royal Roast
         [268680] = { label = "Hi 2nd", hearty = true }, -- Hearty Flora Frenzy
-        [242532] = { label = "Feast" }, -- [PH] Vegetarian Recipe
-        [260264] = true, -- Quel'Danas Rations
-        [260275] = true, -- Mukleech Curry
-        [260276] = true, -- Akil'stew
-        [260277] = true, -- Sedge Crawler Gumbo
-        [260286] = true, -- Shrooms and Nectar
-        [260299] = true, -- Roasted Abyssal Eel
+        -- Recovery-only (no Well Fed buff, just health/mana restore). Not tracked, listed here for reference.
+        -- [260264] = true, -- Quel'Danas Rations
+        -- [260275] = true, -- Mukleech Curry
+        -- [260276] = true, -- Akil'stew
+        -- [260277] = true, -- Sedge Crawler Gumbo
+        -- [260286] = true, -- Shrooms and Nectar
+        -- [260299] = true, -- Roasted Abyssal Eel
     },
     -- Flask priority: cauldron flasks (1) are prioritized over regular flasks (true)
     flask = {

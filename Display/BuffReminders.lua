@@ -92,6 +92,7 @@ local addonName, BR = ...
 ---@field stackCount FontString
 ---@field buffText? FontString
 ---@field foodLabel? FontString
+---@field foodHeartyBadge? FontString
 ---@field testText FontString
 ---@field isPlayerBuff? boolean
 ---@field buffCategory? CategoryName
@@ -973,16 +974,6 @@ local function CreateBuffFrame(buff, category)
         end
     end
 
-    -- Food label FontString (top-left inside the icon, shows stat abbreviation + hearty indicator)
-    if buff.key == "food" then
-        frame.foodLabel = frame:CreateFontString(nil, "OVERLAY")
-        frame.foodLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
-        local flSize = max(8, (catSettings.iconSize or 64) * 0.22)
-        frame.foodLabel:SetFont(fontPath, flSize, "OUTLINE")
-        frame.foodLabel:SetTextColor(1, 1, 1, 1)
-        frame.foodLabel:Hide()
-    end
-
     -- "TEST" text (shown above icon in test mode)
     frame.testText = frame:CreateFontString(nil, "OVERLAY")
     frame.testText:SetPoint("BOTTOM", frame, "TOP", 0, 25)
@@ -1611,7 +1602,7 @@ end
 -- Eating icon texture ID (from State.lua, matches the eating channel aura icon)
 local EATING_ICON = BR.EATING_AURA_ICON
 
----Apply food visual styling (stat label + hearty indicator) to a frame.
+---Apply food visual styling (stat label + hearty badge) to a frame.
 ---@param frame table
 ---@param label string? Food stat label (e.g. "M/V", "Crit")
 ---@param hearty boolean? Whether the food is hearty
@@ -1619,28 +1610,38 @@ local function ApplyFoodFrameStyle(frame, label, hearty)
     if not label then
         return
     end
-    -- Lazy-init foodLabel FontString for extra frames (main frame creates it at init)
+    local size = frame:GetWidth()
+    local fontSize = max(8, size * 0.22)
     if not frame.foodLabel then
         frame.foodLabel = frame:CreateFontString(nil, "OVERLAY")
         frame.foodLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
     end
-    local size = frame:GetWidth()
-    local fontSize = max(8, size * 0.22)
     frame.foodLabel:SetFont(fontPath, fontSize, "OUTLINE")
     frame.foodLabel:SetTextColor(1, 1, 1, 1)
-    if hearty then
-        frame.foodLabel:SetText("|cFFFFD100H|r " .. label)
-    else
-        frame.foodLabel:SetText(label)
-    end
+    frame.foodLabel:SetText(label)
     frame.foodLabel:Show()
+    if not frame.foodHeartyBadge then
+        frame.foodHeartyBadge = frame:CreateFontString(nil, "OVERLAY")
+        frame.foodHeartyBadge:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 2, 2)
+    end
+    if hearty then
+        frame.foodHeartyBadge:SetFont(fontPath, fontSize, "OUTLINE")
+        frame.foodHeartyBadge:SetTextColor(0.4, 0.7, 1, 1)
+        frame.foodHeartyBadge:SetText("H")
+        frame.foodHeartyBadge:Show()
+    else
+        frame.foodHeartyBadge:Hide()
+    end
 end
 
 ---Clear food visual styling from a frame.
 ---@param frame table
 local function ClearFoodFrameStyle(frame)
-    if frame.foodLabel and (frame.key == "food" or frame.isExtraFrame) then
+    if frame.foodLabel then
         frame.foodLabel:Hide()
+    end
+    if frame.foodHeartyBadge then
+        frame.foodHeartyBadge:Hide()
     end
 end
 
@@ -1807,6 +1808,9 @@ local function RenderVisibleEntry(frame, entry)
         frame.stackCount:Hide()
         if frame.foodLabel then
             frame.foodLabel:Hide()
+        end
+        if frame.foodHeartyBadge then
+            frame.foodHeartyBadge:Hide()
         end
     end
     return true
@@ -2522,10 +2526,11 @@ local function UpdateVisuals()
         -- Frame alpha
         frame:SetAlpha(catSettings.iconAlpha or 1)
 
-        -- Food label font update
+        -- Food label + hearty badge font update
         if frame.foodLabel then
             local flSize = max(8, size * 0.22)
             frame.foodLabel:SetFont(fontPath, flSize, "OUTLINE")
+            frame.foodHeartyBadge:SetFont(fontPath, flSize, "OUTLINE")
         end
         if frame.buffText then
             -- Raid BUFF! text
@@ -2550,6 +2555,9 @@ local function UpdateVisuals()
             frame.count:Hide()
             if frame.foodLabel then
                 frame.foodLabel:Hide()
+            end
+            if frame.foodHeartyBadge then
+                frame.foodHeartyBadge:Hide()
             end
         end
 
