@@ -667,6 +667,7 @@ BR.BUFF_TABLES = {
                 431972, -- Flask of Tempered Swiftness
                 431973, -- Flask of Tempered Versatility
                 431974, -- Flask of Tempered Mastery
+                432473, -- Flask of Saving Graces
                 -- Midnight
                 1235057, -- Flask of Thalassian Resistance (Versatility)
                 1235108, -- Flask of the Magisters (Mastery)
@@ -796,7 +797,7 @@ BR.BuffGroups = {
     healthstone = { displayName = "Healthstone!" },
 }
 
--- Classes that benefit from each buff (BETA: class-level only, not spec-aware)
+-- Classes that benefit from each buff
 -- nil = everyone benefits, otherwise only listed classes are counted
 BR.BuffBeneficiaries = {
     intellect = {
