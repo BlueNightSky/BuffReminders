@@ -258,7 +258,7 @@ local defaults = {
     petPassiveOnlyInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
-    instanceEntryReminder = true,
+
     minimap = {
         hide = true,
     },
@@ -2853,7 +2853,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 24
+        local DB_VERSION = 25
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3400,6 +3400,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     end
                 end
             end,
+            [25] = function()
+                db.instanceEntryReminder = nil
+            end,
         }
 
         -- Run pending migrations
@@ -3419,11 +3422,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 )
             end
         end)
-
-        -- Clean up old one-time notice flags
-        db.glowUpdateNoticeShown = nil
-        db.selfClickNoticeShown = nil
-        db.renameNotificationShown = nil
 
         -- Deep copy defaults for non-defaults tables
         DeepCopyDefault(defaults, db)
