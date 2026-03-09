@@ -171,7 +171,7 @@ BR.CONSUMABLE_ITEMS = {
     },
     -- Flask priority: cauldron flasks (1) are prioritized over regular flasks (true)
     flask = {
-        -- Regular TWW flasks
+        -- TWW 11.0.0
         [212269] = true,
         [212270] = true,
         [212271] = true,
@@ -190,7 +190,7 @@ BR.CONSUMABLE_ITEMS = {
         [212299] = true,
         [212300] = true,
         [212301] = true,
-        -- Cauldron TWW flasks
+        -- TWW 11.0.0 (cauldron)
         [212725] = 1,
         [212727] = 1,
         [212728] = 1,
@@ -209,23 +209,7 @@ BR.CONSUMABLE_ITEMS = {
         [212745] = 1,
         [212746] = 1,
         [212747] = 1,
-        [241320] = true,
-        [241321] = true,
-        [241322] = true,
-        [241323] = true,
-        [241324] = true,
-        [241325] = true,
-        [241326] = true,
-        [241327] = true,
-        [245926] = true,
-        [245927] = true,
-        [245928] = true,
-        [245929] = true,
-        [245930] = true,
-        [245931] = true,
-        [245932] = true,
-        [245933] = true,
-        -- Midnight flasks
+        -- Midnight 12.0.0
         [236774] = true,
         [236776] = true,
         [236780] = true,
@@ -239,8 +223,25 @@ BR.CONSUMABLE_ITEMS = {
         [241315] = true,
         [241316] = true,
         [241317] = true,
+        [241320] = true,
+        [241321] = true,
+        [241322] = true,
+        [241323] = true,
+        [241324] = true,
+        [241325] = true,
+        [241326] = true,
+        [241327] = true,
         [241334] = true,
         [241335] = true,
+        -- Midnight 12.0.0 (fleeting)
+        [245926] = true,
+        [245927] = true,
+        [245928] = true,
+        [245929] = true,
+        [245930] = true,
+        [245931] = true,
+        [245932] = true,
+        [245933] = true,
     },
     -- Rune priority: lower number = use first (Ethereal > Soulgorged > Crystallized > legacy)
     rune = {
@@ -254,41 +255,37 @@ BR.CONSUMABLE_ITEMS = {
         [181468] = 7, -- Veiled Augment Rune (Shadowlands)
     },
     weapon = {
-        [220156] = true,
-        [222502] = true,
-        [222503] = true,
-        [222504] = true,
-        [222508] = true,
-        [222509] = true,
-        [222510] = true,
-        [224105] = true,
-        [224106] = true,
-        [224107] = true,
-        [224108] = true,
-        [224109] = true,
-        [224110] = true,
-        [224111] = true,
-        [224112] = true,
-        [224113] = true,
-        [237367] = true,
-        [237369] = true,
-        [237370] = true,
-        [237371] = true,
-        [243733] = true,
-        [243734] = true,
-        [243735] = true,
-        [243736] = true,
-        [243737] = true,
-        [243738] = true,
-        [257749] = true,
-        [257750] = true,
-        [257751] = true,
-        [257752] = true,
-        -- Midnight weapon enhancements
-        [237372] = true,
-        [237373] = true,
-        [268032] = true,
-        [268033] = true,
-        [268034] = true,
+        -- TWW 11.0.0
+        [220156] = true, -- Bubbling Wax (Rogue)
+        [222502] = true, -- Ironclaw Whetstone
+        [222503] = true, -- Ironclaw Whetstone (quality 2)
+        [222504] = true, -- Ironclaw Whetstone (quality 3)
+        [222508] = true, -- Ironclaw Weightstone
+        [222509] = true, -- Ironclaw Weightstone (quality 2)
+        [222510] = true, -- Ironclaw Weightstone (quality 3)
+        [224105] = true, -- Algari Mana Oil
+        [224106] = true, -- Algari Mana Oil (quality 2)
+        [224107] = true, -- Algari Mana Oil (quality 3)
+        [224108] = true, -- Oil of Beledar's Grace
+        [224109] = true, -- Oil of Beledar's Grace (quality 2)
+        [224110] = true, -- Oil of Beledar's Grace (quality 3)
+        [224111] = true, -- Oil of Deep Toxins
+        [224112] = true, -- Oil of Deep Toxins (quality 2)
+        [224113] = true, -- Oil of Deep Toxins (quality 3)
+        -- Midnight 12.0.0
+        [237367] = true, -- Refulgent Weightstone
+        [237369] = true, -- Refulgent Weightstone (quality 2)
+        [237370] = true, -- Refulgent Whetstone
+        [237371] = true, -- Refulgent Whetstone (quality 2)
+        [243733] = true, -- Thalassian Phoenix Oil
+        [243734] = true, -- Thalassian Phoenix Oil (quality 2)
+        [243735] = true, -- Oil of Dawn
+        [243736] = true, -- Oil of Dawn (quality 2)
+        [243737] = true, -- Smuggler's Enchanted Edge
+        [243738] = true, -- Smuggler's Enchanted Edge (quality 2)
+        [257749] = true, -- Laced Zoomshots
+        [257750] = true, -- Laced Zoomshots (quality 2)
+        [257751] = true, -- Weighted Boomshots
+        [257752] = true, -- Weighted Boomshots (quality 2)
     },
 }

@@ -1456,10 +1456,10 @@ local function CreateOptionsPanel()
             local P_GAP = 3
             local P_STEP = P_ICON + P_GAP + P_BORDER * 2
             local P_SUB_STEP = P_SUB + P_BORDER * 2 -- sub-icons touch borders
-            -- Distinct textures for flask/food/oil and their variants
-            local TEX_FLASK = { 134877, 134863, 134852 } -- main + 2 other variants
-            local TEX_FOOD = { 134062, 133984 } -- main + 1 other variant
-            local TEX_OIL = 609892
+            -- Distinct textures for flask/food/oil and their variants (Midnight icons)
+            local TEX_FLASK = { 7548898, 7548899, 7548900 } -- Haranir flasks: blue, green, orange
+            local TEX_FOOD = { 4672193, 1045939 } -- Royal Roast, Twilight Angler's Medley
+            local TEX_OIL = 7548987 -- Thalassian Phoenix Oil
 
             local previewHeight = P_ICON + P_SUB + P_GAP + P_BORDER * 2
             local MODE_ICON_COUNT = { icon_only = 3, sub_icons = 3, expanded = 6 }

@@ -651,7 +651,7 @@ BR.BUFF_TABLES = {
                 1264426, -- Void-Touched Augment Rune (Midnight)
                 347901, -- Veiled Augment Rune (Shadowlands) - legacy
             },
-            displaySpells = { 1234969, 1242347, 453250, 393438 }, -- Show rune icons in priority order
+            displaySpells = { 1264426, 1234969 }, -- Void-Touched (Midnight), Ethereal (TWW permanent)
             key = "rune",
             name = "Rune",
             missingText = "NO\nRUNE",
@@ -675,12 +675,12 @@ BR.BUFF_TABLES = {
                 1239355, -- Vicious Thalassian Flask of Honor
             },
             displaySpells = {
-                -- Show only TWW flask icons in UI
-                432021, -- Flask of Alchemical Chaos
-                431971, -- Flask of Tempered Aggression
-                431972, -- Flask of Tempered Swiftness
-                431973, -- Flask of Tempered Versatility
-                431974, -- Flask of Tempered Mastery
+                -- Show Midnight flask icons in UI
+                1235111, -- Flask of the Shattered Sun (Critical Strike)
+                1235110, -- Flask of the Blood Knights (Haste)
+                1235108, -- Flask of the Magisters (Mastery)
+                1235057, -- Flask of Thalassian Resistance (Versatility)
+                1239355, -- Vicious Thalassian Flask of Honor
             },
             key = "flask",
             name = "Flask",
@@ -716,7 +716,7 @@ BR.BUFF_TABLES = {
             name = "Weapon",
             missingText = "NO\nWEAPON\nBUFF",
             groupId = "weaponBuff",
-            displayIcon = { 609892, 3622195, 3622196 }, -- Oil, Whetstone, Weightstone/Razorstone
+            displayIcon = { 7548987, 7548941, 7548938 }, -- Thalassian Phoenix Oil, Refulgent Whetstone, Refulgent Weightstone
             consumableCategory = "weapon",
             excludeIfSpellKnown = {
                 -- Shaman imbues
@@ -735,7 +735,7 @@ BR.BUFF_TABLES = {
             name = "Weapon (OH)",
             missingText = "NO\nWEAPON\nBUFF",
             groupId = "weaponBuff",
-            displayIcon = { 609892, 3622195, 3622196 }, -- Oil, Whetstone, Weightstone/Razorstone
+            displayIcon = { 7548987, 7548941, 7548938 }, -- Thalassian Phoenix Oil, Refulgent Whetstone, Refulgent Weightstone
             consumableCategory = "weapon",
             excludeIfSpellKnown = {
                 -- Shaman imbues
