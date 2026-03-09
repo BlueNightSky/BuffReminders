@@ -2782,7 +2782,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         modal = true,
     })
 
-    local spellRows, nameBox, missingBox
+    local spellRows, nameBox, overlayBox
     local castSpellEditBox, castItemEditBox, macroEditBox, requireItemEditBox
 
     modal:SetScript("OnHide", function()
@@ -2796,8 +2796,8 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         if nameBox then
             nameBox:ClearFocus()
         end
-        if missingBox then
-            missingBox:ClearFocus()
+        if overlayBox then
+            overlayBox:ClearFocus()
         end
         if castSpellEditBox then
             castSpellEditBox:ClearFocus()
@@ -2984,18 +2984,18 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     nameHolder:SetPoint("TOPLEFT", 0, -30)
     nameBox = nameHolder.editBox
 
-    local missingHolder = Components.TextInput(sectionsFrame, {
+    local overlayHolder = Components.TextInput(sectionsFrame, {
         label = "Text:",
-        value = editingBuff and editingBuff.missingText and editingBuff.missingText:gsub("\n", "\\n") or "",
+        value = editingBuff and editingBuff.overlayText and editingBuff.overlayText:gsub("\n", "\\n") or "",
         width = 250,
         labelWidth = 50,
     })
-    missingHolder:SetPoint("TOPLEFT", 0, -54)
-    missingBox = missingHolder.editBox
+    overlayHolder:SetPoint("TOPLEFT", 0, -54)
+    overlayBox = overlayHolder.editBox
 
-    local missingHint = sectionsFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    missingHint:SetPoint("LEFT", missingHolder, "RIGHT", 5, 0)
-    missingHint:SetText("(use \\n for line break)")
+    local overlayHint = sectionsFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    overlayHint:SetPoint("LEFT", overlayHolder, "RIGHT", 5, 0)
+    overlayHint:SetText("(use \\n for line break)")
 
     -- Conditions section (merges restrictions, visibility, advanced)
     CreateSeparator(sectionsFrame, -76)
@@ -3439,11 +3439,11 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             displayName = firstName or ("Spell " .. validatedIDs[1])
         end
 
-        local missingTextValue = strtrim(missingBox:GetText())
-        if missingTextValue ~= "" then
-            missingTextValue = missingTextValue:gsub("\\n", "\n")
+        local overlayTextValue = strtrim(overlayBox:GetText())
+        if overlayTextValue ~= "" then
+            overlayTextValue = overlayTextValue:gsub("\\n", "\n")
         else
-            missingTextValue = nil
+            overlayTextValue = nil
         end
 
         -- Resolve click action fields based on selected action type
@@ -3501,7 +3501,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             spellID = spellIDValue,
             key = key,
             name = displayName,
-            missingText = missingTextValue,
+            overlayText = overlayTextValue,
             class = classDropdownHolder:GetValue(),
             requireSpecId = specDropdownHolder and specDropdownHolder:GetValue() or nil,
             showWhenPresent = showIconToggle:GetChecked() or nil,

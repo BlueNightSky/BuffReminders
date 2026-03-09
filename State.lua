@@ -15,9 +15,9 @@ local _, BR = ...
 ---@field category CategoryName              -- "raid", "presence", "targeted", "self", "pet", "consumable", "custom"
 ---@field sortOrder number                   -- Position within category for display ordering
 ---@field visible boolean                    -- Should show?
----@field displayType "count"|"missing"|"expiring"
+---@field displayType "count"|"text"|"expiring"
 ---@field countText string?                  -- "17/20" for raid buffs, "5m" for expiring consumables
----@field missingText string?                -- "NO\nAURA" for non-raid
+---@field overlayText string?                -- "NO\nAURA" for non-raid
 ---@field expiringTime number?               -- Seconds remaining if expiring
 ---@field shouldGlow boolean                 -- Expiration glow?
 ---@field iconByRole table<RoleType,number>? -- Role-based icon override
@@ -1236,21 +1236,21 @@ local function GetOrCreateEntry(key, category, sortOrder)
             category = category,
             sortOrder = sortOrder or 0,
             visible = false,
-            displayType = "missing",
+            displayType = "text",
             shouldGlow = false,
         }
     end
     return BuffState.entries[key]
 end
 
----Mark an entry as visible+missing with optional glow
+---Mark an entry as visible with overlay text and optional glow
 ---@param entry BuffStateEntry
----@param missingText? string
+---@param overlayText? string
 ---@param glowEnabled boolean
-local function SetEntryMissing(entry, missingText, glowEnabled)
+local function SetEntryText(entry, overlayText, glowEnabled)
     entry.visible = true
-    entry.displayType = "missing"
-    entry.missingText = missingText
+    entry.displayType = "text"
+    entry.overlayText = overlayText
     entry.shouldGlow = glowEnabled
 end
 
@@ -1322,7 +1322,7 @@ function BuffState.Refresh()
         entry.visible = false
         entry.shouldGlow = false
         entry.countText = nil
-        entry.missingText = nil
+        entry.overlayText = nil
         entry.expiringTime = nil
         entry.rebuffWarning = nil -- legacy field, still cleared for safety
         entry.isEating = nil
@@ -1400,12 +1400,12 @@ function BuffState.Refresh()
         if (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet) and IsBuffEnabled(buff.key) and showBuff then
             if useGlowDet then
                 if IsAnySpellGlowing(buff) then
-                    SetEntryMissing(entry, buff.missingText, presGlow)
+                    SetEntryText(entry, buff.overlayText, presGlow)
                 end
             else
                 local hasBuff, minRemaining, targetEntry = HasPresenceBuff(buff.spellID, scope.playerOnly)
                 if not hasBuff then
-                    SetEntryMissing(entry, buff.missingText, presGlow)
+                    SetEntryText(entry, buff.overlayText, presGlow)
                 elseif not buff.noExpirationGlow and not hideExpiring then
                     TrySetEntryExpiring(entry, minRemaining, presThreshold, presGlow)
                 end
@@ -1444,7 +1444,7 @@ function BuffState.Refresh()
         then
             if useGlowDet then
                 if IsAnySpellGlowing(buff) then
-                    SetEntryMissing(entry, buff.missingText, targGlow)
+                    SetEntryText(entry, buff.overlayText, targGlow)
                 end
             else
                 local shouldShow, remaining = ShouldShowTargetedBuff(
@@ -1457,7 +1457,7 @@ function BuffState.Refresh()
                 )
 
                 if shouldShow then
-                    SetEntryMissing(entry, buff.missingText, targGlow)
+                    SetEntryText(entry, buff.overlayText, targGlow)
                 elseif shouldShow == false and not hideExpiring then
                     TrySetEntryExpiring(entry, remaining, targThreshold, targGlow)
                 end
@@ -1482,7 +1482,7 @@ function BuffState.Refresh()
                 and IsBuffEnabled(settingKey)
                 and (not buff.customCheck or buff.customCheck())
             then
-                SetEntryMissing(entry, buff.missingText, selfGlow)
+                SetEntryText(entry, buff.overlayText, selfGlow)
             end
         else
             local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
@@ -1493,7 +1493,7 @@ function BuffState.Refresh()
             then
                 if useGlowDet then
                     if IsAnySpellGlowing(buff) then
-                        SetEntryMissing(entry, buff.missingText, selfGlow)
+                        SetEntryText(entry, buff.overlayText, selfGlow)
                         entry.iconByRole = buff.iconByRole
                     end
                 else
@@ -1510,7 +1510,7 @@ function BuffState.Refresh()
                         buff.requiresBuffWithEnchant
                     )
                     if shouldShow then
-                        SetEntryMissing(entry, buff.missingText, selfGlow)
+                        SetEntryText(entry, buff.overlayText, selfGlow)
                         entry.iconByRole = buff.iconByRole
                     elseif
                         shouldShow == false
@@ -1552,7 +1552,7 @@ function BuffState.Refresh()
                 buff.requiresBuffWithEnchant
             )
             if shouldShow then
-                SetEntryMissing(entry, buff.missingText, petGlow)
+                SetEntryText(entry, buff.overlayText, petGlow)
                 entry.iconByRole = buff.iconByRole
                 -- Expanded pet actions (individual summon spell icons)
                 if buff.getPetActions then
@@ -1591,12 +1591,12 @@ function BuffState.Refresh()
         then
             if useGlowDet then
                 if IsAnySpellGlowing(buff) then
-                    SetEntryMissing(entry, buff.missingText, consGlow)
+                    SetEntryText(entry, buff.overlayText, consGlow)
                 end
             else
                 local shouldShow, remainingTime = ShouldShowConsumableBuff(buff)
                 if shouldShow then
-                    SetEntryMissing(entry, buff.missingText, consGlow)
+                    SetEntryText(entry, buff.overlayText, consGlow)
                 elseif not buff.noExpirationGlow and not hideExpiring then
                     TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow)
                 end
@@ -1652,7 +1652,7 @@ function BuffState.Refresh()
             local anyGlowing = IsAnySpellGlowing(buff)
             local show = (mode == "whenGlowing" and anyGlowing) or (mode == "whenNotGlowing" and not anyGlowing)
             if show then
-                SetEntryMissing(entry, buff.missingText, customGlow)
+                SetEntryText(entry, buff.overlayText, customGlow)
             end
         elseif shouldProcess then
             local shouldShow = ShouldShowSelfBuff(
@@ -1670,7 +1670,7 @@ function BuffState.Refresh()
             local wantPresent = buff.showWhenPresent
             local show = (wantPresent and shouldShow == false) or (not wantPresent and shouldShow)
             if show then
-                SetEntryMissing(entry, buff.missingText, customGlow)
+                SetEntryText(entry, buff.overlayText, customGlow)
             elseif not show and shouldShow ~= nil and not buff.enchantID and not hideExpiring then
                 -- Buff is present (not missing), check if expiring
                 local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)

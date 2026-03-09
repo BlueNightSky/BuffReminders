@@ -27,7 +27,7 @@ local min = math.min
 ---@field name string
 ---@field class ClassName
 ---@field levelRequired? number
----@field missingText string
+---@field overlayText string
 ---@field groupId? string
 ---@field excludeSpellID? number
 ---@field displayIcon? number
@@ -43,7 +43,7 @@ local min = math.min
 ---@field key string
 ---@field name string
 ---@field class ClassName
----@field missingText string
+---@field overlayText string
 ---@field groupId? string
 ---@field beneficiaryRole? RoleType
 ---@field excludeSpellID? number
@@ -59,7 +59,7 @@ local min = math.min
 ---@field key string
 ---@field name string
 ---@field class? ClassName
----@field missingText string
+---@field overlayText string
 ---@field groupId? string
 ---@field enchantID? number
 ---@field requiresBuffWithEnchant? boolean -- When true, require both enchant AND buff to be present (for Paladin Rites)
@@ -82,7 +82,7 @@ local min = math.min
 ---@field spellID? SpellID
 ---@field key string
 ---@field name string
----@field missingText string
+---@field overlayText string
 ---@field groupId? string
 ---@field checkWeaponEnchant? boolean Check if any weapon enchant exists (oils, stones, imbues)
 ---@field checkWeaponEnchantOH? boolean Check if off-hand weapon enchant exists
@@ -105,7 +105,7 @@ local min = math.min
 ---@field spellID SpellID
 ---@field key string
 ---@field name string
----@field missingText? string
+---@field overlayText? string
 ---@field class? ClassName
 ---@field requireSpecId? number
 ---@field requireSpellKnown? boolean -- Only show if player knows at least one of the tracked spells
@@ -201,7 +201,7 @@ BR.BUFF_TABLES = {
             name = "Atrophic/Numbing Poison",
             class = "ROGUE",
             levelRequired = 80,
-            missingText = "NO\nPOISON",
+            overlayText = "NO\nPOISON",
         },
         {
             spellID = 465,
@@ -209,7 +209,7 @@ BR.BUFF_TABLES = {
             name = "Devotion Aura",
             class = "PALADIN",
             levelRequired = 10,
-            missingText = "NO\nAURA",
+            overlayText = "NO\nAURA",
         },
         {
             spellID = 20707,
@@ -217,7 +217,7 @@ BR.BUFF_TABLES = {
             name = "Soulstone",
             class = "WARLOCK",
             levelRequired = 13,
-            missingText = "NO\nSTONE",
+            overlayText = "NO\nSTONE",
             readyCheckOnly = true,
             castOnOthers = true,
             noExpirationGlow = true,
@@ -261,7 +261,7 @@ BR.BUFF_TABLES = {
             key = "beaconOfFaith",
             name = "Beacon of Faith",
             class = "PALADIN",
-            missingText = "NO\nFAITH",
+            overlayText = "NO\nFAITH",
             groupId = "beacons",
             requireSpecId = 65, -- Holy only
             glowDetectable = true,
@@ -272,7 +272,7 @@ BR.BUFF_TABLES = {
             key = "beaconOfLight",
             name = "Beacon of Light",
             class = "PALADIN",
-            missingText = "NO\nLIGHT",
+            overlayText = "NO\nLIGHT",
             groupId = "beacons",
             requireSpecId = 65, -- Holy only
             glowDetectable = true,
@@ -285,7 +285,7 @@ BR.BUFF_TABLES = {
             key = "earthShieldOthers",
             name = "Earth Shield",
             class = "SHAMAN",
-            missingText = "NO\nES",
+            overlayText = "NO\nES",
             infoTooltip = "May Show Extra Icon|Until you cast this, you might see both this and the Water/Lightning Shield reminder. I can't tell if you want Earth Shield on yourself, or Earth Shield on an ally + Water/Lightning Shield on yourself.",
             clickMacro = TargetedClickMacro("earthShieldOthers"),
         },
@@ -295,7 +295,7 @@ BR.BUFF_TABLES = {
             name = "Source of Magic",
             class = "EVOKER",
             beneficiaryRole = "HEALER",
-            missingText = "NO\nSOURCE",
+            overlayText = "NO\nSOURCE",
             clickMacro = TargetedClickMacro("sourceOfMagic"),
         },
         {
@@ -304,7 +304,7 @@ BR.BUFF_TABLES = {
             name = "Blistering Scales",
             class = "EVOKER",
             beneficiaryRole = "TANK",
-            missingText = "NO\nSCALES",
+            overlayText = "NO\nSCALES",
             requireSpecId = 1473, -- Augmentation
             requiresSpellID = 360827,
             clickMacro = TargetedClickMacro("blisteringScales"),
@@ -315,7 +315,7 @@ BR.BUFF_TABLES = {
             key = "symbioticRelationship",
             name = "Symbiotic Relationship",
             class = "DRUID",
-            missingText = "NO\nLINK",
+            overlayText = "NO\nLINK",
             clickMacro = TargetedClickMacro("symbioticRelationship"),
         },
     },
@@ -329,7 +329,7 @@ BR.BUFF_TABLES = {
             key = "arcaneFamiliar",
             name = "Arcane Familiar",
             class = "MAGE",
-            missingText = "NO\nFAMILIAR",
+            overlayText = "NO\nFAMILIAR",
         },
         -- Soulwell reminder (warlock only, instance entry only)
         {
@@ -338,9 +338,9 @@ BR.BUFF_TABLES = {
             key = "soulwell",
             name = "Create Soulwell",
             class = "WARLOCK",
-            missingText = "DROP\nWELL",
+            overlayText = "DROP\nWELL",
             showOnInstanceEntry = true, -- Only shows on instance entry
-            infoTooltip = "Instance Entry Reminder|Briefly shown when entering a dungeon or raid as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds.",
+            infoTooltip = "Instance Entry Reminder|Briefly shown when entering a dungeon as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds.",
             customCheck = function()
                 local info = C_Spell.GetSpellCooldown(29893)
                 return not info or info.duration == 0
@@ -353,7 +353,7 @@ BR.BUFF_TABLES = {
             key = "grimoireOfSacrifice",
             name = "Grimoire of Sacrifice",
             class = "WARLOCK",
-            missingText = "NO\nGRIM",
+            overlayText = "NO\nGRIM",
         },
         -- Paladin weapon rites (alphabetical: Adjuration, Sanctification)
         -- NOTE: Due to a Blizzard bug, when changing talents the buff drops but enchant remains.
@@ -363,7 +363,7 @@ BR.BUFF_TABLES = {
             key = "riteOfAdjuration",
             name = "Rite of Adjuration",
             class = "PALADIN",
-            missingText = "NO\nRITE",
+            overlayText = "NO\nRITE",
             enchantID = 7144,
             buffIdOverride = 433584, -- Actual buff ID on player
             requiresBuffWithEnchant = true,
@@ -377,7 +377,7 @@ BR.BUFF_TABLES = {
             key = "riteOfSanctification",
             name = "Rite of Sanctification",
             class = "PALADIN",
-            missingText = "NO\nRITE",
+            overlayText = "NO\nRITE",
             enchantID = 7143,
             buffIdOverride = 433550, -- Actual buff ID on player
             requiresBuffWithEnchant = true,
@@ -395,7 +395,7 @@ BR.BUFF_TABLES = {
             key = "roguePoisons",
             name = "Rogue Poisons",
             class = "ROGUE",
-            missingText = "NO\nSELF\nPOISON",
+            overlayText = "NO\nSELF\nPOISON",
             customCheck = function()
                 local lethalPoisons = { 315584, 8679, 2823, 381664 } -- Instant, Wound, Deadly, Amplifying
                 local nonLethalPoisons = { 5761, 381637, 3408 } -- Numbing, Atrophic, Crippling
@@ -492,7 +492,7 @@ BR.BUFF_TABLES = {
             key = "shadowform",
             name = "Shadowform",
             class = "PRIEST",
-            missingText = "NO\nFORM",
+            overlayText = "NO\nFORM",
             buffIdOverride = { 232698, 194249 },
             noExpirationGlow = true, -- Voidform (short duration) replaces Shadowform; don't warn
         },
@@ -502,7 +502,7 @@ BR.BUFF_TABLES = {
             key = "earthlivingWeapon",
             name = "Earthliving Weapon",
             class = "SHAMAN",
-            missingText = "NO\nEL",
+            overlayText = "NO\nEL",
             enchantID = 6498,
             groupId = "shamanImbues",
         },
@@ -511,7 +511,7 @@ BR.BUFF_TABLES = {
             key = "flametongueWeapon",
             name = "Flametongue Weapon",
             class = "SHAMAN",
-            missingText = "NO\nFT",
+            overlayText = "NO\nFT",
             enchantID = 5400,
             groupId = "shamanImbues",
         },
@@ -520,7 +520,7 @@ BR.BUFF_TABLES = {
             key = "windfuryWeapon",
             name = "Windfury Weapon",
             class = "SHAMAN",
-            missingText = "NO\nWF",
+            overlayText = "NO\nWF",
             enchantID = 5401,
             groupId = "shamanImbues",
         },
@@ -538,7 +538,7 @@ BR.BUFF_TABLES = {
             key = "earthShieldSelfEO",
             name = "Earth Shield (Self)",
             class = "SHAMAN",
-            missingText = "NO\nSELF ES",
+            overlayText = "NO\nSELF ES",
             requiresSpellID = 383010,
             groupId = "shamanShields",
             displaySpells = 974, -- Earth Shield icon for group checkbox
@@ -549,7 +549,7 @@ BR.BUFF_TABLES = {
             key = "waterLightningShieldEO",
             name = "Water/Lightning Shield",
             class = "SHAMAN",
-            missingText = "NO\nSHIELD",
+            overlayText = "NO\nSHIELD",
             requiresSpellID = 383010,
             groupId = "shamanShields",
             displaySpells = 192106, -- Lightning Shield icon for group checkbox
@@ -561,7 +561,7 @@ BR.BUFF_TABLES = {
             key = "shamanShieldBasic",
             name = "Shield (No Talent)",
             class = "SHAMAN",
-            missingText = "NO\nSHIELD",
+            overlayText = "NO\nSHIELD",
             excludeSpellID = 383010,
             groupId = "shamanShields",
             displaySpells = 52127, -- Water Shield icon for group checkbox
@@ -576,7 +576,7 @@ BR.BUFF_TABLES = {
             key = "frostMagePet",
             name = "Water Elemental",
             class = "MAGE",
-            missingText = "NO\nPET",
+            overlayText = "NO\nPET",
             requireSpecId = 64, -- Frost
             requiresSpellID = 31687,
             groupId = "pets",
@@ -588,7 +588,7 @@ BR.BUFF_TABLES = {
             key = "hunterPet",
             name = "Hunter Pet",
             class = "HUNTER",
-            missingText = "NO\nPET",
+            overlayText = "NO\nPET",
             displayIcon = 132161,
             groupId = "pets",
             customCheck = function()
@@ -603,7 +603,7 @@ BR.BUFF_TABLES = {
             key = "petPassive",
             name = "Pet Passive",
             -- No class: applies to any class with a pet
-            missingText = "PASSIVE\nPET",
+            overlayText = "PASSIVE\nPET",
             displayIcon = 132311,
             customCheck = IsPetOnPassive,
         },
@@ -612,7 +612,7 @@ BR.BUFF_TABLES = {
             key = "unholyPet",
             name = "Unholy Ghoul",
             class = "DEATHKNIGHT",
-            missingText = "NO\nPET",
+            overlayText = "NO\nPET",
             requireSpecId = 252, -- Unholy
             groupId = "pets",
             customCheck = function()
@@ -623,7 +623,7 @@ BR.BUFF_TABLES = {
             key = "warlockWrongPet",
             name = "Wrong Demon",
             class = "WARLOCK",
-            missingText = "WRONG\nPET",
+            overlayText = "WRONG\nPET",
             displayIcon = 136216, -- Felguard icon
             excludeSpellID = 108503, -- Grimoire of Sacrifice: pet intentionally sacrificed
             requireSpecId = 266, -- Demonology only
@@ -643,7 +643,7 @@ BR.BUFF_TABLES = {
             key = "warlockPet",
             name = "Warlock Demon",
             class = "WARLOCK",
-            missingText = "NO\nPET",
+            overlayText = "NO\nPET",
             displayIcon = 136082, -- Summon Demon flyout icon
             excludeSpellID = 108503, -- Grimoire of Sacrifice: pet intentionally sacrificed
             groupId = "pets",
@@ -669,7 +669,7 @@ BR.BUFF_TABLES = {
             displaySpells = { 1264426, 1234969 }, -- Void-Touched (Midnight), Ethereal (TWW permanent)
             key = "rune",
             name = "Rune",
-            missingText = "NO\nRUNE",
+            overlayText = "NO\nRUNE",
             groupId = "rune",
             consumableCategory = "rune",
         },
@@ -700,7 +700,7 @@ BR.BUFF_TABLES = {
             },
             key = "flask",
             name = "Flask",
-            missingText = "NO\nFLASK",
+            overlayText = "NO\nFLASK",
             groupId = "flask",
             consumableCategory = "flask",
         },
@@ -709,7 +709,7 @@ BR.BUFF_TABLES = {
             buffIconID = 136000, -- All food buffs use this icon
             key = "food",
             name = "Food",
-            missingText = "NO\nFOOD",
+            overlayText = "NO\nFOOD",
             groupId = "food",
             consumableCategory = "food",
             displayIcon = 136000,
@@ -719,7 +719,7 @@ BR.BUFF_TABLES = {
             spellID = 442522,
             key = "delveFood",
             name = "Delve Food",
-            missingText = "NO\nFOOD",
+            overlayText = "NO\nFOOD",
             groupId = "delveFood",
             noExpirationGlow = true, -- 10-min duration makes standard thresholds meaningless
             infoTooltip = "Delves Only|Only shown inside delves when Brann or Valeera are in your party.\n\nExpiration glow is disabled for this buff because its short 10-minute duration would cause it to always glow.",
@@ -730,7 +730,7 @@ BR.BUFF_TABLES = {
             checkWeaponEnchant = true, -- Check if any weapon enchant exists
             key = "weaponBuff",
             name = "Weapon",
-            missingText = "NO\nWEAPON\nBUFF",
+            overlayText = "NO\nWEAPON\nBUFF",
             groupId = "weaponBuff",
             displayIcon = { 7548987, 7548941, 7548938 }, -- Thalassian Phoenix Oil, Refulgent Whetstone, Refulgent Weightstone
             consumableCategory = "weapon",
@@ -749,7 +749,7 @@ BR.BUFF_TABLES = {
             checkWeaponEnchantOH = true,
             key = "weaponBuffOH",
             name = "Weapon (OH)",
-            missingText = "NO\nWEAPON\nBUFF",
+            overlayText = "NO\nWEAPON\nBUFF",
             groupId = "weaponBuff",
             displayIcon = { 7548987, 7548941, 7548938 }, -- Thalassian Phoenix Oil, Refulgent Whetstone, Refulgent Weightstone
             consumableCategory = "weapon",
@@ -773,7 +773,7 @@ BR.BUFF_TABLES = {
             key = "healthstone",
             name = "Healthstone",
             casterClass = "WARLOCK",
-            missingText = "NO\nSTONE",
+            overlayText = "NO\nSTONE",
             groupId = "healthstone",
             displayIcon = 538745, -- Healthstone icon
             readyCheckOnly = true,

@@ -402,7 +402,7 @@ local defaults = {
 }
 
 -- Constants
-local MISSING_TEXT_SCALE = 0.6 -- scale for "NO X" warning text
+local OVERLAY_TEXT_SCALE = 0.6 -- scale for "NO X" warning text
 
 -- Locals
 local mainFrame
@@ -768,23 +768,23 @@ local function HideFrame(frame)
     frame:Hide()
 end
 
----Show a frame with missing text styling
+---Show a frame with overlay text styling
 ---@param frame BuffFrame
----@param missingText? string
+---@param overlayText? string
 ---@param shouldGlow? boolean
 ---@param category? CategoryName
 ---@param cachedGlow? {typeIndex: number, color: number[], size: number}
 ---@return boolean true (for anyVisible chaining)
-local function ShowMissingFrame(frame, missingText, shouldGlow, category, cachedGlow)
-    -- Hide stackCount/qualityOverlay — ShowMissingFrame can be called from fallback paths
+local function ShowTextFrame(frame, overlayText, shouldGlow, category, cachedGlow)
+    -- Hide stackCount/qualityOverlay — ShowTextFrame can be called from fallback paths
     -- (UpdateFallbackDisplay) that don't go through RenderVisibleEntry's cleanup.
     frame.stackCount:Hide()
     if frame.qualityOverlay then
         frame.qualityOverlay:Hide()
     end
-    if missingText then
-        frame.count:SetFont(fontPath, GetFrameFontSize(frame, MISSING_TEXT_SCALE), "OUTLINE")
-        frame.count:SetText(missingText)
+    if overlayText then
+        frame.count:SetFont(fontPath, GetFrameFontSize(frame, OVERLAY_TEXT_SCALE), "OUTLINE")
+        frame.count:SetText(overlayText)
         frame.count:Show()
     else
         frame.count:Hide()
@@ -1315,7 +1315,7 @@ local function GenerateTestEntries()
         entry.visible = false
         entry.shouldGlow = false
         entry.countText = nil
-        entry.missingText = nil
+        entry.overlayText = nil
         entry.expiringTime = nil
         entry.isEating = nil
         entry.petActions = nil
@@ -1342,7 +1342,7 @@ local function GenerateTestEntries()
                         category = category,
                         sortOrder = i,
                         visible = false,
-                        displayType = "missing",
+                        displayType = "text",
                         shouldGlow = false,
                     }
                     BR.BuffState.entries[buff.key] = entry
@@ -1365,8 +1365,8 @@ local function GenerateTestEntries()
                     end
                     raidIndex = raidIndex + 1
                 elseif category == "pet" then
-                    entry.displayType = "missing"
-                    entry.missingText = buff.missingText
+                    entry.displayType = "text"
+                    entry.overlayText = buff.overlayText
                     entry.iconByRole = buff.iconByRole
                     entry.shouldGlow = glowEnabled
                     if buff.groupId == "pets" and BR.PetHelpers then
@@ -1377,8 +1377,8 @@ local function GenerateTestEntries()
                     end
                 else
                     -- consumable, presence, targeted, self, custom
-                    entry.displayType = "missing"
-                    entry.missingText = buff.missingText
+                    entry.displayType = "text"
+                    entry.overlayText = buff.overlayText
                     entry.iconByRole = buff.iconByRole
                     entry.shouldGlow = glowEnabled
 
@@ -1522,7 +1522,7 @@ end
 --                     seenKeys[buff.key] = true
 --                     local frame = buffFrames[buff.key]
 --                     if frame and IsBuffEnabled(buff.key) then
---                         ShowMissingFrame(frame, buff.missingText)
+--                         ShowTextFrame(frame, buff.overlayText)
 --                     end
 --                 end
 --             end
@@ -1546,7 +1546,7 @@ end
 --                 if not skipSpec then
 --                     local frame = buffFrames[buff.key]
 --                     if frame and IsBuffEnabled(buff.key) then
---                         ShowMissingFrame(frame, buff.missingText)
+--                         ShowTextFrame(frame, buff.overlayText)
 --                     end
 --                 end
 --             end
@@ -1775,7 +1775,7 @@ local function RenderVisibleEntry(frame, entry)
                 ApplyFoodFrameStyle(frame, items[1].foodLabel, items[1].foodHearty)
             end
         end
-    else -- "missing"
+    else -- "text"
         -- Consumables with bag scan support: show actual item from bags
         if BUFF_KEY_TO_CATEGORY[frame.key] then
             local result = ResolveConsumableFrame(frame)
@@ -1783,10 +1783,10 @@ local function RenderVisibleEntry(frame, entry)
                 frame:Show()
                 SetExpirationGlow(frame, entry.shouldGlow, entry.category, cachedGlow)
             elseif result == "missing" then
-                ShowMissingFrame(frame, entry.missingText, entry.shouldGlow, entry.category, cachedGlow)
+                ShowTextFrame(frame, entry.overlayText, entry.shouldGlow, entry.category, cachedGlow)
             else
                 if testMode then
-                    ShowMissingFrame(frame, entry.missingText, entry.shouldGlow, entry.category, cachedGlow)
+                    ShowTextFrame(frame, entry.overlayText, entry.shouldGlow, entry.category, cachedGlow)
                 else
                     return false
                 end
@@ -1798,7 +1798,7 @@ local function RenderVisibleEntry(frame, entry)
                     frame.icon:SetTexture(texture)
                 end
             end
-            ShowMissingFrame(frame, entry.missingText, entry.shouldGlow, entry.category, cachedGlow)
+            ShowTextFrame(frame, entry.overlayText, entry.shouldGlow, entry.category, cachedGlow)
         end
     end
 
@@ -1829,7 +1829,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         end
     end
 
-    if (entry.displayType ~= "missing" and entry.displayType ~= "expiring") or entry.isEating then
+    if (entry.displayType ~= "text" and entry.displayType ~= "expiring") or entry.isEating then
         return
     end
     if not BUFF_KEY_TO_CATEGORY[frame.key] or not frame:IsShown() then
@@ -2853,7 +2853,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 25
+        local DB_VERSION = 26
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3085,7 +3085,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                         spellID = 111400,
                         key = key,
                         name = "Burning Rush",
-                        missingText = "",
+                        overlayText = "",
                         class = "WARLOCK",
                         showWhenPresent = true,
                     }
@@ -3402,6 +3402,17 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             end,
             [25] = function()
                 db.instanceEntryReminder = nil
+            end,
+            -- [26] Rename missingText → overlayText on saved custom buffs
+            [26] = function()
+                if db.customBuffs then
+                    for _, buff in pairs(db.customBuffs) do
+                        if buff.missingText ~= nil and buff.overlayText == nil then
+                            buff.overlayText = buff.missingText
+                            buff.missingText = nil
+                        end
+                    end
+                end
             end,
         }
 
