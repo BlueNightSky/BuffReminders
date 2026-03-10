@@ -2419,8 +2419,8 @@ ShowGlowAdvanced = function()
     local previewKey = "BR_adv_preview"
 
     -- Content area
-    local contentY = -36
     local dynamicHolders = {}
+    local staticLayout = Components.VerticalLayout(panel, { x = MARGIN, y = -36 })
 
     -- Type dropdown (always visible, top-left beside preview)
     local typeOptions = {}
@@ -2440,22 +2440,22 @@ ShowGlowAdvanced = function()
             BR.Config.Set("defaults.glowType", val)
         end,
     }, "BuffRemindersGlowAdvTypeDropdown")
-    typeHolder:SetPoint("TOPLEFT", MARGIN, contentY)
-    contentY = contentY - 30
+    staticLayout:Add(typeHolder, 30, 4)
 
     -- Separator
-    contentY = contentY - 4
     local sep = panel:CreateTexture(nil, "ARTWORK")
     sep:SetHeight(1)
-    sep:SetPoint("TOPLEFT", MARGIN, contentY)
+    sep:SetPoint("TOPLEFT", MARGIN, staticLayout:GetY())
     sep:SetPoint("RIGHT", panel, "RIGHT", -MARGIN, 0)
     sep:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-    contentY = contentY - 10
+    staticLayout:Space(10)
+
+    local DYNAMIC_START_Y = staticLayout:GetY()
 
     -- Preview icon (below separator, top-right)
     local previewFrame = CreateFrame("Frame", nil, panel)
     previewFrame:SetSize(PREVIEW_SIZE, PREVIEW_SIZE)
-    previewFrame:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(MARGIN + 20), contentY)
+    previewFrame:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(MARGIN + 20), DYNAMIC_START_Y)
 
     local previewIcon = previewFrame:CreateTexture(nil, "ARTWORK")
     previewIcon:SetAllPoints()
@@ -2479,23 +2479,20 @@ ShowGlowAdvanced = function()
         Glow.Start(previewFrame, typeIdx, color, previewKey, size, xOff, yOff, params)
     end
 
-    local DYNAMIC_START_Y = contentY
-
     local SLIDER_SPACING = 24
+    local dynamicLayout
 
     local function AddSlider(config)
         local holder = Components.Slider(panel, config)
-        holder:SetPoint("TOPLEFT", MARGIN, contentY)
         holder:SetPoint("RIGHT", panel, "RIGHT", -MARGIN, 0)
-        contentY = contentY - SLIDER_SPACING
+        dynamicLayout:Add(holder, SLIDER_SPACING)
         table.insert(dynamicHolders, holder)
         return holder
     end
 
     local function AddCheckbox(config)
         local holder = Components.Checkbox(panel, config)
-        holder:SetPoint("TOPLEFT", MARGIN, contentY)
-        contentY = contentY - SLIDER_SPACING
+        dynamicLayout:Add(holder, SLIDER_SPACING)
         table.insert(dynamicHolders, holder)
         return holder
     end
@@ -2523,17 +2520,15 @@ ShowGlowAdvanced = function()
         -- Hide and unregister old dynamic components
         UnregisterDynamicHolders()
         wipe(dynamicHolders)
-        contentY = DYNAMIC_START_Y
+        dynamicLayout = Components.VerticalLayout(panel, { x = MARGIN, y = DYNAMIC_START_Y })
 
         local d = BR.profile.defaults or {}
         local typeIdx = d.glowType or GlowType.Pixel
 
         -- Size + Color row
-        local hasRow = false
-        local lastAnchor
+        local sizeHolder
         if typeIdx == GlowType.Pixel or typeIdx == GlowType.Border then
-            -- Size stepper (Pixel, Border)
-            local sizeHolder = Components.NumericStepper(panel, {
+            sizeHolder = Components.NumericStepper(panel, {
                 label = "Size:",
                 labelWidth = 34,
                 min = 1,
@@ -2547,14 +2542,12 @@ ShowGlowAdvanced = function()
                     RefreshPreview()
                 end,
             })
-            sizeHolder:SetPoint("TOPLEFT", MARGIN, contentY)
             table.insert(dynamicHolders, sizeHolder)
-            lastAnchor = sizeHolder
-            hasRow = true
         end
 
+        local colorSwatchHolder
         if typeIdx ~= GlowType.Proc then
-            local colorSwatchHolder = Components.ColorSwatch(panel, {
+            colorSwatchHolder = Components.ColorSwatch(panel, {
                 hasOpacity = true,
                 get = function()
                     local c = BR.Config.Get("defaults.glowColor", Glow.DEFAULT_COLOR)
@@ -2565,17 +2558,16 @@ ShowGlowAdvanced = function()
                     RefreshPreview()
                 end,
             })
-            if lastAnchor then
-                colorSwatchHolder:SetPoint("LEFT", lastAnchor, "RIGHT", 8, 0)
-            else
-                colorSwatchHolder:SetPoint("TOPLEFT", MARGIN, contentY)
-            end
             table.insert(dynamicHolders, colorSwatchHolder)
-            hasRow = true
         end
 
-        if hasRow then
-            contentY = contentY - 26
+        if sizeHolder and colorSwatchHolder then
+            dynamicLayout:Add(sizeHolder, 26)
+            colorSwatchHolder:SetPoint("LEFT", sizeHolder, "RIGHT", 8, 0)
+        elseif sizeHolder then
+            dynamicLayout:Add(sizeHolder, 26)
+        elseif colorSwatchHolder then
+            dynamicLayout:Add(colorSwatchHolder, 26)
         end
 
         -- Type-specific parameters
@@ -2747,7 +2739,7 @@ ShowGlowAdvanced = function()
         })
 
         -- Reset button (resets current type's params + shared keys)
-        contentY = contentY - 8
+        dynamicLayout:Space(8)
         local resetBtn = CreateButton(panel, "Reset to Defaults", function()
             local keys = { "glowColor", "glowSize", "glowXOffset", "glowYOffset" }
             local typeKeys = typeResetKeys[typeIdx]
@@ -2764,11 +2756,11 @@ ShowGlowAdvanced = function()
             Components.RefreshAll()
         end)
         resetBtn:SetSize(140, 24)
-        resetBtn:SetPoint("TOPLEFT", MARGIN, contentY)
+        dynamicLayout:Add(resetBtn, 24)
         table.insert(dynamicHolders, resetBtn)
 
         -- Adjust panel height
-        panel:SetHeight(math.abs(contentY) + 46)
+        panel:SetHeight(math.abs(dynamicLayout:GetY()) + 46)
 
         RefreshPreview()
     end
@@ -3105,21 +3097,21 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     sectionsFrame = CreateFrame("Frame", nil, modal)
     sectionsFrame:SetSize(MODAL_WIDTH - 40, 456)
 
-    local function CreateSeparator(parent, yOff, width)
-        local line = parent:CreateTexture(nil, "ARTWORK")
+    local secLayout = Components.VerticalLayout(sectionsFrame, { x = 0, y = 0 })
+
+    local function LayoutSeparator()
+        local line = sectionsFrame:CreateTexture(nil, "ARTWORK")
         line:SetHeight(1)
-        line:SetPoint("TOPLEFT", 0, yOff)
-        if width then
-            line:SetWidth(width)
-        else
-            line:SetPoint("RIGHT", 0, 0)
-        end
+        line:SetPoint("TOPLEFT", 0, secLayout:GetY())
+        line:SetPoint("RIGHT", 0, 0)
         line:SetColorTexture(0.25, 0.25, 0.25, 0.8)
+        secLayout:Space(1)
     end
 
     -- Appearance section
-    CreateSeparator(sectionsFrame, 0)
-    CreateSectionHeader(sectionsFrame, "APPEARANCE", 0, -9)
+    LayoutSeparator()
+    secLayout:Space(8)
+    LayoutSectionHeader(secLayout, sectionsFrame, "APPEARANCE")
 
     local nameHolder = Components.TextInput(sectionsFrame, {
         label = "Name:",
@@ -3127,7 +3119,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         width = 250,
         labelWidth = 50,
     })
-    nameHolder:SetPoint("TOPLEFT", 0, -30)
+    secLayout:Add(nameHolder, 20, COMPONENT_GAP)
     nameBox = nameHolder.editBox
 
     local overlayHolder = Components.TextInput(sectionsFrame, {
@@ -3136,7 +3128,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         width = 250,
         labelWidth = 50,
     })
-    overlayHolder:SetPoint("TOPLEFT", 0, -54)
+    secLayout:Add(overlayHolder, 20, SECTION_GAP)
     overlayBox = overlayHolder.editBox
 
     local overlayHint = sectionsFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
@@ -3144,8 +3136,9 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     overlayHint:SetText("(use \\n for line break)")
 
     -- Conditions section (merges restrictions, visibility, advanced)
-    CreateSeparator(sectionsFrame, -76)
-    CreateSectionHeader(sectionsFrame, "CONDITIONS", 0, -85)
+    LayoutSeparator()
+    secLayout:Space(8)
+    LayoutSectionHeader(secLayout, sectionsFrame, "CONDITIONS")
 
     local classOptions = {
         { value = nil, label = "Any" },
@@ -3164,6 +3157,27 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         { value = "WARRIOR", label = "Warrior" },
     }
 
+    showIconToggle = Components.Toggle(sectionsFrame, {
+        label = editingBuff and editingBuff.showWhenPresent and "When active" or "When missing",
+        checked = editingBuff and editingBuff.showWhenPresent or false,
+        onChange = function(isChecked)
+            if isChecked then
+                showIconToggle.label:SetText("When active")
+            else
+                showIconToggle.label:SetText("When missing")
+            end
+        end,
+    })
+
+    requireSpellKnownToggle = Components.Toggle(sectionsFrame, {
+        label = "Only if spell known",
+        checked = editingBuff and editingBuff.requireSpellKnown or false,
+        onChange = function() end,
+    })
+    secLayout:AddRow({ { showIconToggle, 0 }, { requireSpellKnownToggle, 210 } }, COMPONENT_GAP)
+
+    local classRowY = secLayout:GetY()
+
     local function CreateSpecDropdown(classToken, selectedSpecId)
         if specDropdownHolder then
             specDropdownHolder:Hide()
@@ -3180,55 +3194,37 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             label = "Spec:",
             options = specOptions,
             selected = selectedSpecId,
-            width = 140,
-            labelWidth = 45,
+            width = 130,
+            labelWidth = 70,
             onChange = function() end,
         })
-        specDropdownHolder:SetPoint("TOPLEFT", 210, -132)
+        specDropdownHolder:SetPoint("TOPLEFT", sectionsFrame, "TOPLEFT", 210, classRowY)
     end
 
     classDropdownHolder = Components.Dropdown(sectionsFrame, {
         label = "Class:",
         options = classOptions,
         selected = editingBuff and editingBuff.class or nil,
-        width = 140,
-        labelWidth = 45,
+        width = 130,
+        labelWidth = 70,
         maxItems = 10,
         onChange = function(value)
             CreateSpecDropdown(value, nil)
         end,
     }, "BuffRemindersCustomClassDropdown")
-    classDropdownHolder:SetPoint("TOPLEFT", 0, -132)
+    secLayout:Add(classDropdownHolder, nil, COMPONENT_GAP)
 
     -- Initialize spec dropdown for editing existing buff
     if editingBuff and editingBuff.class then
         CreateSpecDropdown(editingBuff.class, editingBuff.requireSpecId)
     end
 
-    showIconToggle = Components.Toggle(sectionsFrame, {
-        label = editingBuff and editingBuff.showWhenPresent and "When active" or "When missing",
-        checked = editingBuff and editingBuff.showWhenPresent or false,
-        onChange = function(isChecked)
-            if isChecked then
-                showIconToggle.label:SetText("When active")
-            else
-                showIconToggle.label:SetText("When missing")
-            end
-        end,
-    })
-    showIconToggle:SetPoint("TOPLEFT", 0, -106)
-
-    requireSpellKnownToggle = Components.Toggle(sectionsFrame, {
-        label = "Only if spell known",
-        checked = editingBuff and editingBuff.requireSpellKnown or false,
-        onChange = function() end,
-    })
-    requireSpellKnownToggle:SetPoint("TOPLEFT", 210, -106)
-
     -- Require item (item gate)
     local requireItemLabel = sectionsFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    requireItemLabel:SetPoint("TOPLEFT", 0, -166)
     requireItemLabel:SetText("Require item:")
+    requireItemLabel:SetWidth(70)
+    requireItemLabel:SetJustifyH("LEFT")
+    secLayout:AddText(requireItemLabel, 14, COMPONENT_GAP)
 
     requireItemEditBox = CreateFrame("EditBox", nil, sectionsFrame)
     requireItemEditBox:SetFontObject("GameFontHighlightSmall")
@@ -3261,11 +3257,13 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         },
         onChange = function() end,
     })
-    glowModeDropdown:SetPoint("TOPLEFT", 0, -192)
+    secLayout:Add(glowModeDropdown, nil, COMPONENT_GAP)
 
     -- Load conditions section (per-buff content visibility)
-    CreateSeparator(sectionsFrame, -222)
-    CreateSectionHeader(sectionsFrame, "SHOW IN", 0, -231)
+    secLayout:Space(SECTION_GAP)
+    LayoutSeparator()
+    secLayout:Space(8)
+    LayoutSectionHeader(secLayout, sectionsFrame, "SHOW IN")
 
     -- Local state for load conditions (read on save)
     local loadConditions = {}
@@ -3311,7 +3309,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         noAutoRefresh = true,
         onChange = function() end,
     })
-    visToggles:SetPoint("TOPLEFT", 0, -248)
+    secLayout:Add(visToggles, nil, COMPONENT_GAP)
 
     -- Ready check toggle
     local lcReadyCheckToggle = Components.Toggle(sectionsFrame, {
@@ -3321,12 +3319,12 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             loadConditions.readyCheckOnly = isChecked or nil
         end,
     })
-    lcReadyCheckToggle:SetPoint("TOPLEFT", 0, -276)
+    secLayout:Add(lcReadyCheckToggle, nil, COMPONENT_GAP)
 
     -- Level filter dropdown
     local levelFilterHolder = Components.Dropdown(sectionsFrame, {
         label = "Level:",
-        labelWidth = 38,
+        labelWidth = 70,
         width = 150,
         options = {
             { value = "any", label = "Any level" },
@@ -3341,11 +3339,13 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             loadConditions.levelFilter = (val ~= "any") and val or nil
         end,
     })
-    levelFilterHolder:SetPoint("TOPLEFT", 0, -298)
+    secLayout:Add(levelFilterHolder, nil, COMPONENT_GAP)
 
     -- Click action section
-    CreateSeparator(sectionsFrame, -330)
-    CreateSectionHeader(sectionsFrame, "CLICK ACTION", 0, -339)
+    secLayout:Space(SECTION_GAP)
+    LayoutSeparator()
+    secLayout:Space(8)
+    LayoutSectionHeader(secLayout, sectionsFrame, "CLICK ACTION")
 
     -- Determine existing action type
     local existingActionType = "none"
@@ -3362,7 +3362,6 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     -- Container for the conditional input (spell/item Lookup or macro text)
     actionInputHolder = CreateFrame("Frame", nil, sectionsFrame)
     actionInputHolder:SetSize(MODAL_WIDTH - 40, 26)
-    actionInputHolder:SetPoint("TOPLEFT", 0, -390)
 
     -- Spell ID input with Lookup
     castSpellEditBox = CreateFrame("EditBox", nil, actionInputHolder)
@@ -3531,7 +3530,8 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             UpdateActionInputVisibility(value)
         end,
     })
-    actionTypeDropdown:SetPoint("TOPLEFT", 0, -360)
+    secLayout:Add(actionTypeDropdown, nil, COMPONENT_GAP)
+    secLayout:Add(actionInputHolder, 26)
 
     -- Initialize visibility for the current action type
     UpdateActionInputVisibility(existingActionType)
