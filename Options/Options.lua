@@ -2555,26 +2555,34 @@ local function CreateOptionsPanel()
     return panel
 end
 
--- Toggle options panel
-local function ToggleOptions()
+local function ShowOptions()
     if not optionsPanel then
         optionsPanel = CreateOptionsPanel()
     end
-
-    if optionsPanel:IsShown() then
-        optionsPanel:Hide()
-    else
-        -- Refresh custom buffs
+    if not optionsPanel:IsShown() then
         if optionsPanel.RenderCustomBuffRows then
             optionsPanel.RenderCustomBuffRows()
         end
-        -- Update button texts
         if BR.Display.IsTestMode() then
             optionsPanel.testBtn.text:SetText("Stop Test")
         else
             optionsPanel.testBtn.text:SetText("Test")
         end
         optionsPanel:Show()
+    end
+end
+
+local function HideOptions()
+    if optionsPanel and optionsPanel:IsShown() then
+        optionsPanel:Hide()
+    end
+end
+
+local function ToggleOptions()
+    if optionsPanel and optionsPanel:IsShown() then
+        HideOptions()
+    else
+        ShowOptions()
     end
 end
 
@@ -3550,4 +3558,6 @@ end
 
 BR.Options = {
     Toggle = ToggleOptions,
+    Show = ShowOptions,
+    Hide = HideOptions,
 }

@@ -15,6 +15,7 @@ ignore = {
 globals = {
 	"_",
 	"BuffReminders",
+	"BuffRemindersAPI",
 	"BuffRemindersDB",
 	"SLASH_BUFFREMINDERS1",
 	"SLASH_BUFFREMINDERS2",
