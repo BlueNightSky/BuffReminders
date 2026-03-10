@@ -2384,6 +2384,8 @@ end
 local glowAdvancedPanel = nil
 
 ShowGlowAdvanced = function()
+    local GlowType = Glow.Type
+
     if glowAdvancedPanel then
         glowAdvancedPanel:Hide()
         glowAdvancedPanel = nil
@@ -2426,7 +2428,7 @@ ShowGlowAdvanced = function()
         labelWidth = 40,
         options = typeOptions,
         get = function()
-            return (BR.profile.defaults or {}).glowType or 1
+            return (BR.profile.defaults or {}).glowType or GlowType.Pixel
         end,
         width = 140,
         onChange = function(val)
@@ -2463,7 +2465,7 @@ ShowGlowAdvanced = function()
     local function RefreshPreview()
         Glow.StopAll(previewFrame, previewKey)
         local d = BR.profile.defaults or {}
-        local typeIdx = d.glowType or 1
+        local typeIdx = d.glowType or GlowType.Pixel
         local color = d.glowColor
         local size = d.glowSize or 2
         local params = Glow.BuildAdvancedParams(d, typeIdx)
@@ -2495,10 +2497,10 @@ ShowGlowAdvanced = function()
 
     -- Reset keys per glow type (type-specific only)
     local typeResetKeys = {
-        { "glowPixelLines", "glowPixelFrequency", "glowPixelLength" },
-        { "glowAutocastScale", "glowAutocastParticles", "glowAutocastFrequency" },
-        { "glowBorderFrequency" },
-        { "glowProcDuration", "glowProcStartAnim" },
+        [GlowType.Pixel] = { "glowPixelLines", "glowPixelFrequency", "glowPixelLength" },
+        [GlowType.AutoCast] = { "glowAutocastScale", "glowAutocastParticles", "glowAutocastFrequency" },
+        [GlowType.Border] = { "glowBorderFrequency" },
+        [GlowType.Proc] = { "glowProcDuration", "glowProcStartAnim" },
     }
 
     local function UnregisterDynamicHolders()
@@ -2519,11 +2521,11 @@ ShowGlowAdvanced = function()
         contentY = DYNAMIC_START_Y
 
         local d = BR.profile.defaults or {}
-        local typeIdx = d.glowType or 1
+        local typeIdx = d.glowType or GlowType.Pixel
 
         -- Size + Color row
         local lastAnchor
-        if typeIdx == 1 or typeIdx == 3 then
+        if typeIdx == GlowType.Pixel or typeIdx == GlowType.Border then
             -- Size stepper (Pixel, Border)
             local sizeHolder = Components.NumericStepper(panel, {
                 label = "Size:",
@@ -2565,7 +2567,7 @@ ShowGlowAdvanced = function()
         contentY = contentY - 26
 
         -- Type-specific parameters
-        if typeIdx == 1 then
+        if typeIdx == GlowType.Pixel then
             -- Pixel
             AddSlider({
                 label = "Lines",
@@ -2609,7 +2611,7 @@ ShowGlowAdvanced = function()
                     RefreshPreview()
                 end,
             })
-        elseif typeIdx == 2 then
+        elseif typeIdx == GlowType.AutoCast then
             -- AutoCast
             AddSlider({
                 label = "Scale",
@@ -2656,7 +2658,7 @@ ShowGlowAdvanced = function()
                     RefreshPreview()
                 end,
             })
-        elseif typeIdx == 3 then
+        elseif typeIdx == GlowType.Border then
             -- Border
             AddSlider({
                 label = "Speed",
@@ -2674,7 +2676,7 @@ ShowGlowAdvanced = function()
                     RefreshPreview()
                 end,
             })
-        elseif typeIdx == 4 then
+        elseif typeIdx == GlowType.Proc then
             -- Proc
             AddSlider({
                 label = "Duration",

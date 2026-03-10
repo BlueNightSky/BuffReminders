@@ -10,6 +10,15 @@ local LCG = LibStub("LibCustomGlow-1.0")
 
 BR.Glow = {}
 
+BR.Glow.Type = {
+    Pixel = 1,
+    AutoCast = 2,
+    Border = 3,
+    Proc = 4,
+}
+
+local GlowType = BR.Glow.Type
+
 -- Default glow color (yellow, matches LibCustomGlow default)
 BR.Glow.DEFAULT_COLOR = { 0.95, 0.95, 0.32, 1 }
 
@@ -170,7 +179,7 @@ local GLOW_STOP = {
 
 ---Start a glow by type index
 ---@param frame table
----@param typeIndex number 1=Pixel, 2=AutoCast, 3=Border, 4=Proc
+---@param typeIndex number BR.Glow.Type value (Pixel, AutoCast, Border, Proc)
 ---@param color number[]|nil {r, g, b, a} or nil for native library color
 ---@param key string Unique key for this glow instance
 ---@param size? number Glow thickness/scale (default 2)
@@ -189,7 +198,7 @@ end
 
 ---Stop a specific glow type on a frame
 ---@param frame table
----@param typeIndex number 1=Pixel, 2=AutoCast, 3=Border
+---@param typeIndex number BR.Glow.Type value (Pixel, AutoCast, Border, Proc)
 ---@param key string Must match the key used in Start
 function BR.Glow.Stop(frame, typeIndex, key)
     local fn = GLOW_STOP[typeIndex]
@@ -261,26 +270,26 @@ end
 ---@param typeIndex number Current glow type index
 ---@return table? params Advanced params or nil if all defaults
 function BR.Glow.BuildAdvancedParams(t, typeIndex)
-    if typeIndex == 1 then
+    if typeIndex == GlowType.Pixel then
         local lines = t.pixelLines or t.glowPixelLines
         local freq = t.pixelFrequency or t.glowPixelFrequency
         local len = t.pixelLength or t.glowPixelLength
         if lines or freq or len then
             return { lines = lines, frequency = freq, length = len }
         end
-    elseif typeIndex == 2 then
+    elseif typeIndex == GlowType.AutoCast then
         local particles = t.autocastParticles or t.glowAutocastParticles
         local freq = t.autocastFrequency or t.glowAutocastFrequency
         local scale = t.autocastScale or t.glowAutocastScale
         if particles or freq or scale then
             return { particles = particles, frequency = freq, scale = scale }
         end
-    elseif typeIndex == 3 then
+    elseif typeIndex == GlowType.Border then
         local freq = t.borderFrequency or t.glowBorderFrequency
         if freq then
             return { frequency = freq }
         end
-    elseif typeIndex == 4 then
+    elseif typeIndex == GlowType.Proc then
         local dur = t.procDuration or t.glowProcDuration
         local startAnim = t.procStartAnim
         if startAnim == nil then
@@ -314,7 +323,7 @@ function BR.Glow.SetExpiration(frame, show, category, cachedSettings)
         else
             local db = BR.profile
             local d = db and db.defaults or {}
-            typeIndex = d.glowType or 1
+            typeIndex = d.glowType or GlowType.Pixel
             color = d.glowColor
             size = d.glowSize or 2
             borderOffset = (category and BR.Config.GetCategorySetting(category, "borderSize"))

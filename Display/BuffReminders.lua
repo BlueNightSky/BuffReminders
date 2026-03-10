@@ -286,7 +286,7 @@ local defaults = {
         -- Behavior (glow settings)
         showExpirationGlow = true,
         expirationThreshold = 15, -- minutes
-        glowType = 1, -- 1=Pixel, 2=AutoCast, 3=Border, 4=Proc
+        glowType = 1, -- BR.Glow.Type: Pixel=1, AutoCast=2, Border=3, Proc=4
         glowSize = 2,
         showConsumablesWithoutItems = false,
         delveFoodOnly = true,
@@ -748,7 +748,7 @@ local function GetCachedGlowSettings(category)
         return cached
     end
     local d = BR.profile and BR.profile.defaults or {}
-    local typeIndex = d.glowType or 1
+    local typeIndex = d.glowType or BR.Glow.Type.Pixel
     cached = {
         typeIndex = typeIndex,
         color = d.glowColor,
