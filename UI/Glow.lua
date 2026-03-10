@@ -157,10 +157,9 @@ local GLOW_START = {
         local p = params or {}
         BR.Glow.PulsingBorderStart(f, key, color, size, xOff, yOff, p.frequency)
     end,
-    function(f, color, key, _, xOff, yOff, params)
+    function(f, _, key, _, xOff, yOff, params)
         local p = params or {}
         LCG.ProcGlow_Start(f, {
-            color = color,
             key = key,
             duration = p.duration or 1,
             startAnim = p.startAnim or false,

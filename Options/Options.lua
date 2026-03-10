@@ -2529,6 +2529,7 @@ ShowGlowAdvanced = function()
         local typeIdx = d.glowType or GlowType.Pixel
 
         -- Size + Color row
+        local hasRow = false
         local lastAnchor
         if typeIdx == GlowType.Pixel or typeIdx == GlowType.Border then
             -- Size stepper (Pixel, Border)
@@ -2549,27 +2550,33 @@ ShowGlowAdvanced = function()
             sizeHolder:SetPoint("TOPLEFT", MARGIN, contentY)
             table.insert(dynamicHolders, sizeHolder)
             lastAnchor = sizeHolder
+            hasRow = true
         end
 
-        local colorSwatchHolder = Components.ColorSwatch(panel, {
-            hasOpacity = true,
-            get = function()
-                local c = BR.Config.Get("defaults.glowColor", Glow.DEFAULT_COLOR)
-                return c[1], c[2], c[3], c[4] or 1
-            end,
-            onChange = function(r, g, b, a)
-                BR.Config.Set("defaults.glowColor", { r, g, b, a or 1 })
-                RefreshPreview()
-            end,
-        })
-        if lastAnchor then
-            colorSwatchHolder:SetPoint("LEFT", lastAnchor, "RIGHT", 8, 0)
-        else
-            colorSwatchHolder:SetPoint("TOPLEFT", MARGIN, contentY)
+        if typeIdx ~= GlowType.Proc then
+            local colorSwatchHolder = Components.ColorSwatch(panel, {
+                hasOpacity = true,
+                get = function()
+                    local c = BR.Config.Get("defaults.glowColor", Glow.DEFAULT_COLOR)
+                    return c[1], c[2], c[3], c[4] or 1
+                end,
+                onChange = function(r, g, b, a)
+                    BR.Config.Set("defaults.glowColor", { r, g, b, a or 1 })
+                    RefreshPreview()
+                end,
+            })
+            if lastAnchor then
+                colorSwatchHolder:SetPoint("LEFT", lastAnchor, "RIGHT", 8, 0)
+            else
+                colorSwatchHolder:SetPoint("TOPLEFT", MARGIN, contentY)
+            end
+            table.insert(dynamicHolders, colorSwatchHolder)
+            hasRow = true
         end
-        table.insert(dynamicHolders, colorSwatchHolder)
 
-        contentY = contentY - 26
+        if hasRow then
+            contentY = contentY - 26
+        end
 
         -- Type-specific parameters
         if typeIdx == GlowType.Pixel then
