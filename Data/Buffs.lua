@@ -31,7 +31,7 @@ local min = math.min
 ---@field groupId? string
 ---@field excludeSpellID? number
 ---@field displayIcon? number
----@field infoTooltip? string
+---@field infoTooltip? TooltipText
 ---@field noExpirationGlow? boolean
 ---@field readyCheckOnly? boolean Only show during ready checks
 ---@field showOnInstanceEntry? boolean Also show when entering an instance (not M+)
@@ -49,7 +49,7 @@ local min = math.min
 ---@field excludeSpellID? number
 ---@field displayIcon? number
 ---@field requireSpecId? number
----@field infoTooltip? string
+---@field infoTooltip? TooltipText
 ---@field clickMacro? fun(spellID: number?): string
 ---@field casterBuffId? number Check this buff on the caster instead of scanning group
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
@@ -72,7 +72,7 @@ local min = math.min
 ---@field displayIcon? number
 ---@field displaySpells? SpellID Spell IDs to show icons for in Options checkbox (subset of spellID)
 ---@field iconByRole? table<RoleType, number>
----@field infoTooltip? string
+---@field infoTooltip? TooltipText
 ---@field customCheck? fun(): boolean?
 ---@field getPetActions? fun(): PetAction[]?  -- Override pet actions (e.g., wrong pet → Felguard only)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
@@ -93,7 +93,7 @@ local min = math.min
 ---@field itemID? number|number[] Check if player has this item in inventory
 ---@field readyCheckOnly? boolean Only show during ready checks
 ---@field casterClass? ClassName Require this class in group, but show reminder to everyone
----@field infoTooltip? string Tooltip text shown on hover (pipe-separated: title|description)
+---@field infoTooltip? TooltipText
 ---@field visibilityCondition? fun(): boolean Custom function that gates visibility (return false to hide)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 ---@field consumableCategory? string Category key in BR.CONSUMABLE_ITEMS for bag scanning (only set when items exist)
@@ -286,7 +286,10 @@ BR.BUFF_TABLES = {
             name = "Earth Shield",
             class = "SHAMAN",
             overlayText = "NO\nES",
-            infoTooltip = "May Show Extra Icon|Until you cast this, you might see both this and the Water/Lightning Shield reminder. I can't tell if you want Earth Shield on yourself, or Earth Shield on an ally + Water/Lightning Shield on yourself.",
+            infoTooltip = {
+                title = "May Show Extra Icon",
+                desc = "Until you cast this, you might see both this and the Water/Lightning Shield reminder. I can't tell if you want Earth Shield on yourself, or Earth Shield on an ally + Water/Lightning Shield on yourself.",
+            },
             clickMacro = TargetedClickMacro("earthShieldOthers"),
         },
         {
@@ -340,7 +343,10 @@ BR.BUFF_TABLES = {
             class = "WARLOCK",
             overlayText = "DROP\nWELL",
             showOnInstanceEntry = true, -- Only shows on instance entry
-            infoTooltip = "Instance Entry Reminder|Briefly shown when entering a dungeon as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds.",
+            infoTooltip = {
+                title = "Instance Entry Reminder",
+                desc = "Briefly shown when entering a dungeon as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds.",
+            },
             customCheck = function()
                 local info = C_Spell.GetSpellCooldown(29893)
                 return not info or info.duration == 0
@@ -722,7 +728,10 @@ BR.BUFF_TABLES = {
             overlayText = "NO\nFOOD",
             groupId = "delveFood",
             noExpirationGlow = true, -- 10-min duration makes standard thresholds meaningless
-            infoTooltip = "Delves Only|Only shown inside delves when Brann or Valeera are in your party.\n\nExpiration glow is disabled for this buff because its short 10-minute duration would cause it to always glow.",
+            infoTooltip = {
+                title = "Delves Only",
+                desc = "Only shown inside delves when Brann or Valeera are in your party.\n\nExpiration glow is disabled for this buff because its short 10-minute duration would cause it to always glow.",
+            },
             visibilityCondition = BR.IsInDelve,
         },
         -- Weapon Buffs (oils, stones - but not for classes with imbues)

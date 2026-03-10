@@ -31,7 +31,7 @@ local _, BR = ...
 ---@field get? fun(): boolean
 ---@field enabled? fun(): boolean
 ---@field onChange fun(checked: boolean)
----@field tooltip? string|table
+---@field tooltip? TooltipText
 
 -- Lua stdlib locals (avoid repeated global lookups in hot paths)
 local floor, max, min = math.floor, math.max, math.min
@@ -45,7 +45,7 @@ local RefreshableComponents = BR.RefreshableComponents
 -- TOOLTIP UTILITIES
 -- ============================================================================
 
----Show a tooltip on a widget (title in gold, optional description in white)
+---Show a tooltip on a widget (title in white, optional description in grey)
 ---@param owner table Frame that owns the tooltip
 ---@param title string Tooltip title
 ---@param desc? string Optional description line
@@ -105,7 +105,7 @@ local ButtonColors = {
 ---@param parent Frame
 ---@param text string
 ---@param onClick function
----@param tooltip? {title: string, desc?: string} Optional tooltip configuration
+---@param tooltip? TooltipText Optional tooltip configuration
 ---@return table
 function BR.CreateButton(parent, text, onClick, tooltip)
     local colors = ButtonColors
@@ -225,7 +225,7 @@ end
 ---@field suffix? string Value suffix (e.g., "px", "%")
 ---@field formatValue? fun(val: number): string Custom value formatter (overrides suffix)
 ---@field onChange fun(val: number) Callback when value changes
----@field tooltip? string|{title: string, desc?: string} Tooltip shown on hover (string or {title, desc} table)
+---@field tooltip? TooltipText Tooltip shown on hover
 ---@field labelWidth? number Width of label (default 70)
 ---@field sliderWidth? number Width of slider (default 100)
 
@@ -562,13 +562,8 @@ function Components.Slider(parent, config)
     -- Hover tooltip (on all interactive children, chained with existing scripts)
     local wheelHint = "Use mouse wheel to adjust"
     if config.tooltip then
-        local title, desc
-        if type(config.tooltip) == "table" then
-            title = config.tooltip.title
-            desc = config.tooltip.desc
-        else
-            title = config.tooltip --[[@as string]]
-        end
+        local title = config.tooltip.title
+        local desc = config.tooltip.desc
         local fullDesc = desc and (desc .. "\n\n" .. wheelHint) or wheelHint
         holder:EnableMouse(true)
         local function showTip()
@@ -771,11 +766,11 @@ end
 ---@field checked? boolean Initial checked state (deprecated: prefer get)
 ---@field get? fun(): boolean Getter for initial value and refresh (preferred over checked)
 ---@field enabled? fun(): boolean Getter for enabled state, evaluated on Refresh()
----@field tooltip? string|{title: string, desc: string} Tooltip shown on hover (string or {title, desc} table)
+---@field tooltip? TooltipText Tooltip shown on hover
 ---@field onChange fun(checked: boolean) Callback when checked state changes
 ---@field icons? number[] Optional texture ID(s) to show between checkbox and label
----@field infoTooltip? string Optional info icon tooltip (format: "title|description")
----@field warningTooltip? string Optional warning icon tooltip (format: "title|description")
+---@field infoTooltip? TooltipText Optional info icon tooltip
+---@field warningTooltip? TooltipText Optional warning icon tooltip
 ---@field onRightClick? fun() Optional right-click callback (wired on all interactive children)
 ---@field labelFont? string Font object name for the label (default "GameFontHighlightSmall")
 
@@ -818,13 +813,8 @@ function Components.Checkbox(parent, config)
 
     -- Hover tooltip (on all interactive children, chained with hover visuals)
     if config.tooltip then
-        local title, desc
-        if type(config.tooltip) == "table" then
-            title = config.tooltip.title
-            desc = config.tooltip.desc
-        else
-            title = config.tooltip --[[@as string]]
-        end
+        local title = config.tooltip.title
+        local desc = config.tooltip.desc
         holder:EnableMouse(true)
         local function showTip()
             ShowTooltip(holder, title, desc, "ANCHOR_TOP")
@@ -839,8 +829,8 @@ function Components.Checkbox(parent, config)
     end
 
     -- Info / warning tooltip icon (optional, shown after label)
-    local tooltipText = config.infoTooltip or config.warningTooltip
-    if tooltipText then
+    local tooltipData = config.infoTooltip or config.warningTooltip
+    if tooltipData then
         local infoIcon = holder:CreateTexture(nil, "ARTWORK")
         infoIcon:SetSize(14, 14)
         infoIcon:SetPoint("LEFT", label, "RIGHT", 4, 0)
@@ -854,11 +844,7 @@ function Components.Checkbox(parent, config)
         infoBtn:SetSize(14, 14)
         infoBtn:SetPoint("CENTER", infoIcon, "CENTER", 0, 0)
 
-        local infoTitle, infoDesc = tooltipText:match("^([^|]+)|(.+)$")
-        if not infoTitle then
-            infoTitle = tooltipText
-        end
-        SetupTooltip(infoBtn, infoTitle, infoDesc)
+        SetupTooltip(infoBtn, tooltipData.title, tooltipData.desc)
     end
 
     -- Right-click callback (wired on all interactive children)
@@ -1141,13 +1127,8 @@ function Components.Toggle(parent, config)
 
     -- Tooltip support (same pattern as Checkbox)
     if config.tooltip then
-        local title, desc
-        if type(config.tooltip) == "table" then
-            title = config.tooltip.title
-            desc = config.tooltip.desc
-        else
-            title = config.tooltip --[[@as string]]
-        end
+        local title = config.tooltip.title
+        local desc = config.tooltip.desc
         holder:EnableMouse(true)
         local function showTip()
             ShowTooltip(holder, title, desc, "ANCHOR_TOP")
@@ -1669,45 +1650,63 @@ function Components.DirectionButtons(parent, config)
     return holder
 end
 
+---@class ToggleDef
+---@field key string
+---@field label string
+---@field tooltip TooltipText
+---@field color? number[]
+---@field diffDbKey? string
+---@field diffDefs? ToggleDef[]
+
+---@type ToggleDef[]
 local SCENARIO_DIFF_DEFS = {
-    { key = "delves", label = "D", tooltip = "Delves" },
-    { key = "others", label = "O", tooltip = "Other Scenarios (Torghast, etc.)" },
+    { key = "delves", label = "D", tooltip = { title = "Delves" } },
+    { key = "others", label = "O", tooltip = { title = "Other Scenarios (Torghast, etc.)" } },
 }
 
+---@type ToggleDef[]
 local DUNGEON_DIFF_DEFS = {
-    { key = "normal", label = "N", tooltip = "Normal Dungeons" },
-    { key = "heroic", label = "H", tooltip = "Heroic Dungeons" },
-    { key = "mythic", label = "M", tooltip = "Mythic Dungeons" },
-    { key = "mythicPlus", label = "M+", tooltip = "Mythic+ Keystones" },
-    { key = "timewalking", label = "TW", tooltip = "Timewalking Dungeons" },
-    { key = "follower", label = "F", tooltip = "Follower Dungeons" },
+    { key = "normal", label = "N", tooltip = { title = "Normal Dungeons" } },
+    { key = "heroic", label = "H", tooltip = { title = "Heroic Dungeons" } },
+    { key = "mythic", label = "M", tooltip = { title = "Mythic Dungeons" } },
+    { key = "mythicPlus", label = "M+", tooltip = { title = "Mythic+ Keystones" } },
+    { key = "timewalking", label = "TW", tooltip = { title = "Timewalking Dungeons" } },
+    { key = "follower", label = "F", tooltip = { title = "Follower Dungeons" } },
 }
 
+---@type ToggleDef[]
 local RAID_DIFF_DEFS = {
-    { key = "lfr", label = "LFR", tooltip = "Looking for Raid" },
-    { key = "normal", label = "N", tooltip = "Normal Raids" },
-    { key = "heroic", label = "H", tooltip = "Heroic Raids" },
-    { key = "mythic", label = "M", tooltip = "Mythic Raids" },
+    { key = "lfr", label = "LFR", tooltip = { title = "Looking for Raid" } },
+    { key = "normal", label = "N", tooltip = { title = "Normal Raids" } },
+    { key = "heroic", label = "H", tooltip = { title = "Heroic Raids" } },
+    { key = "mythic", label = "M", tooltip = { title = "Mythic Raids" } },
 }
 
+---@type ToggleDef[]
 local CONTENT_TOGGLE_DEFS = {
-    { key = "openWorld", label = "W", tooltip = "Open World" },
-    { key = "housing", label = "H", tooltip = "Housing" },
+    { key = "openWorld", label = "W", tooltip = { title = "Open World" } },
+    { key = "housing", label = "H", tooltip = { title = "Housing" } },
     {
         key = "scenario",
         label = "S",
-        tooltip = "Scenarios (Delves, Torghast, etc.)",
+        tooltip = { title = "Scenarios (Delves, Torghast, etc.)" },
         diffDbKey = "scenarioDifficulty",
         diffDefs = SCENARIO_DIFF_DEFS,
     },
     {
         key = "dungeon",
         label = "D",
-        tooltip = "Dungeons (including M+)",
+        tooltip = { title = "Dungeons (including M+)" },
         diffDbKey = "dungeonDifficulty",
         diffDefs = DUNGEON_DIFF_DEFS,
     },
-    { key = "raid", label = "R", tooltip = "Raids", diffDbKey = "raidDifficulty", diffDefs = RAID_DIFF_DEFS },
+    {
+        key = "raid",
+        label = "R",
+        tooltip = { title = "Raids" },
+        diffDbKey = "raidDifficulty",
+        diffDefs = RAID_DIFF_DEFS,
+    },
 }
 
 -- Lookup: contentKey -> toggle def (for data-driven submenu access)
@@ -1736,9 +1735,17 @@ end
 
 local BAR_H = SEGMENT_H + 2
 
+---@class SegmentedBarConfig
+---@field toggleDefs ToggleDef[]
+---@field segmentWidth? number
+---@field getState fun(key: string): boolean
+---@field getVisualState? fun(key: string): "on"|"partial"|"off"
+---@field setState fun(key: string)
+---@field onChange? fun()
+
 ---Create a generic segmented toggle bar
 ---@param parent table Parent frame
----@param barConfig table { toggleDefs, segmentWidth, getState, setState, onChange }
+---@param barConfig SegmentedBarConfig
 ---@return table container The bar container frame
 ---@return table toggleButtons Array of segment button frames
 local function CreateSegmentedBar(parent, barConfig)
@@ -1820,7 +1827,8 @@ local function CreateSegmentedBar(parent, barConfig)
             end
         end)
 
-        SetupTooltip(btn, toggle.tooltip, "Click to toggle visibility in " .. toggle.tooltip:lower(), "ANCHOR_TOP")
+        local tipTitle = toggle.tooltip.title
+        SetupTooltip(btn, tipTitle, "Click to toggle visibility in " .. tipTitle:lower(), "ANCHOR_TOP")
 
         if i < #toggleDefs then
             local divider = container:CreateTexture(nil, "ARTWORK")
@@ -2074,8 +2082,8 @@ function Components.VisibilityToggles(parent, config)
         local toggle = CONTENT_TOGGLE_DEFS[mapping.btnIndex]
         SetupTooltip(
             btn,
-            toggle.tooltip,
-            "Click to filter by " .. toggle.tooltip:lower() .. " difficulty",
+            toggle.tooltip.title,
+            "Click to filter by " .. toggle.tooltip.title:lower() .. " difficulty",
             "ANCHOR_TOP"
         )
     end
@@ -2115,7 +2123,7 @@ end
 ---@field selected? any Initial selected value (deprecated: prefer get)
 ---@field get? fun(): any Getter for initial value and refresh (preferred over selected)
 ---@field enabled? fun(): boolean Getter for enabled state, evaluated on Refresh()
----@field tooltip? string|{title: string, desc?: string} Tooltip on hover
+---@field tooltip? TooltipText Tooltip on hover
 ---@field width? number Dropdown width (default 100)
 ---@field labelWidth? number Label width (default 70)
 ---@field maxItems? number Max visible items before scrolling (nil = no limit)
@@ -2170,13 +2178,8 @@ function Components.Dropdown(parent, config, _)
 
     -- Hover tooltip (attached to label only, not the entire holder)
     if config.tooltip then
-        local tipTitle, tipDesc
-        if type(config.tooltip) == "table" then
-            tipTitle = config.tooltip.title
-            tipDesc = config.tooltip.desc
-        else
-            tipTitle = config.tooltip --[[@as string]]
-        end
+        local tipTitle = config.tooltip.title
+        local tipDesc = config.tooltip.desc
         label:EnableMouse(true)
         local function showTip()
             ShowTooltip(label, tipTitle, tipDesc, "ANCHOR_TOP")

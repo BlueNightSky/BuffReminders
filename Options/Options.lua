@@ -1304,10 +1304,15 @@ local function CreateOptionsPanel()
 
             local petClassBar, petClassButtons = Components.CreateSegmentedBar(petLabelsHolder, {
                 toggleDefs = {
-                    { key = "HUNTER", label = "H", tooltip = "Hunter", color = classColor("HUNTER") },
-                    { key = "WARLOCK", label = "W", tooltip = "Warlock", color = classColor("WARLOCK") },
-                    { key = "DEATHKNIGHT", label = "D", tooltip = "Death Knight", color = classColor("DEATHKNIGHT") },
-                    { key = "MAGE", label = "M", tooltip = "Mage", color = classColor("MAGE") },
+                    { key = "HUNTER", label = "H", tooltip = { title = "Hunter" }, color = classColor("HUNTER") },
+                    { key = "WARLOCK", label = "W", tooltip = { title = "Warlock" }, color = classColor("WARLOCK") },
+                    {
+                        key = "DEATHKNIGHT",
+                        label = "D",
+                        tooltip = { title = "Death Knight" },
+                        color = classColor("DEATHKNIGHT"),
+                    },
+                    { key = "MAGE", label = "M", tooltip = { title = "Mage" }, color = classColor("MAGE") },
                 },
                 getState = function(key)
                     local vis = BR.profile.defaults.petLabelClasses
