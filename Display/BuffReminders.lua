@@ -18,9 +18,19 @@ local addonName, BR = ...
 ---@field showExpirationGlow boolean
 ---@field expirationThreshold number
 ---@field glowType number
----@field glowColor number[]
----@field useCustomGlowColor boolean
+---@field glowColor? number[]
 ---@field glowSize number
+---@field glowPixelLines? number
+---@field glowPixelFrequency? number
+---@field glowPixelLength? number
+---@field glowAutocastParticles? number
+---@field glowAutocastFrequency? number
+---@field glowAutocastScale? number
+---@field glowBorderFrequency? number
+---@field glowProcDuration? number
+---@field glowProcStartAnim? boolean
+---@field glowXOffset? number
+---@field glowYOffset? number
 ---@field fontFace? string
 ---@field showConsumablesWithoutItems? boolean
 ---@field delveFoodOnly? boolean
@@ -47,10 +57,6 @@ local addonName, BR = ...
 ---@field borderSize? number
 ---@field showExpirationGlow? boolean
 ---@field expirationThreshold? number
----@field glowType? number
----@field glowColor? number[]
----@field useCustomGlowColor? boolean
----@field glowSize? number
 ---@field showBuffReminder? boolean
 ---@field buffTextSize? number
 ---@field showText? boolean
@@ -281,8 +287,6 @@ local defaults = {
         showExpirationGlow = true,
         expirationThreshold = 15, -- minutes
         glowType = 1, -- 1=Pixel, 2=AutoCast, 3=Border, 4=Proc
-        glowColor = BR.Glow.DEFAULT_COLOR,
-        useCustomGlowColor = false,
         glowSize = 2,
         showConsumablesWithoutItems = false,
         delveFoodOnly = true,
@@ -543,9 +547,6 @@ local function GetCategorySettings(category)
         result.iconZoom = (catSettings and catSettings.iconZoom) or 0
         result.borderSize = (catSettings and catSettings.borderSize) or 2
         result.growDirection = (catSettings and catSettings.growDirection) or "CENTER"
-        result.glowType = (catSettings and catSettings.glowType) or 1
-        result.glowColor = (catSettings and catSettings.glowColor) or BR.Glow.DEFAULT_COLOR
-        result.glowSize = (catSettings and catSettings.glowSize) or 2
         result.showExpirationGlow = catSettings and catSettings.showExpirationGlow
         result.expirationThreshold = (catSettings and catSettings.expirationThreshold)
     else
@@ -559,9 +560,6 @@ local function GetCategorySettings(category)
         result.iconZoom = globalDefaults.iconZoom or 0
         result.borderSize = globalDefaults.borderSize or 2
         result.growDirection = globalDefaults.growDirection or "CENTER"
-        result.glowType = globalDefaults.glowType or 1
-        result.glowColor = globalDefaults.glowColor or BR.Glow.DEFAULT_COLOR
-        result.glowSize = globalDefaults.glowSize or 2
         result.showExpirationGlow = globalDefaults.showExpirationGlow
         result.expirationThreshold = globalDefaults.expirationThreshold
     end
@@ -737,23 +735,28 @@ end
 -- Local alias for glow module
 local SetExpirationGlow = BR.Glow.SetExpiration
 
--- Per-render-cycle cache for glow settings (avoids repeated BR.Config.GetCategorySetting calls)
-local glowSettingsCache = {} ---@type table<string, {typeIndex: number, color: number[], size: number, borderSize: number}>
+-- Per-render-cycle cache for glow settings (avoids repeated DB reads)
+local glowSettingsCache = {} ---@type table<string, table>
 
 ---Get cached glow settings for a category (populated once per render cycle)
+---Glow style is always global; only borderSize is per-category.
 ---@param category string
----@return {typeIndex: number, color: number[], size: number, borderSize: number}
+---@return table
 local function GetCachedGlowSettings(category)
     local cached = glowSettingsCache[category]
     if cached then
         return cached
     end
+    local d = BR.profile and BR.profile.defaults or {}
+    local typeIndex = d.glowType or 1
     cached = {
-        typeIndex = BR.Config.GetCategorySetting(category, "glowType") or 1,
-        color = BR.Config.GetCategorySetting(category, "glowColor") or BR.Glow.DEFAULT_COLOR,
-        useCustomColor = BR.Config.GetCategorySetting(category, "useCustomGlowColor") or false,
-        size = BR.Config.GetCategorySetting(category, "glowSize") or 2,
+        typeIndex = typeIndex,
+        color = d.glowColor,
+        size = d.glowSize or 2,
         borderSize = BR.Config.GetCategorySetting(category, "borderSize") or DEFAULT_BORDER_SIZE,
+        params = BR.Glow.BuildAdvancedParams(d, typeIndex),
+        glowXOffset = d.glowXOffset or 0,
+        glowYOffset = d.glowYOffset or 0,
     }
     glowSettingsCache[category] = cached
     return cached
@@ -2853,7 +2856,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 26
+        local DB_VERSION = 27
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3412,6 +3415,23 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                             buff.missingText = nil
                         end
                     end
+                end
+            end,
+            -- [27] Glow style is now global-only. Remove per-category glow style keys.
+            -- Also remove useCustomGlowColor (color swatch is now always active).
+            -- If user had custom color disabled, nil out glowColor so they keep native LCG colors.
+            [27] = function()
+                if db.defaults then
+                    if not db.defaults.useCustomGlowColor then
+                        db.defaults.glowColor = nil
+                    end
+                    db.defaults.useCustomGlowColor = nil
+                end
+                for _, catSettings in pairs(db.categorySettings or {}) do
+                    catSettings.glowType = nil
+                    catSettings.glowSize = nil
+                    catSettings.glowColor = nil
+                    catSettings.useCustomGlowColor = nil
                 end
             end,
         }

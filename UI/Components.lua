@@ -1623,7 +1623,7 @@ function Components.DirectionButtons(parent, config)
     label:SetPoint("LEFT", 0, 0)
     label:SetWidth(labelWidth)
     label:SetJustifyH("LEFT")
-    label:SetText(config.label or "Direction:")
+    label:SetText(config.label or "Direction")
     holder.label = label
 
     -- Initial value
