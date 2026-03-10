@@ -1455,18 +1455,22 @@ ToggleTestMode = function(showLabels)
         UpdateDisplay()
         return false
     else
-        testMode = true
-        -- Seed fake values for consistent display during test mode
+        -- Seed fake values BEFORE setting testMode = true, so that if initialization
+        -- errors (e.g. random(1,0) when threshold is 0), testMode stays false and
+        -- the OnUpdate handler won't call GenerateTestEntries with nil testModeData.
         local db = BR.profile
-        testModeData = {
+        local threshold = max(1, (db.defaults and db.defaults.expirationThreshold) or 15)
+        local data = {
             fakeTotal = random(10, 20),
-            fakeRemaining = random(1, (db.defaults and db.defaults.expirationThreshold) or 15) * 60,
+            fakeRemaining = random(1, threshold) * 60,
             fakeMissing = {},
             showLabels = showLabels,
         }
         for i = 1, #RaidBuffs do
-            testModeData.fakeMissing[i] = random(1, 5)
+            data.fakeMissing[i] = random(1, 5)
         end
+        testModeData = data
+        testMode = true
         BR.SecureButtons.HideAllSecureFrames()
         lastMainSignature = ""
         wipe(lastSplitSignatures)
