@@ -148,6 +148,22 @@ local CategorySettingKeys = {
     showText = "VisualsRefresh",
     -- Toggles
     useCustomAppearance = "VisualsRefresh",
+    useCustomGlow = "VisualsRefresh",
+    -- Per-category glow style overrides
+    glowType = "VisualsRefresh",
+    glowColor = "VisualsRefresh",
+    glowSize = "VisualsRefresh",
+    glowPixelLines = "VisualsRefresh",
+    glowPixelFrequency = "VisualsRefresh",
+    glowPixelLength = "VisualsRefresh",
+    glowAutocastParticles = "VisualsRefresh",
+    glowAutocastFrequency = "VisualsRefresh",
+    glowAutocastScale = "VisualsRefresh",
+    glowBorderFrequency = "VisualsRefresh",
+    glowProcDuration = "VisualsRefresh",
+    glowProcStartAnim = "VisualsRefresh",
+    glowXOffset = "VisualsRefresh",
+    glowYOffset = "VisualsRefresh",
     split = "FramesReparent",
     clickable = nil, -- No auto-refresh, handled manually via UpdateClickOverlays
     clickableHighlight = nil, -- No auto-refresh, handled manually via UpdateClickOverlays
@@ -304,6 +320,22 @@ local function ValidatePath(segments)
                 "buffTextSize",
                 "showText",
                 "useCustomAppearance",
+                "useCustomGlow",
+                "glowType",
+                "glowColor",
+                "glowSize",
+                "glowPixelLines",
+                "glowPixelFrequency",
+                "glowPixelLength",
+                "glowAutocastParticles",
+                "glowAutocastFrequency",
+                "glowAutocastScale",
+                "glowBorderFrequency",
+                "glowProcDuration",
+                "glowProcStartAnim",
+                "glowXOffset",
+                "glowYOffset",
+                "priority",
                 "split",
                 "clickable",
                 "clickableHighlight",
@@ -528,6 +560,24 @@ local AppearanceKeys = {
     expirationThreshold = true,
 }
 
+-- Keys that are glow-style-related (inherit from defaults when useCustomGlow is false)
+local GlowKeys = {
+    glowType = true,
+    glowColor = true,
+    glowSize = true,
+    glowPixelLines = true,
+    glowPixelFrequency = true,
+    glowPixelLength = true,
+    glowAutocastParticles = true,
+    glowAutocastFrequency = true,
+    glowAutocastScale = true,
+    glowBorderFrequency = true,
+    glowProcDuration = true,
+    glowProcStartAnim = true,
+    glowXOffset = true,
+    glowYOffset = true,
+}
+
 ---Get a category setting with inheritance from defaults
 ---@param category string Category name (raid, presence, etc.)
 ---@param key string Setting key (iconSize, showBuffReminder, etc.)
@@ -554,6 +604,14 @@ function BR.Config.GetCategorySetting(category, key)
         return catSettings[key]
     end
 
+    -- Glow style keys: inherit from defaults unless useCustomGlow is true
+    if GlowKeys[key] then
+        if not catSettings.useCustomGlow then
+            return db.defaults and db.defaults[key]
+        end
+        return catSettings[key]
+    end
+
     -- Non-appearance keys: use category value if set, otherwise fall back to defaults
     local value = catSettings[key]
     if value ~= nil then
@@ -571,6 +629,17 @@ function BR.Config.HasCustomAppearance(category)
         return false
     end
     return db.categorySettings[category].useCustomAppearance == true
+end
+
+---Check if a category has custom glow style enabled
+---@param category string
+---@return boolean
+function BR.Config.HasCustomGlow(category)
+    local db = BR.profile
+    if not db or not db.categorySettings or not db.categorySettings[category] then
+        return false
+    end
+    return db.categorySettings[category].useCustomGlow == true
 end
 
 -- ============================================================================

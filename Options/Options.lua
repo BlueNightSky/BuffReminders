@@ -834,6 +834,7 @@ local function CreateOptionsPanel()
     displayBehaviorLayout:Add(defGlowHolder, nil, COMPONENT_GAP)
 
     -- Expiration Reminder section
+    displayBehaviorLayout:Space(8)
     LayoutSectionHeader(displayBehaviorLayout, displayBehaviorContent, "Expiration Reminder")
     displayBehaviorLayout:Space(COMPONENT_GAP)
 
@@ -855,6 +856,7 @@ local function CreateOptionsPanel()
     displayBehaviorLayout:Add(defThresholdHolder, nil, COMPONENT_GAP)
 
     -- Per-Category Customization section
+    displayBehaviorLayout:Space(8)
     LayoutSectionHeader(displayBehaviorLayout, displayBehaviorContent, "Per-Category Customization")
     displayBehaviorLayout:Space(COMPONENT_GAP)
 
@@ -1705,6 +1707,41 @@ local function CreateOptionsPanel()
                 and db.categorySettings[category].useCustomAppearance == true
         end
 
+        local function isCustomGlowEnabled()
+            return isCustomAppearanceEnabled() and db.categorySettings[category].useCustomGlow == true
+        end
+
+        -- Snapshot current effective glow values from defaults into a category
+        local function SnapshotGlowDefaults()
+            local cs = db.categorySettings[category]
+            local glowDefaults = db.defaults or {}
+            local glowSnapshotKeys = {
+                "glowType",
+                "glowSize",
+                "glowPixelLines",
+                "glowPixelFrequency",
+                "glowPixelLength",
+                "glowAutocastParticles",
+                "glowAutocastFrequency",
+                "glowAutocastScale",
+                "glowBorderFrequency",
+                "glowProcDuration",
+                "glowProcStartAnim",
+                "glowXOffset",
+                "glowYOffset",
+            }
+            for _, key in ipairs(glowSnapshotKeys) do
+                if cs[key] == nil and glowDefaults[key] ~= nil then
+                    cs[key] = glowDefaults[key]
+                end
+            end
+            -- glowColor: deep copy (table value)
+            if cs.glowColor == nil and glowDefaults.glowColor then
+                local gc = glowDefaults.glowColor
+                cs.glowColor = { gc[1], gc[2], gc[3], gc[4] }
+            end
+        end
+
         -- Use custom appearance checkbox
         catLayout:SetX(0)
         local useCustomAppHolder = Components.Checkbox(catContent, {
@@ -1850,7 +1887,43 @@ local function CreateOptionsPanel()
             })
             catPetGlowHolder:SetPoint("TOPLEFT", 0, glowRowY)
 
-            gridHeight = catGrid.height + 24
+            -- Per-category custom glow style (pet)
+            local catPetCustomGlowHolder = Components.Checkbox(appFrame, {
+                label = "Custom glow style",
+                get = function()
+                    return isCustomGlowEnabled()
+                end,
+                enabled = isCustomAppearanceEnabled,
+                onChange = function(checked)
+                    if checked then
+                        SnapshotGlowDefaults()
+                    end
+                    BR.Config.Set("categorySettings." .. category .. ".useCustomGlow", checked)
+                    Components.RefreshAll()
+                end,
+            })
+            catPetCustomGlowHolder:SetPoint("TOPLEFT", 0, glowRowY - 24)
+
+            local catPetGlowSettingsBtn = CreateButton(appFrame, "Customize", function()
+                ShowGlowAdvanced(category)
+            end)
+            catPetGlowSettingsBtn:SetPoint("LEFT", catPetCustomGlowHolder.label, "RIGHT", 8, 0)
+            catPetGlowSettingsBtn:SetFrameLevel(catPetCustomGlowHolder:GetFrameLevel() + 5)
+
+            local function updatePetGlowBtnEnabled()
+                local enabled = isCustomGlowEnabled()
+                if enabled then
+                    catPetGlowSettingsBtn:Enable()
+                    catPetGlowSettingsBtn:SetAlpha(1)
+                else
+                    catPetGlowSettingsBtn:Disable()
+                    catPetGlowSettingsBtn:SetAlpha(0.4)
+                end
+            end
+            updatePetGlowBtnEnabled()
+            tinsert(BR.RefreshableComponents, { Refresh = updatePetGlowBtnEnabled })
+
+            gridHeight = catGrid.height + 48
         else
             local catThresholdHolder = Components.Slider(appFrame, {
                 label = "Expiration",
@@ -1884,7 +1957,44 @@ local function CreateOptionsPanel()
             })
             catGlowCheckHolder:SetPoint("TOPLEFT", 0, glowRowY - 24)
 
-            gridHeight = catGrid.height + 48
+            -- Per-category custom glow style
+            local catCustomGlowHolder = Components.Checkbox(appFrame, {
+                label = "Custom glow style",
+                get = function()
+                    return isCustomGlowEnabled()
+                end,
+                enabled = isCustomAppearanceEnabled,
+                onChange = function(checked)
+                    if checked then
+                        SnapshotGlowDefaults()
+                    end
+                    BR.Config.Set("categorySettings." .. category .. ".useCustomGlow", checked)
+                    Components.RefreshAll()
+                end,
+            })
+            catCustomGlowHolder:SetPoint("TOPLEFT", 0, glowRowY - 48)
+
+            local catGlowSettingsBtn = CreateButton(appFrame, "Customize", function()
+                ShowGlowAdvanced(category)
+            end)
+            catGlowSettingsBtn:SetPoint("LEFT", catCustomGlowHolder.label, "RIGHT", 8, 0)
+            catGlowSettingsBtn:SetFrameLevel(catCustomGlowHolder:GetFrameLevel() + 5)
+
+            -- Register enabled state for the customize button
+            local function updateGlowBtnEnabled()
+                local enabled = isCustomGlowEnabled()
+                if enabled then
+                    catGlowSettingsBtn:Enable()
+                    catGlowSettingsBtn:SetAlpha(1)
+                else
+                    catGlowSettingsBtn:Disable()
+                    catGlowSettingsBtn:SetAlpha(0.4)
+                end
+            end
+            updateGlowBtnEnabled()
+            tinsert(BR.RefreshableComponents, { Refresh = updateGlowBtnEnabled })
+
+            gridHeight = catGrid.height + 72
         end
 
         -- Advance past the appFrame grid and finalize section height
@@ -2436,12 +2546,22 @@ end
 -- Advanced glow settings panel
 local glowAdvancedPanel = nil
 
-ShowGlowAdvanced = function()
+---@param targetCategory? string nil = global defaults, string = per-category override
+ShowGlowAdvanced = function(targetCategory)
     local GlowType = Glow.Type
 
     if glowAdvancedPanel then
         glowAdvancedPanel:Hide()
         glowAdvancedPanel = nil
+    end
+
+    local configPrefix = targetCategory and ("categorySettings." .. targetCategory .. ".") or "defaults."
+    local function getSource()
+        if targetCategory then
+            return (BR.profile.categorySettings and BR.profile.categorySettings[targetCategory]) or {}
+        else
+            return BR.profile.defaults or {}
+        end
     end
 
     local PANEL_W = 440
@@ -2454,9 +2574,12 @@ ShowGlowAdvanced = function()
         modal = true,
     })
 
+    local titleText = targetCategory
+            and ("Glow Settings — " .. targetCategory:sub(1, 1):upper() .. targetCategory:sub(2))
+        or "Glow Settings"
     local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOP", 0, -10)
-    title:SetText("|cffffcc00Glow Settings|r")
+    title:SetText("|cffffcc00" .. titleText .. "|r")
 
     local closeBtn = CreateButton(panel, "x", function()
         panel:Hide()
@@ -2481,11 +2604,11 @@ ShowGlowAdvanced = function()
         labelWidth = 40,
         options = typeOptions,
         get = function()
-            return (BR.profile.defaults or {}).glowType or GlowType.Pixel
+            return getSource().glowType or GlowType.Pixel
         end,
         width = 140,
         onChange = function(val)
-            BR.Config.Set("defaults.glowType", val)
+            BR.Config.Set(configPrefix .. "glowType", val)
         end,
     }, "BuffRemindersGlowAdvTypeDropdown")
     staticLayout:Add(typeHolder, 30, 4)
@@ -2517,7 +2640,7 @@ ShowGlowAdvanced = function()
 
     local function RefreshPreview()
         Glow.StopAll(previewFrame, previewKey)
-        local d = BR.profile.defaults or {}
+        local d = getSource()
         local typeIdx = d.glowType or GlowType.Pixel
         local color = d.glowColor
         local size = d.glowSize or 2
@@ -2570,7 +2693,7 @@ ShowGlowAdvanced = function()
         wipe(dynamicHolders)
         dynamicLayout = Components.VerticalLayout(panel, { x = MARGIN, y = DYNAMIC_START_Y })
 
-        local d = BR.profile.defaults or {}
+        local d = getSource()
         local typeIdx = d.glowType or GlowType.Pixel
 
         -- Size + Color row
@@ -2583,10 +2706,10 @@ ShowGlowAdvanced = function()
                 max = 10,
                 step = 1,
                 get = function()
-                    return (BR.profile.defaults or {}).glowSize or 2
+                    return getSource().glowSize or 2
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowSize", val)
+                    BR.Config.Set(configPrefix .. "glowSize", val)
                     RefreshPreview()
                 end,
             })
@@ -2598,11 +2721,11 @@ ShowGlowAdvanced = function()
             colorSwatchHolder = Components.ColorSwatch(panel, {
                 hasOpacity = true,
                 get = function()
-                    local c = BR.Config.Get("defaults.glowColor", Glow.DEFAULT_COLOR)
+                    local c = getSource().glowColor or Glow.DEFAULT_COLOR
                     return c[1], c[2], c[3], c[4] or 1
                 end,
                 onChange = function(r, g, b, a)
-                    BR.Config.Set("defaults.glowColor", { r, g, b, a or 1 })
+                    BR.Config.Set(configPrefix .. "glowColor", { r, g, b, a or 1 })
                     RefreshPreview()
                 end,
             })
@@ -2627,10 +2750,10 @@ ShowGlowAdvanced = function()
                 max = 20,
                 step = 1,
                 get = function()
-                    return (BR.profile.defaults or {}).glowPixelLines or 8
+                    return getSource().glowPixelLines or 8
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowPixelLines", val)
+                    BR.Config.Set(configPrefix .. "glowPixelLines", val)
                     RefreshPreview()
                 end,
             })
@@ -2640,13 +2763,13 @@ ShowGlowAdvanced = function()
                 max = 1,
                 step = 0.01,
                 get = function()
-                    return (BR.profile.defaults or {}).glowPixelFrequency or 0.25
+                    return getSource().glowPixelFrequency or 0.25
                 end,
                 formatValue = function(val)
                     return string.format("%.2f", val)
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowPixelFrequency", val)
+                    BR.Config.Set(configPrefix .. "glowPixelFrequency", val)
                     RefreshPreview()
                 end,
             })
@@ -2656,10 +2779,10 @@ ShowGlowAdvanced = function()
                 max = 20,
                 step = 1,
                 get = function()
-                    return (BR.profile.defaults or {}).glowPixelLength or 10
+                    return getSource().glowPixelLength or 10
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowPixelLength", val)
+                    BR.Config.Set(configPrefix .. "glowPixelLength", val)
                     RefreshPreview()
                 end,
             })
@@ -2671,13 +2794,13 @@ ShowGlowAdvanced = function()
                 max = 3,
                 step = 0.1,
                 get = function()
-                    return (BR.profile.defaults or {}).glowAutocastScale or 1
+                    return getSource().glowAutocastScale or 1
                 end,
                 formatValue = function(val)
                     return string.format("%.1f", val)
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowAutocastScale", val)
+                    BR.Config.Set(configPrefix .. "glowAutocastScale", val)
                     RefreshPreview()
                 end,
             })
@@ -2687,10 +2810,10 @@ ShowGlowAdvanced = function()
                 max = 8,
                 step = 1,
                 get = function()
-                    return (BR.profile.defaults or {}).glowAutocastParticles or 4
+                    return getSource().glowAutocastParticles or 4
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowAutocastParticles", val)
+                    BR.Config.Set(configPrefix .. "glowAutocastParticles", val)
                     RefreshPreview()
                 end,
             })
@@ -2700,13 +2823,13 @@ ShowGlowAdvanced = function()
                 max = 1,
                 step = 0.01,
                 get = function()
-                    return (BR.profile.defaults or {}).glowAutocastFrequency or 0.125
+                    return getSource().glowAutocastFrequency or 0.125
                 end,
                 formatValue = function(val)
                     return string.format("%.2f", val)
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowAutocastFrequency", val)
+                    BR.Config.Set(configPrefix .. "glowAutocastFrequency", val)
                     RefreshPreview()
                 end,
             })
@@ -2718,13 +2841,13 @@ ShowGlowAdvanced = function()
                 max = 2,
                 step = 0.1,
                 get = function()
-                    return (BR.profile.defaults or {}).glowBorderFrequency or 0.6
+                    return getSource().glowBorderFrequency or 0.6
                 end,
                 formatValue = function(val)
                     return string.format("%.1f", val)
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowBorderFrequency", val)
+                    BR.Config.Set(configPrefix .. "glowBorderFrequency", val)
                     RefreshPreview()
                 end,
             })
@@ -2736,23 +2859,23 @@ ShowGlowAdvanced = function()
                 max = 3,
                 step = 0.1,
                 get = function()
-                    return (BR.profile.defaults or {}).glowProcDuration or 1
+                    return getSource().glowProcDuration or 1
                 end,
                 formatValue = function(val)
                     return string.format("%.1f", val)
                 end,
                 onChange = function(val)
-                    BR.Config.Set("defaults.glowProcDuration", val)
+                    BR.Config.Set(configPrefix .. "glowProcDuration", val)
                     RefreshPreview()
                 end,
             })
             AddCheckbox({
                 label = "Start Animation",
                 get = function()
-                    return (BR.profile.defaults or {}).glowProcStartAnim or false
+                    return getSource().glowProcStartAnim or false
                 end,
                 onChange = function(checked)
-                    BR.Config.Set("defaults.glowProcStartAnim", checked)
+                    BR.Config.Set(configPrefix .. "glowProcStartAnim", checked)
                     RefreshPreview()
                 end,
             })
@@ -2765,10 +2888,10 @@ ShowGlowAdvanced = function()
             max = 10,
             step = 1,
             get = function()
-                return (BR.profile.defaults or {}).glowXOffset or 0
+                return getSource().glowXOffset or 0
             end,
             onChange = function(val)
-                BR.Config.Set("defaults.glowXOffset", val)
+                BR.Config.Set(configPrefix .. "glowXOffset", val)
                 RefreshPreview()
             end,
         })
@@ -2778,10 +2901,10 @@ ShowGlowAdvanced = function()
             max = 10,
             step = 1,
             get = function()
-                return (BR.profile.defaults or {}).glowYOffset or 0
+                return getSource().glowYOffset or 0
             end,
             onChange = function(val)
-                BR.Config.Set("defaults.glowYOffset", val)
+                BR.Config.Set(configPrefix .. "glowYOffset", val)
                 RefreshPreview()
             end,
         })
@@ -2797,7 +2920,7 @@ ShowGlowAdvanced = function()
                 end
             end
             for _, key in ipairs(keys) do
-                BR.Config.Set("defaults." .. key, nil)
+                BR.Config.Set(configPrefix .. key, nil)
             end
             BuildTypeContent()
             RefreshPreview()
@@ -2817,7 +2940,7 @@ ShowGlowAdvanced = function()
 
     -- Subscribe to glow type changes to rebuild type-specific content
     local function OnSettingChanged(_, path)
-        if path == "defaults.glowType" then
+        if path == configPrefix .. "glowType" then
             BuildTypeContent()
         end
     end
