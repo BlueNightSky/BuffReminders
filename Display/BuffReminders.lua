@@ -782,7 +782,7 @@ local SetExpirationGlow = BR.Glow.SetExpiration
 local glowSettingsCache = {} ---@type table<string, table>
 
 ---Get cached glow settings for a category (populated once per render cycle)
----Glow style is always global; only borderSize is per-category.
+---Glow style reads from per-category overrides when useCustomGlow is enabled, otherwise from defaults.
 ---@param category string
 ---@return table
 local function GetCachedGlowSettings(category)
@@ -790,16 +790,21 @@ local function GetCachedGlowSettings(category)
     if cached then
         return cached
     end
-    local d = BR.profile and BR.profile.defaults or {}
-    local typeIndex = d.glowType or BR.Glow.Type.Pixel
+
+    local db = BR.profile
+    local catSettings = db and db.categorySettings and db.categorySettings[category]
+    local useCustom = catSettings and catSettings.useCustomGlow
+    local source = (useCustom and catSettings) or (db and db.defaults) or {}
+
+    local typeIndex = source.glowType or BR.Glow.Type.Pixel
     cached = {
         typeIndex = typeIndex,
-        color = d.glowColor,
-        size = d.glowSize or 2,
+        color = source.glowColor,
+        size = source.glowSize or 2,
         borderSize = BR.Config.GetCategorySetting(category, "borderSize") or DEFAULT_BORDER_SIZE,
-        params = BR.Glow.BuildAdvancedParams(d, typeIndex),
-        glowXOffset = d.glowXOffset or 0,
-        glowYOffset = d.glowYOffset or 0,
+        params = BR.Glow.BuildAdvancedParams(source, typeIndex),
+        glowXOffset = source.glowXOffset or 0,
+        glowYOffset = source.glowYOffset or 0,
     }
     glowSettingsCache[category] = cached
     return cached
@@ -2644,6 +2649,7 @@ end
 CallbackRegistry:RegisterCallback("VisualsRefresh", function()
     ResolveFontPath()
     ResetLayoutSignatures()
+    wipe(glowSettingsCache)
     UpdateVisuals()
     for _, mover in pairs(BR.Movers.GetMoverFrames()) do
         mover:UpdateSize()
@@ -3465,9 +3471,10 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     end
                 end
             end,
-            -- [27] Glow style is now global-only. Remove per-category glow style keys.
-            -- Also remove useCustomGlowColor (color swatch is now always active).
-            -- If user had custom color disabled, nil out glowColor so they keep native LCG colors.
+            -- [27] Per-category glow is now opt-in via useCustomGlow.
+            -- Remove useCustomGlowColor (color swatch is now always active).
+            -- Migrate old per-category glow keys: if a category had any glow overrides,
+            -- enable useCustomGlow and keep the values; otherwise clean up.
             [27] = function()
                 if db.defaults then
                     if not db.defaults.useCustomGlowColor then
@@ -3475,11 +3482,29 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     end
                     db.defaults.useCustomGlowColor = nil
                 end
+                local globalDefaults = db.defaults or {}
                 for _, catSettings in pairs(db.categorySettings or {}) do
-                    catSettings.glowType = nil
-                    catSettings.glowSize = nil
-                    catSettings.glowColor = nil
                     catSettings.useCustomGlowColor = nil
+                    -- Check if category had any glow overrides that differ from defaults
+                    local hasOverride = false
+                    if catSettings.glowType ~= nil and catSettings.glowType ~= globalDefaults.glowType then
+                        hasOverride = true
+                    end
+                    if catSettings.glowSize ~= nil and catSettings.glowSize ~= globalDefaults.glowSize then
+                        hasOverride = true
+                    end
+                    if catSettings.glowColor ~= nil then
+                        hasOverride = true
+                    end
+                    if hasOverride then
+                        -- Port old overrides into useCustomGlow system
+                        catSettings.useCustomGlow = true
+                    else
+                        -- No meaningful overrides — clean up stale keys
+                        catSettings.glowType = nil
+                        catSettings.glowSize = nil
+                        catSettings.glowColor = nil
+                    end
                 end
             end,
             -- [28] Add arena and bg visibility keys for existing users.
