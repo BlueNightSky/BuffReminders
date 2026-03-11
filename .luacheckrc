@@ -30,6 +30,7 @@ read_globals = {
 	"C_Container",
 	"C_ChallengeMode",
 	"C_Housing",
+	"C_PvP",
 	"C_EncodingUtil",
 	"C_Item",
 	"C_Spell",
@@ -92,6 +93,9 @@ read_globals = {
 	"strtrim",
 	"tinsert",
 	"wipe",
+
+	-- WoW Enums
+	"Enum",
 
 	-- WoW Mixins
 	"Mixin",

@@ -35,12 +35,19 @@ local _, BR = ...
 ---@field delves? boolean
 ---@field others? boolean
 
+---@class PvPType
+---@field arena? boolean
+---@field bg? boolean
+
 ---@class ContentVisibility
 ---@field openWorld boolean
 ---@field dungeon boolean
 ---@field scenario boolean
 ---@field raid boolean
 ---@field housing boolean
+---@field pvp boolean
+---@field hideInPvPMatch? boolean
+---@field pvpType? PvPType
 ---@field scenarioDifficulty? ScenarioDifficulty
 ---@field dungeonDifficulty? DungeonDifficulty
 ---@field raidDifficulty? RaidDifficulty

@@ -1683,6 +1683,12 @@ local RAID_DIFF_DEFS = {
 }
 
 ---@type ToggleDef[]
+local PVP_TYPE_DEFS = {
+    { key = "arena", label = "A", tooltip = { title = "Arena" } },
+    { key = "bg", label = "B", tooltip = { title = "Battlegrounds" } },
+}
+
+---@type ToggleDef[]
 local CONTENT_TOGGLE_DEFS = {
     { key = "openWorld", label = "W", tooltip = { title = "Open World" } },
     { key = "housing", label = "H", tooltip = { title = "Housing" } },
@@ -1706,6 +1712,13 @@ local CONTENT_TOGGLE_DEFS = {
         tooltip = { title = "Raids" },
         diffDbKey = "raidDifficulty",
         diffDefs = RAID_DIFF_DEFS,
+    },
+    {
+        key = "pvp",
+        label = "P",
+        tooltip = { title = "PvP (Arena & Battlegrounds)" },
+        diffDbKey = "pvpType",
+        diffDefs = PVP_TYPE_DEFS,
     },
 }
 
@@ -1814,6 +1827,8 @@ local function CreateSegmentedBar(parent, barConfig)
             end
         end
         btn.UpdateVisual = UpdateToggleVisual
+        btn.bg = bg
+        btn.label = btnLabel
         UpdateToggleVisual()
 
         btn:SetScript("OnClick", function()
@@ -1859,6 +1874,7 @@ Components.CreateSegmentedBar = CreateSegmentedBar
 ---@field store? VisibilityStore Custom data source (overrides category DB access)
 ---@field onChange fun() Callback when visibility changes
 ---@field noAutoRefresh? boolean Skip auto-registration in RefreshableComponents
+---@field disabledSubToggles? table<string, table<string, {tooltip: TooltipText}>> Per-diffDbKey per-subKey overrides: greyed out, unclickable
 
 ---@class VisibilityStore
 ---@field getContent fun(key: string): boolean Whether content type is enabled
@@ -1882,8 +1898,15 @@ local function MakeCategoryStore(category)
                 db.categoryVisibility = {}
             end
             if not db.categoryVisibility[category] then
-                db.categoryVisibility[category] =
-                    { openWorld = true, scenario = true, dungeon = true, raid = true, housing = false }
+                db.categoryVisibility[category] = {
+                    openWorld = true,
+                    scenario = true,
+                    dungeon = true,
+                    raid = true,
+                    housing = false,
+                    pvp = true,
+                    hideInPvPMatch = true,
+                }
             end
             db.categoryVisibility[category][key] = not db.categoryVisibility[category][key]
         end,
@@ -1898,7 +1921,15 @@ local function MakeCategoryStore(category)
                 db.categoryVisibility = {}
             end
             if not db.categoryVisibility[category] then
-                db.categoryVisibility[category] = { openWorld = true, scenario = true, dungeon = true, raid = true }
+                db.categoryVisibility[category] = {
+                    openWorld = true,
+                    scenario = true,
+                    dungeon = true,
+                    raid = true,
+                    housing = false,
+                    pvp = true,
+                    hideInPvPMatch = true,
+                }
             end
             if not db.categoryVisibility[category][dbKey] then
                 db.categoryVisibility[category][dbKey] = {}
@@ -1998,6 +2029,9 @@ function Components.VisibilityToggles(parent, config)
 
     -- Pre-create difficulty bars
     for _, mapping in ipairs(DIFF_MAPPINGS) do
+        -- Resolve disabled sub-toggles before bar creation so setState can reference them
+        local disabledSubs = config.disabledSubToggles and config.disabledSubToggles[mapping.diffDbKey]
+
         local bar, buttons = CreateSegmentedBar(holder, {
             toggleDefs = mapping.diffDefs,
             segmentWidth = DIFF_SEGMENT_W,
@@ -2012,10 +2046,12 @@ function Components.VisibilityToggles(parent, config)
 
                 -- Auto-manage content type toggle
                 if wasEnabled then
-                    -- Turned off: check if ALL are now off -> disable content type
+                    -- Turned off: check if ALL toggleable subs are now off -> disable content type
+                    -- Skip force-disabled keys (e.g. arena for consumables) so they don't
+                    -- cause the parent to auto-disable when the only interactive sub is turned off.
                     local anyStillOn = false
                     for _, def in ipairs(mapping.diffDefs) do
-                        if t[def.key] ~= false then
+                        if not (disabledSubs and disabledSubs[def.key]) and t[def.key] ~= false then
                             anyStillOn = true
                             break
                         end
@@ -2042,6 +2078,23 @@ function Components.VisibilityToggles(parent, config)
         })
         bar:SetPoint("LEFT", expandArrow, "RIGHT", 2, 0)
         bar:Hide()
+        if disabledSubs then
+            for j, subDef in ipairs(mapping.diffDefs) do
+                local disabledInfo = disabledSubs[subDef.key]
+                if disabledInfo then
+                    local subBtn = buttons[j]
+                    subBtn:SetScript("OnClick", function() end)
+                    subBtn.UpdateVisual = function()
+                        subBtn.bg:SetColorTexture(0.08, 0.02, 0.02, 1)
+                        subBtn.label:SetTextColor(0.5, 0.2, 0.2, 1)
+                    end
+                    subBtn.UpdateVisual()
+                    if disabledInfo.tooltip then
+                        SetupTooltip(subBtn, disabledInfo.tooltip.title, disabledInfo.tooltip.desc, "ANCHOR_TOP")
+                    end
+                end
+            end
+        end
 
         for _, btn in ipairs(buttons) do
             allToggleButtons[#allToggleButtons + 1] = btn

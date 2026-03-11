@@ -902,7 +902,20 @@ local function CreateOptionsPanel()
 
             local visToggles = Components.VisibilityToggles(catContent, {
                 category = category,
-                onChange = OnCategoryVisibilityChange,
+                onChange = function()
+                    OnCategoryVisibilityChange()
+                    Components.RefreshAll()
+                end,
+                disabledSubToggles = category == "consumable" and {
+                    pvpType = {
+                        arena = {
+                            tooltip = {
+                                title = "Arena",
+                                desc = "Consumables cannot be used in arena",
+                            },
+                        },
+                    },
+                } or nil,
             })
             catLayout:Add(visToggles, nil, SECTION_GAP)
 
@@ -921,6 +934,41 @@ local function CreateOptionsPanel()
                 end,
             })
             catLayout:Add(readyCheckHolder, nil, COMPONENT_GAP)
+
+            local hideInPvPMatchHolder = Components.Checkbox(catContent, {
+                label = "Hide when PvP match starts",
+                get = function()
+                    local vis = db.categoryVisibility and db.categoryVisibility[category]
+                    return vis and vis.hideInPvPMatch or false
+                end,
+                enabled = function()
+                    local vis = db.categoryVisibility and db.categoryVisibility[category]
+                    return not vis or vis.pvp ~= false
+                end,
+                tooltip = {
+                    title = "Hide When PvP Match Starts",
+                    desc = "Hide this category once a PvP match begins (after prep phase ends).",
+                },
+                onChange = function(checked)
+                    if not db.categoryVisibility then
+                        db.categoryVisibility = {}
+                    end
+                    if not db.categoryVisibility[category] then
+                        db.categoryVisibility[category] = {
+                            openWorld = true,
+                            scenario = true,
+                            dungeon = true,
+                            raid = true,
+                            housing = false,
+                            pvp = true,
+                            hideInPvPMatch = true,
+                        }
+                    end
+                    db.categoryVisibility[category].hideInPvPMatch = checked
+                    OnCategoryVisibilityChange()
+                end,
+            })
+            catLayout:Add(hideInPvPMatchHolder, nil, COMPONENT_GAP)
         else
             local banner = Components.Banner(catContent, {
                 text = "Visibility and ready check settings moved to each buff's edit menu.",

@@ -306,17 +306,60 @@ local defaults = {
 
     ---@type CategoryVisibility
     categoryVisibility = { -- Which content types each category shows in
-        raid = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
-        presence = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
-        targeted = { openWorld = false, dungeon = true, scenario = true, raid = true, housing = false },
-        self = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
-        pet = { openWorld = true, dungeon = true, scenario = true, raid = true, housing = false },
+        raid = {
+            openWorld = true,
+            dungeon = true,
+            scenario = true,
+            raid = true,
+            housing = false,
+            pvp = true,
+            hideInPvPMatch = true,
+        },
+        presence = {
+            openWorld = true,
+            dungeon = true,
+            scenario = true,
+            raid = true,
+            housing = false,
+            pvp = true,
+            hideInPvPMatch = true,
+        },
+        targeted = {
+            openWorld = false,
+            dungeon = true,
+            scenario = true,
+            raid = true,
+            housing = false,
+            pvp = true,
+            hideInPvPMatch = true,
+        },
+        self = {
+            openWorld = true,
+            dungeon = true,
+            scenario = true,
+            raid = true,
+            housing = false,
+            pvp = true,
+            hideInPvPMatch = true,
+        },
+        pet = {
+            openWorld = true,
+            dungeon = true,
+            scenario = true,
+            raid = true,
+            housing = false,
+            pvp = true,
+            hideInPvPMatch = false,
+        },
         consumable = {
             openWorld = false,
             dungeon = true,
             scenario = true,
             raid = true,
             housing = false,
+            pvp = true,
+            hideInPvPMatch = true,
+            pvpType = { arena = false, bg = true },
             scenarioDifficulty = {
                 delves = true,
                 others = false,
@@ -2767,6 +2810,7 @@ eventFrame:RegisterEvent("UNIT_EXITED_VEHICLE")
 eventFrame:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
 eventFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
 eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
+eventFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 
 ClearInstanceEntryState = function()
     if instanceEntryTimer then
@@ -2860,7 +2904,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 27
+        local DB_VERSION = 28
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3438,6 +3482,28 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     catSettings.useCustomGlowColor = nil
                 end
             end,
+            -- [28] Add arena and bg visibility keys for existing users.
+            -- Derive from their current dungeon setting; arena forced off for consumable.
+            [28] = function()
+                if db.categoryVisibility then
+                    for cat, vis in pairs(db.categoryVisibility) do
+                        if type(vis) == "table" then
+                            -- Add pvp toggle, derive from dungeon setting
+                            if vis.pvp == nil then
+                                vis.pvp = vis.dungeon ~= false
+                            end
+                            -- Add pvpType sub-table for consumable (arena off)
+                            if cat == "consumable" and not vis.pvpType then
+                                vis.pvpType = { arena = false, bg = true }
+                            end
+                            -- Default hideInPvPMatch on for all categories except pet
+                            if vis.hideInPvPMatch == nil then
+                                vis.hideInPvPMatch = cat ~= "pet"
+                            end
+                        end
+                    end
+                end
+            end,
         }
 
         -- Run pending migrations
@@ -3500,9 +3566,12 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 local defaultVis = defaults.categoryVisibility[category]
                 db.categoryVisibility[category] = {
                     openWorld = defaultVis and defaultVis.openWorld ~= false,
+                    housing = defaultVis and defaultVis.housing == true,
                     dungeon = defaultVis and defaultVis.dungeon ~= false,
                     scenario = defaultVis and defaultVis.scenario ~= false,
                     raid = defaultVis and defaultVis.raid ~= false,
+                    pvp = defaultVis and defaultVis.pvp ~= false,
+                    hideInPvPMatch = defaultVis and defaultVis.hideInPvPMatch == true,
                 }
             end
         end
@@ -3580,6 +3649,13 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         inCombat = InCombatLockdown()
         isResting = IsResting()
         BR.BuffState.SetInCombat(inCombat)
+        -- Detect PvP prep phase: in a PvP instance but match not yet started.
+        -- Default is false (restricted), so reloads during active matches stay safe.
+        local _, instType = IsInInstance()
+        local inPvPZone = instType == "pvp" or instType == "arena"
+        local matchState = C_PvP.GetActiveMatchState()
+        local isPrep = matchState ~= Enum.PvPMatchState.Engaged
+        BR.BuffState.SetPvPPrepPhase(inPvPZone and isPrep)
         BR.BuffState.SetInVehicle(UnitInVehicle("player") == true)
         BR.StateHelpers.ScanEatingState()
         ResolveFontPath()
@@ -3681,6 +3757,12 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         SetDirty()
     elseif event == "PLAYER_DIFFICULTY_CHANGED" then
         BR.BuffState.InvalidateContentTypeCache()
+        SetDirty()
+    elseif event == "PVP_MATCH_STATE_CHANGED" then
+        local state = C_PvP.GetActiveMatchState()
+        -- Prep phase: anything that isn't Engaged means match isn't active.
+        local isPrep = state ~= Enum.PvPMatchState.Engaged
+        BR.BuffState.SetPvPPrepPhase(isPrep)
         SetDirty()
     elseif event == "PLAYER_UPDATE_RESTING" then
         isResting = IsResting()

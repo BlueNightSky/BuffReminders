@@ -89,9 +89,11 @@ local inCombat = false
 
 -- Content type cache (invalidated on PLAYER_ENTERING_WORLD)
 local cachedContentType = nil
+local cachedInstanceType = nil -- raw WoW instanceType, stashed alongside content type
 
--- PvP instance flag (set alongside content type cache)
-local isPvPInstance = false
+-- Whether we are in the PvP prep phase (before gates open). Aura API is unrestricted during prep.
+-- Defaults to false (restricted) so reloads during active matches stay safe.
+local inPvPPrepPhase = false
 
 -- Difficulty cache (invalidated alongside content type)
 local cachedDifficultyKey = nil
@@ -123,6 +125,7 @@ local CONTENT_DIFF_DB_KEYS = {
     scenario = "scenarioDifficulty",
     dungeon = "dungeonDifficulty",
     raid = "raidDifficulty",
+    pvp = "pvpType",
 }
 
 -- Talent/spell knowledge cache (invalidated on PLAYER_SPECIALIZATION_CHANGED)
@@ -493,7 +496,7 @@ local function IsBuffEnabled(key)
 end
 
 ---Get the current content type based on instance/zone (cached)
----@return "openWorld"|"dungeon"|"scenario"|"raid"|"housing"
+---@return string contentType One of "openWorld", "dungeon", "scenario", "raid", "housing", "pvp"
 local function GetCurrentContentType()
     if cachedContentType then
         return cachedContentType
@@ -520,6 +523,7 @@ local function GetCurrentContentType()
     end
 
     local inInstance, instanceType = IsInInstance()
+    cachedInstanceType = instanceType
     if not inInstance then
         cachedContentType = "openWorld"
     elseif instanceType == "raid" then
@@ -527,10 +531,10 @@ local function GetCurrentContentType()
     elseif instanceType == "scenario" then
         cachedContentType = "scenario"
     else
-        -- pvp and arena instance types map to "dungeon" for content visibility
-        cachedContentType = "dungeon"
-        if instanceType == "pvp" or instanceType == "arena" then
-            isPvPInstance = true
+        if instanceType == "arena" or instanceType == "pvp" then
+            cachedContentType = "pvp"
+        else
+            cachedContentType = "dungeon"
         end
     end
 
@@ -556,6 +560,10 @@ local function GetCurrentDifficultyKey()
         return key
     elseif contentType == "scenario" then
         local key = difficultyID == 208 and "delves" or "others"
+        cachedDifficultyKey = key
+        return key
+    elseif contentType == "pvp" then
+        local key = cachedInstanceType == "arena" and "arena" or "bg"
         cachedDifficultyKey = key
         return key
     end
@@ -589,6 +597,10 @@ local function IsCategoryVisibleForContent(category)
         if diffTable and diffTable[diffKey] == false then
             return false
         end
+    end
+    -- Hide category when PvP match is active (past prep phase)
+    if contentType == "pvp" and not inPvPPrepPhase and visibility.hideInPvPMatch then
+        return false
     end
     -- Per-category ready check filter
     local catSettings = db.categorySettings and db.categorySettings[category]
@@ -1344,8 +1356,11 @@ function BuffState.Refresh()
 
     local trackingMode = db.buffTrackingMode
     -- Aura API is restricted in combat/encounters (inCombat set by Display layer),
-    -- during M+ keystones, and in PvP instances (always restricted regardless of combat state).
-    local isAuraRestricted = inCombat or GetCurrentDifficultyKey() == "mythicPlus" or isPvPInstance
+    -- during M+ keystones, and in PvP instances (except during prep phase before gates open).
+    -- Ensure content type cache is populated before checking (avoids one-frame flicker after invalidation).
+    local contentType = GetCurrentContentType()
+    local isPvPRestricted = contentType == "pvp" and not inPvPPrepPhase
+    local isAuraRestricted = inCombat or GetCurrentDifficultyKey() == "mythicPlus" or isPvPRestricted
     local hideExpiring = isAuraRestricted and db.hideExpiringInCombat ~= false
 
     -- Process raid buffs (coverage - need everyone to have them)
@@ -1776,6 +1791,12 @@ function BuffState.SetInCombat(state)
     inCombat = state
 end
 
+---Set whether we are in the PvP prep phase (before gates open).
+---@param state boolean
+function BuffState.SetPvPPrepPhase(state)
+    inPvPPrepPhase = state
+end
+
 -- ============================================================================
 -- CACHE INVALIDATION
 -- ============================================================================
@@ -1783,8 +1804,12 @@ end
 ---Invalidate content type cache (call on PLAYER_ENTERING_WORLD)
 function BuffState.InvalidateContentTypeCache()
     cachedContentType = nil
+    cachedInstanceType = nil
     cachedDifficultyKey = nil
-    isPvPInstance = false
+    -- Note: inPvPPrepPhase is NOT reset here — it's managed explicitly by
+    -- SetPvPPrepPhase() calls from PLAYER_ENTERING_WORLD and PVP_MATCH_STATE_CHANGED.
+    -- Resetting it here would clobber the prep state when ZONE_CHANGED_NEW_AREA's
+    -- deferred invalidation fires 0.5s after entering a PvP instance.
 end
 
 ---Invalidate spec ID cache (call on PLAYER_ENTERING_WORLD, PLAYER_SPECIALIZATION_CHANGED)

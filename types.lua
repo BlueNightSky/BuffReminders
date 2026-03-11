@@ -47,6 +47,7 @@
 ---@field scenario? boolean
 ---@field raid? boolean
 ---@field housing? boolean
+---@field pvp? boolean
 ---@field readyCheckOnly? boolean
 ---@field levelFilter? "maxLevel"|"belowMaxLevel"
 ---@field scenarioDifficulty? table<string, boolean>
