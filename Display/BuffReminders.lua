@@ -1371,6 +1371,7 @@ local function GenerateTestEntries()
         entry.isEating = nil
         entry.petActions = nil
         entry.iconByRole = nil
+        entry.dynamicIcon = nil
     end
 
     local raidIndex = 1
@@ -1847,7 +1848,9 @@ local function RenderVisibleEntry(frame, entry)
                 end
             end
         else
-            if entry.iconByRole then
+            if entry.dynamicIcon then
+                frame.icon:SetTexture(entry.dynamicIcon)
+            elseif entry.iconByRole then
                 local texture = GetBuffTexture(frame.spellIDs, entry.iconByRole)
                 if texture then
                     frame.icon:SetTexture(texture)
