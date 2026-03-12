@@ -2494,6 +2494,17 @@ local function CreateOptionsPanel()
     lockBtn:Refresh()
     tinsert(BR.RefreshableComponents, lockBtn)
 
+    local unlockBanner = Components.Banner(panel, {
+        text = "Click an anchor to edit exact coordinates",
+        color = "orange",
+        icon = "services-icon-warning",
+        visible = function()
+            return not BR.profile.locked
+        end,
+    })
+    unlockBanner:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -4)
+    unlockBanner:SetPoint("TOPRIGHT", panel, "BOTTOMRIGHT", 0, -4)
+
     local testBtn = CreateButton(btnHolder, "Stop Test", function(self)
         local isOn = ToggleTestMode()
         self.text:SetText(isOn and "Stop Test" or "Test")

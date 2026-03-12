@@ -34,7 +34,7 @@ local ANCHOR_COORD_FN = {
 
 local moverFrames = {} -- Per-category mover frames (shown when unlocked for drag positioning)
 local lastDirection = {} -- Tracks previous growDirection per catKey for position conversion
-local coordPopup -- Shared coordinate popup
+local coordPopup -- Shared coordinate popup (shown on the active mover)
 
 -- Offset from anchor edge to frame center, in units of iconSize
 local ANCHOR_TO_CENTER = {
@@ -148,6 +148,7 @@ end
 -- Finish a mover drag: read the direction-anchor edge, re-anchor, save
 local function FinishMoverDrag(mover, catKey)
     mover.isDragging = false
+    mover:SetScript("OnUpdate", nil)
     mover:StopMovingOrSizing()
     local settings = GetCategorySettings(catKey)
     local direction = settings.growDirection or "CENTER"
@@ -167,6 +168,10 @@ local function FinishMoverDrag(mover, catKey)
     mover:ClearAllPoints()
     mover:SetPoint(anchor, UIParent, "CENTER", x, y)
     SavePosition(catKey, x, y)
+    if coordPopup and coordPopup:IsShown() and coordPopup.catKey == catKey then
+        coordPopup.xEdit:SetText(tostring(x))
+        coordPopup.yEdit:SetText(tostring(y))
+    end
     RestoreContainer(catKey)
     -- Re-sync sub-icon action buttons at new position
     if BR.SecureButtons then
@@ -174,7 +179,7 @@ local function FinishMoverDrag(mover, catKey)
     end
 end
 
--- Coordinate popup: shared popup for typing exact X/Y positions on mover frames
+-- Coordinate popup: shared singleton for typing exact X/Y positions
 local function CreateCoordinatePopup()
     local fontPath = BR.Display.GetFontPath()
     local popup = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
@@ -238,7 +243,6 @@ local function CreateCoordinatePopup()
         xVal = RoundCoord(xVal)
         yVal = RoundCoord(yVal)
         SavePosition(catKey, xVal, yVal)
-        popup:Hide()
     end)
     applyBtn:SetPoint("BOTTOM", 0, 8)
 
@@ -274,12 +278,12 @@ local function CreateCoordinatePopup()
     return popup
 end
 
+-- Show the shared popup anchored to a specific mover, populated with its coords
 local function ShowCoordinatePopup(catKey, mover)
     if not coordPopup then
         coordPopup = CreateCoordinatePopup()
     end
     coordPopup.catKey = catKey
-    coordPopup.mover = mover
     coordPopup:ClearAllPoints()
     coordPopup:SetPoint("LEFT", mover, "RIGHT", 10, 0)
 
@@ -288,7 +292,28 @@ local function ShowCoordinatePopup(catKey, mover)
     coordPopup.yEdit:SetText(tostring(pos.y or 0))
 
     coordPopup:Show()
-    coordPopup.xEdit:SetFocus()
+end
+
+-- Update the shared popup's edit boxes from live mover position during drag
+local function UpdatePopupLive(mover, catKey)
+    if not coordPopup or not coordPopup:IsShown() then
+        return
+    end
+    local settings = GetCategorySettings(catKey)
+    local direction = settings.growDirection or "CENTER"
+    local anchor = DIRECTION_ANCHORS[direction] or "CENTER"
+    local px, py = UIParent:GetCenter()
+    local x, y
+    local coordFn = ANCHOR_COORD_FN[anchor]
+    if coordFn then
+        x, y = coordFn(mover, px, py)
+    else
+        local cx, cy = mover:GetCenter()
+        x = cx - px
+        y = cy - py
+    end
+    coordPopup.xEdit:SetText(tostring(RoundCoord(x)))
+    coordPopup.yEdit:SetText(tostring(RoundCoord(y)))
 end
 
 -- Create a mover frame for positioning a category.
@@ -341,14 +366,11 @@ local function CreateMoverFrame(catKey, displayName)
     mover:SetPoint(initAnchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
 
     -- Tooltip
-    BR.SetupTooltip(mover, "Buff Anchor", "Drag to reposition\nRight-click to set exact coordinates")
+    BR.SetupTooltip(mover, "Buff Anchor", "Drag to reposition\nClick to toggle coordinate editor")
 
     -- Drag scripts
     mover:SetScript("OnDragStart", function(self)
         GameTooltip:Hide()
-        if coordPopup then
-            coordPopup:Hide()
-        end
         DimContainer(catKey)
         -- Hide sub-icon action buttons so they don't linger at old positions during drag
         if BR.SecureButtons then
@@ -356,6 +378,15 @@ local function CreateMoverFrame(catKey, displayName)
         end
         self.isDragging = true
         self:StartMoving()
+        -- Live coordinate updates if popup is already open
+        if coordPopup and coordPopup:IsShown() then
+            coordPopup:ClearAllPoints()
+            coordPopup:SetPoint("LEFT", self, "RIGHT", 10, 0)
+            coordPopup.catKey = catKey
+        end
+        self:SetScript("OnUpdate", function()
+            UpdatePopupLive(self, catKey)
+        end)
     end)
     mover:SetScript("OnDragStop", function(self)
         FinishMoverDrag(self, catKey)
@@ -366,10 +397,14 @@ local function CreateMoverFrame(catKey, displayName)
         end
     end)
 
-    -- Right-click to open coordinate popup
-    mover:SetScript("OnMouseDown", function(self, button)
-        if button == "RightButton" then
-            ShowCoordinatePopup(catKey, self)
+    -- Click to toggle coordinate popup
+    mover:SetScript("OnMouseUp", function(self, button)
+        if not self.isDragging and button == "LeftButton" then
+            if coordPopup and coordPopup:IsShown() and coordPopup.catKey == catKey then
+                coordPopup:Hide()
+            else
+                ShowCoordinatePopup(catKey, self)
+            end
         end
     end)
 
@@ -389,6 +424,10 @@ PositionMoverFrame = function(catKey)
     local anchor = DIRECTION_ANCHORS[direction] or "CENTER"
     mover:ClearAllPoints()
     mover:SetPoint(anchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
+    if coordPopup and coordPopup:IsShown() and coordPopup.catKey == catKey then
+        coordPopup.xEdit:SetText(tostring(pos.x or 0))
+        coordPopup.yEdit:SetText(tostring(pos.y or 0))
+    end
 end
 
 -- Initialize mover frames for all categories (called from InitializeFrames)
@@ -454,7 +493,7 @@ local function UpdateAnchor()
     end
 end
 
--- Hide all mover frames
+-- Hide all mover frames and the coordinate popup
 local function HideAllMovers()
     if coordPopup then
         coordPopup:Hide()
