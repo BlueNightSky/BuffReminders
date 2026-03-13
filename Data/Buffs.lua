@@ -398,7 +398,7 @@ BR.BUFF_TABLES = {
                 desc = "Briefly shown when entering a dungeon as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds.",
             },
             customCheck = function()
-                local info = C_Spell.GetSpellCooldown(29893)
+                local info = securecallfunction(C_Spell.GetSpellCooldown, 29893)
                 return not info or info.duration == 0
             end,
         },
