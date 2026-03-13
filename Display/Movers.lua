@@ -236,7 +236,7 @@ local KNOWN_ANCHOR_FRAMES = {
     "Vd1",
 }
 
--- Scan for anchor frames: check known names + detect addon patterns dynamically
+-- Scan for anchor frames: check known names + user custom names
 local function ScanAnchorFrames()
     local results = {}
     local seen = {}
@@ -247,6 +247,18 @@ local function ScanAnchorFrames()
         if obj and type(obj) == "table" and not seen[obj] and obj.GetCenter ~= nil then
             seen[obj] = true
             tinsert(results, name)
+        end
+    end
+
+    -- Check user-defined custom anchor frames
+    local db = BR.profile
+    if db.customAnchorFrames then
+        for _, name in ipairs(db.customAnchorFrames) do
+            local obj = _G[name]
+            if obj and type(obj) == "table" and not seen[obj] and obj.GetCenter ~= nil then
+                seen[obj] = true
+                tinsert(results, name)
+            end
         end
     end
 
