@@ -99,7 +99,6 @@ local addonName, BR = ...
 ---@field buffText? FontString
 ---@field foodLabel? FontString
 ---@field foodHeartyBadge? FontString
----@field testText FontString
 ---@field isPlayerBuff? boolean
 ---@field buffCategory? CategoryName
 ---@field glowTexture? Texture
@@ -466,7 +465,6 @@ local eventFrame -- forward declaration; created later in file, referenced by St
 ---@field fakeTotal number Total group size for fake counts
 ---@field fakeRemaining number Fake time remaining for expiration glow test
 ---@field fakeMissing table<number, number> Fake missing counts per raid buff index
----@field showLabels boolean Whether to show "TEST" labels on icons
 
 ---@type TestModeData?
 local testModeData = nil -- Stores seeded fake values for consistent test display
@@ -1055,14 +1053,6 @@ local function CreateBuffFrame(buff, category)
         end
     end
 
-    -- "TEST" text (shown above icon in test mode)
-    frame.testText = frame:CreateFontString(nil, "OVERLAY")
-    frame.testText:SetPoint("BOTTOM", frame, "TOP", 0, 25)
-    frame.testText:SetFont(fontPath, GetFontSize(0.6, catSettings.textSize, catSettings.iconSize), "OUTLINE")
-    frame.testText:SetTextColor(1, 0.8, 0, 1)
-    frame.testText:SetText("TEST")
-    frame.testText:Hide()
-
     -- Always click-through (dragging is handled by anchor handles)
     frame:EnableMouse(false)
 
@@ -1516,11 +1506,7 @@ local function GenerateTestEntries()
 end
 
 -- Toggle test mode - returns true if test mode is now ON, false if OFF
--- showLabels: if true (default), show "TEST" labels above icons
-ToggleTestMode = function(showLabels)
-    if showLabels == nil then
-        showLabels = true
-    end
+ToggleTestMode = function()
     if testMode then
         testMode = false
         testModeData = nil
@@ -1529,9 +1515,6 @@ ToggleTestMode = function(showLabels)
         -- test mode but not tracked in previouslyVisibleKeys would linger as orphans.
         for _, frame in pairs(buffFrames) do
             SetExpirationGlow(frame, false)
-            if frame.testText then
-                frame.testText:Hide()
-            end
             frame:Hide()
             if frame.extraFrames then
                 for _, extra in ipairs(frame.extraFrames) do
@@ -1555,7 +1538,6 @@ ToggleTestMode = function(showLabels)
             fakeTotal = random(10, 20),
             fakeRemaining = random(1, threshold) * 60,
             fakeMissing = {},
-            showLabels = showLabels,
         }
         for i = 1, #RaidBuffs do
             data.fakeMissing[i] = random(1, 5)
@@ -2380,16 +2362,6 @@ UpdateDisplay = function()
     end
     BR.Movers.UpdateAnchor()
 
-    -- Show TEST labels in test mode (after positioning so font size is correct)
-    if testMode and testModeData and testModeData.showLabels then
-        for _, frame in pairs(buffFrames) do
-            if frame:IsShown() and frame.testText then
-                frame.testText:SetFont(fontPath, GetFrameFontSize(frame, 0.6), "OUTLINE")
-                frame.testText:Show()
-            end
-        end
-    end
-
     -- Skip secure frame sync in test mode (secure frames are hidden)
     if not testMode then
         BR.SecureButtons.ScheduleSecureSync()
@@ -2817,7 +2789,7 @@ local function SlashHandler(msg)
     cmd = cmd:lower()
 
     if cmd == "test" then
-        ToggleTestMode(false) -- no labels, for previews
+        ToggleTestMode()
     elseif cmd == "lock" then
         BR.profile.locked = true
         BR.Movers.HideAll()
@@ -3706,7 +3678,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     if button == "LeftButton" then
                         BR.Options.Toggle()
                     elseif button == "RightButton" then
-                        ToggleTestMode(true)
+                        ToggleTestMode()
                     end
                 end,
                 OnTooltipShow = function(tooltip)
