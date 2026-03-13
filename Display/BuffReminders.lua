@@ -853,14 +853,32 @@ local DIRECTION_ANCHORS = {
 }
 BR.DIRECTION_ANCHORS = DIRECTION_ANCHORS
 
-local OPPOSITE_POINTS = {
-    TOP = "BOTTOM",
-    BOTTOM = "TOP",
-    LEFT = "RIGHT",
-    RIGHT = "LEFT",
-    CENTER = "CENTER",
+-- Compound anchor for external-frame anchoring: combines opposite(extPoint) on cross-axis
+-- with growth direction anchor on main-axis. Same-axis conflicts: growth direction wins.
+local EXT_DIRECTION_ANCHORS = {
+    TOP = { LEFT = "BOTTOMRIGHT", RIGHT = "BOTTOMLEFT", UP = "BOTTOM", DOWN = "TOP", CENTER = "BOTTOM" },
+    BOTTOM = { LEFT = "TOPRIGHT", RIGHT = "TOPLEFT", UP = "BOTTOM", DOWN = "TOP", CENTER = "TOP" },
+    LEFT = { LEFT = "RIGHT", RIGHT = "LEFT", UP = "BOTTOMRIGHT", DOWN = "TOPRIGHT", CENTER = "RIGHT" },
+    RIGHT = { LEFT = "RIGHT", RIGHT = "LEFT", UP = "BOTTOMLEFT", DOWN = "TOPLEFT", CENTER = "LEFT" },
+    CENTER = { LEFT = "RIGHT", RIGHT = "LEFT", UP = "BOTTOM", DOWN = "TOP", CENTER = "CENTER" },
+    TOPLEFT = {
+        LEFT = "BOTTOMRIGHT",
+        RIGHT = "BOTTOMLEFT",
+        UP = "BOTTOMRIGHT",
+        DOWN = "TOPRIGHT",
+        CENTER = "BOTTOMRIGHT",
+    },
+    TOPRIGHT = {
+        LEFT = "BOTTOMRIGHT",
+        RIGHT = "BOTTOMLEFT",
+        UP = "BOTTOMLEFT",
+        DOWN = "TOPLEFT",
+        CENTER = "BOTTOMLEFT",
+    },
+    BOTTOMLEFT = { LEFT = "TOPRIGHT", RIGHT = "TOPLEFT", UP = "BOTTOMRIGHT", DOWN = "TOPRIGHT", CENTER = "TOPRIGHT" },
+    BOTTOMRIGHT = { LEFT = "TOPRIGHT", RIGHT = "TOPLEFT", UP = "BOTTOMLEFT", DOWN = "TOPLEFT", CENTER = "TOPLEFT" },
 }
-BR.OPPOSITE_POINTS = OPPOSITE_POINTS
+BR.EXT_DIRECTION_ANCHORS = EXT_DIRECTION_ANCHORS
 
 -- Resolve an external anchor parent frame for a category (returns nil if not set or invalid)
 local function ResolveAnchorParent(catKey)
@@ -896,8 +914,8 @@ local function CreateCategoryFrame(category)
     frame:SetSize(200, 50)
     local extFrame, extPoint = ResolveAnchorParent(category)
     if extFrame then
-        local myPoint = OPPOSITE_POINTS[extPoint] or "CENTER"
-        frame:SetPoint(myPoint, extFrame, extPoint, pos.x or 0, pos.y or 0)
+        local extAnchor = EXT_DIRECTION_ANCHORS[extPoint] and EXT_DIRECTION_ANCHORS[extPoint][direction] or anchor
+        frame:SetPoint(extAnchor, extFrame, extPoint, pos.x or 0, pos.y or 0)
     else
         frame:SetPoint(anchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
     end
@@ -1299,8 +1317,8 @@ local function PositionMainContainer(mainFrameBuffs)
         mainFrame:ClearAllPoints()
         local extFrame, extPoint = ResolveAnchorParent("main")
         if extFrame then
-            local myPoint = OPPOSITE_POINTS[extPoint] or "CENTER"
-            mainFrame:SetPoint(myPoint, extFrame, extPoint, pos.x or 0, pos.y or 0)
+            local extAnchor = EXT_DIRECTION_ANCHORS[extPoint] and EXT_DIRECTION_ANCHORS[extPoint][direction] or anchor
+            mainFrame:SetPoint(extAnchor, extFrame, extPoint, pos.x or 0, pos.y or 0)
         else
             mainFrame:SetPoint(anchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
         end
@@ -1355,8 +1373,8 @@ local function PositionSplitCategory(category, frames)
         catFrame:ClearAllPoints()
         local extFrame, extPoint = ResolveAnchorParent(category)
         if extFrame then
-            local myPoint = OPPOSITE_POINTS[extPoint] or "CENTER"
-            catFrame:SetPoint(myPoint, extFrame, extPoint, pos.x or 0, pos.y or 0)
+            local extAnchor = EXT_DIRECTION_ANCHORS[extPoint] and EXT_DIRECTION_ANCHORS[extPoint][direction] or anchor
+            catFrame:SetPoint(extAnchor, extFrame, extPoint, pos.x or 0, pos.y or 0)
         else
             catFrame:SetPoint(anchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
         end
@@ -2426,12 +2444,17 @@ local function InitializeFrames()
     local pos = (db.categorySettings and db.categorySettings.main and db.categorySettings.main.position)
         or db.position
         or { point = "CENTER", x = 0, y = 0 }
+    local mainCatSettings = db.categorySettings and db.categorySettings.main
+    local initDirection = (mainCatSettings and mainCatSettings.growDirection)
+        or (db.defaults and db.defaults.growDirection)
+        or "CENTER"
+    local anchor = DIRECTION_ANCHORS[initDirection] or "CENTER"
     local extFrame, extPoint = ResolveAnchorParent("main")
     if extFrame then
-        local myPoint = OPPOSITE_POINTS[extPoint] or "CENTER"
-        mainFrame:SetPoint(myPoint, extFrame, extPoint, pos.x or 0, pos.y or 0)
+        local extAnchor = EXT_DIRECTION_ANCHORS[extPoint] and EXT_DIRECTION_ANCHORS[extPoint][initDirection] or anchor
+        mainFrame:SetPoint(extAnchor, extFrame, extPoint, pos.x or 0, pos.y or 0)
     else
-        mainFrame:SetPoint("CENTER", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+        mainFrame:SetPoint(anchor, UIParent, "CENTER", pos.x or 0, pos.y or 0)
     end
     mainFrame:EnableMouse(false)
 
