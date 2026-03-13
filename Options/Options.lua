@@ -2381,6 +2381,7 @@ local function CreateOptionsPanel()
         end,
         onChange = function(value)
             BR.Profiles.SwitchProfile(value)
+            RefreshProfileDropdown()
             Components.RefreshAll()
         end,
     })
