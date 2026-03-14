@@ -205,6 +205,9 @@ local DefaultSettingKeys = {
     glowYOffset = "VisualsRefresh",
     showConsumablesWithoutItems = "DisplayRefresh",
     delveFoodOnly = "DisplayRefresh",
+    freeConsumableMode = "DisplayRefresh",
+    freeConsumableVisibility = "DisplayRefresh",
+    freeConsumableReadyCheckOnly = "DisplayRefresh",
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
     showConsumableTooltips = nil, -- No refresh needed, read at tooltip time

@@ -98,6 +98,8 @@ local min = math.min
 ---@field visibilityCondition? fun(): boolean Custom function that gates visibility (return false to hide)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 ---@field consumableCategory? string Category key in BR.CONSUMABLE_ITEMS for bag scanning (only set when items exist)
+---@field freeConsumable? boolean Bypass content gates (always show when enabled)
+---@field permanentRuneItemIDs? number[] Item IDs that, if in bags, make this buff essential (bypass content gates)
 
 ---@class BuffGroup
 ---@field displayName string
@@ -692,6 +694,7 @@ BR.BUFF_TABLES = {
             key = "rune",
             name = "Rune",
             overlayText = "NO\nRUNE",
+            permanentRuneItemIDs = { 243191, 259085 }, -- Ethereal (TWW), Void-Touched (Midnight)
             groupId = "rune",
             consumableCategory = "rune",
         },
@@ -750,6 +753,24 @@ BR.BUFF_TABLES = {
             },
             visibilityCondition = BR.IsInDelve,
         },
+        -- Healthstone (checks inventory, free consumable for warlocks)
+        {
+            itemID = { 5512, 224464 }, -- Healthstone, Demonic Healthstone
+            castSpellID = 29893, -- Create Soulwell
+            key = "healthstone",
+            name = "Healthstone",
+            casterClass = "WARLOCK",
+            overlayText = "NO\nSTONE",
+            groupId = "healthstone",
+            displayIcon = 538745, -- Healthstone icon
+            readyCheckOnly = true,
+            freeConsumable = true,
+            clickMacro = function()
+                local spellID = (GetNumGroupMembers() > 0 and IsInInstance()) and 29893 or 6201
+                local name = BR.GetSpellName(spellID)
+                return "/cast " .. (name or "")
+            end,
+        },
         -- Weapon Buffs (oils, stones - but not for classes with imbues)
         {
             checkWeaponEnchant = true, -- Check if any weapon enchant exists
@@ -791,23 +812,6 @@ BR.BUFF_TABLES = {
                 return BR.BuffState.HasOffHandWeapon()
             end,
         },
-        -- Healthstone (shows on ready check - checks inventory)
-        {
-            itemID = { 5512, 224464 }, -- Healthstone, Demonic Healthstone
-            castSpellID = 29893, -- Create Soulwell
-            key = "healthstone",
-            name = "Healthstone",
-            casterClass = "WARLOCK",
-            overlayText = "NO\nSTONE",
-            groupId = "healthstone",
-            displayIcon = 538745, -- Healthstone icon
-            readyCheckOnly = true,
-            clickMacro = function()
-                local spellID = (GetNumGroupMembers() > 0 and IsInInstance()) and 29893 or 6201
-                local name = BR.GetSpellName(spellID)
-                return "/cast " .. (name or "")
-            end,
-        },
     },
 }
 
@@ -831,9 +835,9 @@ BR.BuffGroups = {
     flask = { displayName = "Flask" },
     food = { displayName = "Food" },
     delveFood = { displayName = "Delve Food" },
+    healthstone = { displayName = "Healthstone" },
     rune = { displayName = "Augment Rune" },
     weaponBuff = { displayName = "Weapon Buff" },
-    healthstone = { displayName = "Healthstone!" },
 }
 
 -- Classes that benefit from each buff

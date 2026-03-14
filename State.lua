@@ -1092,6 +1092,58 @@ local function GetEatingExpirationTime()
     return auraData.expirationTime
 end
 
+---Check if a consumable buff is "essential" (free/reusable)
+---@param buff ConsumableBuff
+---@return boolean
+local function IsEssentialConsumable(buff)
+    if buff.freeConsumable then
+        return true
+    end
+    if buff.permanentRuneItemIDs then
+        for _, itemID in ipairs(buff.permanentRuneItemIDs) do
+            if HasItemInBagsOrEquipped(itemID) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+---Check if a free consumable should be visible based on its override visibility settings
+---@param db table Database settings
+---@return boolean
+local function IsFreeConsumableVisible(db)
+    if inVehicle then
+        return false
+    end
+    local vis = db.defaults and db.defaults.freeConsumableVisibility
+    if not vis then
+        return true
+    end
+    local contentType = GetCurrentContentType()
+    if vis[contentType] == false then
+        return false
+    end
+    -- Check difficulty sub-filter
+    local diffKey = GetCurrentDifficultyKey()
+    if diffKey then
+        local diffDbKey = CONTENT_DIFF_DB_KEYS[contentType]
+        local diffTable = diffDbKey and vis[diffDbKey]
+        if diffTable and diffTable[diffKey] == false then
+            return false
+        end
+    end
+    -- Hide when PvP match is active (past prep phase)
+    if contentType == "pvp" and not inPvPPrepPhase and vis.hideInPvPMatch then
+        return false
+    end
+    -- Ready check filter
+    if db.defaults and db.defaults.freeConsumableReadyCheckOnly and not inReadyCheck then
+        return false
+    end
+    return true
+end
+
 ---Check if player is missing a consumable buff, weapon enchant, or inventory item (returns true if missing)
 ---@param buff table Consumable buff definition
 ---@return boolean shouldShow
@@ -1178,7 +1230,7 @@ end
 ---@param presentClasses? table<ClassName, boolean>
 ---@param db table Database settings
 ---@return boolean passes
-local function PassesPreChecks(buff, presentClasses, db)
+local function PassesPreChecks(buff, presentClasses, db, isFreeOverride)
     -- Custom visibility condition
     if buff.visibilityCondition and not buff.visibilityCondition() then
         return false
@@ -1186,10 +1238,15 @@ local function PassesPreChecks(buff, presentClasses, db)
 
     -- Ready check gate
     if buff.readyCheckOnly and not inReadyCheck then
-        local overrides = db.readyCheckOnlyOverrides
-        local settingKey = buff.groupId or buff.key
-        if not overrides or overrides[settingKey] ~= false then
-            return false
+        -- Free consumables in override mode bypass readyCheckOnly for the caster class
+        -- (readyCheck filtering is handled by IsFreeConsumableVisible instead)
+        local isFreeForPlayer = isFreeOverride and (not buff.casterClass or buff.casterClass == playerClass)
+        if not isFreeForPlayer then
+            local overrides = db.readyCheckOnlyOverrides
+            local settingKey = buff.groupId or buff.key
+            if not overrides or overrides[settingKey] ~= false then
+                return false
+            end
         end
     end
 
@@ -1596,6 +1653,8 @@ function BuffState.Refresh()
     local consumableVisible = IsCategoryVisibleForContent("consumable")
     local consGlow, consThreshold = GetCategoryGlowSettings("consumable")
     local delveFoodOnly = db.defaults and db.defaults.delveFoodOnly and BR.IsInDelve()
+    local freeMode = db.defaults and db.defaults.freeConsumableMode or "override"
+    local freeVisible = freeMode == "override" and IsFreeConsumableVisible(db) or false
     for i, buff in ipairs(Consumables) do
         local entry = GetOrCreateEntry(buff.key, "consumable", i)
         local settingKey = buff.groupId or buff.key
@@ -1603,12 +1662,13 @@ function BuffState.Refresh()
         local requiredClass = buff.class or buff.casterClass
         local hasCaster = not requiredClass or HasCasterForBuff(requiredClass, buff.levelRequired)
         local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
+        local isEssential = freeVisible and IsEssentialConsumable(buff)
         if
             (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet)
             and IsBuffEnabled(settingKey)
-            and consumableVisible
+            and (consumableVisible or isEssential)
             and hasCaster
-            and PassesPreChecks(buff, nil, db)
+            and PassesPreChecks(buff, nil, db, isEssential)
             and not (buff.key ~= "delveFood" and delveFoodOnly)
         then
             if useGlowDet then

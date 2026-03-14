@@ -34,6 +34,9 @@ local addonName, BR = ...
 ---@field fontFace? string
 ---@field showConsumablesWithoutItems? boolean
 ---@field delveFoodOnly? boolean
+---@field freeConsumableMode? "follow"|"override"
+---@field freeConsumableVisibility? table
+---@field freeConsumableReadyCheckOnly? boolean
 ---@field consumableRebuffWarning? boolean
 ---@field consumableRebuffThreshold? number
 ---@field consumableRebuffColor? number[]
@@ -289,6 +292,16 @@ local defaults = {
         glowSize = 2,
         showConsumablesWithoutItems = false,
         delveFoodOnly = true,
+        freeConsumableMode = "override",
+        freeConsumableVisibility = {
+            openWorld = false,
+            scenario = true,
+            dungeon = true,
+            raid = true,
+            housing = false,
+            pvp = true,
+        },
+        freeConsumableReadyCheckOnly = false,
         consumableDisplayMode = "sub_icons",
         showConsumableTooltips = false,
         petDisplayMode = "generic", -- "generic" or "expanded"

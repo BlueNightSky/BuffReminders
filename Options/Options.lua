@@ -403,7 +403,8 @@ local function CreateOptionsPanel()
         displayName,
         infoTooltip,
         displayIcon,
-        readyCheckOnly
+        readyCheckOnly,
+        freeConsumable
     )
         local holder = Components.Checkbox(parent, {
             label = displayName,
@@ -424,7 +425,8 @@ local function CreateOptionsPanel()
         panel.buffCheckboxes[key] = holder
 
         -- Inline toggle: "Ready check only" / "Always show" (replaces info tooltip icon)
-        if readyCheckOnly then
+        -- Skip for free consumables — controlled by the "Free consumables" dropdown instead
+        if readyCheckOnly and not freeConsumable then
             local function GetReadyCheckOnlyState()
                 local overrides = BR.profile.readyCheckOnlyOverrides
                 return not overrides or overrides[key] ~= false
@@ -473,6 +475,7 @@ local function CreateOptionsPanel()
         local groupDisplaySpells = {}
         local groupIconOverrides = {}
         local groupReadyCheckOnly = {}
+        local groupFreeConsumable = {}
 
         for _, buff in ipairs(buffArray) do
             if buff.groupId then
@@ -529,6 +532,9 @@ local function CreateOptionsPanel()
                 if buff.readyCheckOnly then
                     groupReadyCheckOnly[buff.groupId] = true
                 end
+                if buff.freeConsumable then
+                    groupFreeConsumable[buff.groupId] = true
+                end
             end
         end
 
@@ -556,7 +562,8 @@ local function CreateOptionsPanel()
                         groupInfo.displayName,
                         buff.infoTooltip,
                         displayIcon,
-                        groupReadyCheckOnly[buff.groupId]
+                        groupReadyCheckOnly[buff.groupId],
+                        groupFreeConsumable[buff.groupId]
                     )
                 end
             else
@@ -570,7 +577,8 @@ local function CreateOptionsPanel()
                     buff.name,
                     buff.infoTooltip,
                     buff.displayIcon,
-                    buff.readyCheckOnly
+                    buff.readyCheckOnly,
+                    buff.freeConsumable
                 )
             end
         end
@@ -971,6 +979,162 @@ local function CreateOptionsPanel()
                 end,
             })
             catLayout:Add(readyCheckHolder, nil, COMPONENT_GAP)
+
+            -- Free consumables sub-section (consumable category only)
+            if category == "consumable" then
+                local function EnsureFreeVisibility()
+                    if not db.defaults then
+                        db.defaults = {}
+                    end
+                    if not db.defaults.freeConsumableVisibility then
+                        db.defaults.freeConsumableVisibility = {
+                            openWorld = false,
+                            scenario = true,
+                            dungeon = true,
+                            raid = true,
+                            housing = false,
+                            pvp = true,
+                        }
+                    end
+                    return db.defaults.freeConsumableVisibility
+                end
+                catLayout:Space(SECTION_GAP)
+                local freeHeader = catContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                freeHeader:SetText("|cffffcc00Free Consumables|r")
+                catLayout:AddText(freeHeader, 12, COMPONENT_GAP)
+                local freeNote = catContent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+                freeNote:SetText("(healthstones, permanent augment runes)")
+                catLayout:AddText(freeNote, 10, COMPONENT_GAP)
+
+                local function IsFreeOverride()
+                    return BR.Config.Get("defaults.freeConsumableMode", "override") == "override"
+                end
+
+                local freeConsumablesHolder = Components.Dropdown(catContent, {
+                    label = "Visibility",
+                    width = 160,
+                    get = function()
+                        return BR.Config.Get("defaults.freeConsumableMode", "override")
+                    end,
+                    options = {
+                        {
+                            value = "follow",
+                            label = "Follow content filters",
+                            desc = "Same visibility rules as other consumables",
+                        },
+                        {
+                            value = "override",
+                            label = "Override",
+                            desc = "Use custom visibility settings below",
+                        },
+                    },
+                    tooltip = {
+                        title = "Free consumable visibility",
+                        desc = "Controls when healthstones (for warlocks) and permanent augment runes are shown. These are free or reusable items that don't get consumed like flasks or food.\n\n|cffffcc00Follow content filters:|r Same visibility as other consumables.\n|cffffcc00Override:|r Set custom visibility and ready check rules below.",
+                    },
+                    onChange = function(val)
+                        BR.Config.Set("defaults.freeConsumableMode", val)
+                        Components.RefreshAll()
+                    end,
+                })
+                catLayout:Add(freeConsumablesHolder, nil, COMPONENT_GAP)
+
+                -- Override controls (indented under dropdown)
+                local INDENT = 12
+                catLayout:SetX(catLayout:GetX() + INDENT)
+
+                local freeVisToggles = Components.VisibilityToggles(catContent, {
+                    store = {
+                        getContent = function(key)
+                            local vis = db.defaults and db.defaults.freeConsumableVisibility
+                            return not vis or vis[key] ~= false
+                        end,
+                        setContent = function(key)
+                            local vis = EnsureFreeVisibility()
+                            vis[key] = not vis[key]
+                        end,
+                        getDiffTable = function(dbKey)
+                            local vis = db.defaults and db.defaults.freeConsumableVisibility
+                            return vis and vis[dbKey]
+                        end,
+                        ensureDiffTable = function(dbKey)
+                            local vis = EnsureFreeVisibility()
+                            if not vis[dbKey] then
+                                vis[dbKey] = {} ---@diagnostic disable-line: assign-type-mismatch
+                            end
+                            return vis[dbKey]
+                        end,
+                    },
+                    noAutoRefresh = true,
+                    onChange = function()
+                        UpdateDisplay()
+                    end,
+                    disabledSubToggles = {
+                        pvpType = {
+                            arena = {
+                                tooltip = {
+                                    title = "Arena",
+                                    desc = "Consumables cannot be used in arena",
+                                },
+                            },
+                        },
+                    },
+                })
+                local origVisRefresh = freeVisToggles.Refresh
+                function freeVisToggles:Refresh()
+                    origVisRefresh(self)
+                    local enabled = IsFreeOverride()
+                    self:SetAlpha(enabled and 1 or 0.4)
+                    for _, btn in ipairs(self.allToggleButtons) do
+                        btn:EnableMouse(enabled)
+                    end
+                end
+                tinsert(BR.RefreshableComponents, freeVisToggles)
+                catLayout:Add(freeVisToggles, nil, COMPONENT_GAP)
+
+                local freeReadyCheckHolder = Components.Checkbox(catContent, {
+                    label = "Show only on ready check",
+                    get = function()
+                        return BR.Config.Get("defaults.freeConsumableReadyCheckOnly", false) == true
+                    end,
+                    enabled = IsFreeOverride,
+                    tooltip = {
+                        title = "Show only on ready check",
+                        desc = "Only show free consumable reminders for 15 seconds after a ready check starts.",
+                    },
+                    onChange = function(checked)
+                        BR.Config.Set("defaults.freeConsumableReadyCheckOnly", checked)
+                    end,
+                })
+                catLayout:Add(freeReadyCheckHolder, nil, COMPONENT_GAP)
+
+                local freeHidePvPHolder = Components.Checkbox(catContent, {
+                    label = "Hide when PvP match starts",
+                    get = function()
+                        local vis = db.defaults and db.defaults.freeConsumableVisibility
+                        return vis and vis.hideInPvPMatch or false
+                    end,
+                    enabled = function()
+                        if not IsFreeOverride() then
+                            return false
+                        end
+                        local vis = db.defaults and db.defaults.freeConsumableVisibility
+                        return not vis or vis.pvp ~= false
+                    end,
+                    tooltip = {
+                        title = "Hide When PvP Match Starts",
+                        desc = "Hide free consumable reminders once a PvP match begins (after prep phase ends).",
+                    },
+                    onChange = function(checked)
+                        EnsureFreeVisibility().hideInPvPMatch = checked
+                        UpdateDisplay()
+                    end,
+                })
+                catLayout:Add(freeHidePvPHolder, nil, COMPONENT_GAP)
+
+                catLayout:SetX(catLayout:GetX() - INDENT)
+                catLayout:Space(SECTION_GAP)
+            end
         else
             local banner = Components.Banner(catContent, {
                 text = "Visibility and ready check settings moved to each buff's edit menu.",
