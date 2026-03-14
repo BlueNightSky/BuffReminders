@@ -932,6 +932,7 @@ local function CreateIconTextures(frame, texture)
     frame.icon:SetAllPoints()
     frame.icon:SetDesaturated(false)
     frame.icon:SetVertexColor(1, 1, 1, 1)
+    frame.icon._br_desaturated = false
     if texture then
         frame.icon:SetTexture(texture)
     end
@@ -1743,9 +1744,24 @@ local function ClearFoodFrameStyle(frame)
     end
 end
 
+-- Set icon desaturation and dimming for consumable frames without bag items.
+-- Tracks state to skip redundant WoW API calls on hot render paths.
+local function SetIconDesaturated(icon, desaturate)
+    if icon._br_desaturated == desaturate then
+        return
+    end
+    icon._br_desaturated = desaturate
+    icon:SetDesaturated(desaturate)
+    if desaturate then
+        icon:SetVertexColor(0.6, 0.6, 0.6, 1)
+    else
+        icon:SetVertexColor(1, 1, 1, 1)
+    end
+end
+
 -- Resolve a consumable frame's icon from bag items.
 -- Returns "items" if bag items found (sets icon, quality overlay, stack count),
--- "missing" if no items but showConsumablesWithoutItems is on,
+-- "missing" if no items but showConsumablesWithoutItems is on (icon greyed out),
 -- or false if no items and setting is off.
 ---@param frame BuffFrame
 ---@return string|false result "items", "missing", or false
@@ -1757,6 +1773,7 @@ local function ResolveConsumableFrame(frame)
     end
     if items and items[1] then
         frame.icon:SetTexture(items[1].icon)
+        SetIconDesaturated(frame.icon, false)
         if frame.qualityOverlay then
             BR.SecureButtons.SetQualityOverlay(frame.qualityOverlay, items[1].craftedQuality, frame:GetWidth())
         end
@@ -1783,6 +1800,7 @@ local function ResolveConsumableFrame(frame)
         frame.qualityOverlay:Hide()
     end
     if (BR.profile.defaults or {}).showConsumablesWithoutItems then
+        SetIconDesaturated(frame.icon, true)
         return "missing"
     end
     return false
@@ -1804,6 +1822,7 @@ local function RenderVisibleEntry(frame, entry)
     -- Eating override: state provides isEating as a snapshot, so the display
     -- never reads a live flag that can change mid-cycle.
     if entry.isEating then
+        SetIconDesaturated(frame.icon, false)
         frame.icon:SetTexture(EATING_ICON)
         frame._br_eating_icon = true
         if entry.eatingExpirationTime then
@@ -1851,12 +1870,18 @@ local function RenderVisibleEntry(frame, entry)
     local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
 
     if entry.displayType == "count" then
+        if frame.buffCategory == "consumable" then
+            SetIconDesaturated(frame.icon, false)
+        end
         frame.count:SetFont(fontPath, GetFrameFontSize(frame), "OUTLINE")
         frame.count:SetText(entry.countText or "")
         frame.count:Show()
         frame:Show()
         SetExpirationGlow(frame, entry.shouldGlow, entry.category, cachedGlow)
     elseif entry.displayType == "expiring" then
+        if frame.buffCategory == "consumable" then
+            SetIconDesaturated(frame.icon, false)
+        end
         frame.count:SetFont(fontPath, GetFrameFontSize(frame), "OUTLINE")
         frame.count:SetText(entry.countText or "")
         frame.count:Show()
