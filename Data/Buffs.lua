@@ -376,6 +376,16 @@ BR.BUFF_TABLES = {
     },
     ---@type SelfBuff[]
     self = {
+        -- Evoker Augmentation attunement (Black 403264 / Bronze 403265, player picks one)
+        {
+            spellID = { 403264, 403265 },
+            key = "evokerAttunement",
+            name = "Attunement",
+            class = "EVOKER",
+            overlayText = "NO\nATTUNE",
+            requireSpecId = 1473, -- Augmentation
+            requiresSpellID = 403208, -- Attunements talent
+        },
         -- Mage Arcane Familiar
         {
             spellID = 205022,
