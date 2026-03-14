@@ -808,9 +808,13 @@ local function GetCachedGlowSettings(category)
     local source = (useCustom and catSettings) or (db and db.defaults) or {}
 
     local typeIndex = source.glowType or BR.Glow.Type.Pixel
+    local color = source.glowColor
+    if typeIndex == BR.Glow.Type.Proc and not source.glowProcUseCustomColor then
+        color = nil
+    end
     cached = {
         typeIndex = typeIndex,
-        color = source.glowColor,
+        color = color,
         size = source.glowSize or 2,
         borderSize = BR.Config.GetCategorySetting(category, "borderSize") or DEFAULT_BORDER_SIZE,
         params = BR.Glow.BuildAdvancedParams(source, typeIndex),

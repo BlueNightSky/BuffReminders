@@ -1891,6 +1891,7 @@ local function CreateOptionsPanel()
                 "glowBorderFrequency",
                 "glowProcDuration",
                 "glowProcStartAnim",
+                "glowProcUseCustomColor",
                 "glowXOffset",
                 "glowYOffset",
             }
@@ -2928,6 +2929,9 @@ ShowGlowAdvanced = function(targetCategory)
         local d = getSource()
         local typeIdx = d.glowType or GlowType.Pixel
         local color = d.glowColor
+        if typeIdx == GlowType.Proc and not d.glowProcUseCustomColor then
+            color = nil
+        end
         local size = d.glowSize or 2
         local params = Glow.BuildAdvancedParams(d, typeIdx)
         local xOff = DEFAULT_BORDER_SIZE + (d.glowXOffset or 0)
@@ -2958,7 +2962,7 @@ ShowGlowAdvanced = function(targetCategory)
         [GlowType.Pixel] = { "glowPixelLines", "glowPixelFrequency", "glowPixelLength" },
         [GlowType.AutoCast] = { "glowAutocastScale", "glowAutocastParticles", "glowAutocastFrequency" },
         [GlowType.Border] = { "glowBorderFrequency" },
-        [GlowType.Proc] = { "glowProcDuration", "glowProcStartAnim" },
+        [GlowType.Proc] = { "glowProcDuration", "glowProcStartAnim", "glowProcUseCustomColor" },
     }
 
     local function UnregisterDynamicHolders()
@@ -3002,7 +3006,42 @@ ShowGlowAdvanced = function(targetCategory)
         end
 
         local colorSwatchHolder
-        if typeIdx ~= GlowType.Proc then
+        local procColorCheckbox
+        if typeIdx == GlowType.Proc then
+            -- Proc: optional custom color (desaturated + vertex color, less vibrant than default)
+            procColorCheckbox = Components.Checkbox(panel, {
+                label = "Use Custom Color",
+                tooltip = {
+                    title = "Use Custom Color",
+                    desc = "When enabled, the proc glow is desaturated and recolored.\nThis looks less vibrant than the default proc glow.",
+                },
+                get = function()
+                    return getSource().glowProcUseCustomColor or false
+                end,
+                onChange = function(checked)
+                    BR.Config.Set(configPrefix .. "glowProcUseCustomColor", checked)
+                    Components.RefreshAll()
+                    RefreshPreview()
+                end,
+            })
+            table.insert(dynamicHolders, procColorCheckbox)
+
+            colorSwatchHolder = Components.ColorSwatch(panel, {
+                hasOpacity = true,
+                enabled = function()
+                    return getSource().glowProcUseCustomColor or false
+                end,
+                get = function()
+                    local c = getSource().glowColor or Glow.DEFAULT_COLOR
+                    return c[1], c[2], c[3], c[4] or 1
+                end,
+                onChange = function(r, g, b, a)
+                    BR.Config.Set(configPrefix .. "glowColor", { r, g, b, a or 1 })
+                    RefreshPreview()
+                end,
+            })
+            table.insert(dynamicHolders, colorSwatchHolder)
+        else
             colorSwatchHolder = Components.ColorSwatch(panel, {
                 hasOpacity = true,
                 get = function()
@@ -3017,13 +3056,18 @@ ShowGlowAdvanced = function(targetCategory)
             table.insert(dynamicHolders, colorSwatchHolder)
         end
 
-        if sizeHolder and colorSwatchHolder then
+        if sizeHolder and colorSwatchHolder and not procColorCheckbox then
             dynamicLayout:Add(sizeHolder, 26)
             colorSwatchHolder:SetPoint("LEFT", sizeHolder, "RIGHT", 8, 0)
         elseif sizeHolder then
             dynamicLayout:Add(sizeHolder, 26)
-        elseif colorSwatchHolder then
+        elseif colorSwatchHolder and not procColorCheckbox then
             dynamicLayout:Add(colorSwatchHolder, 26)
+        end
+
+        if procColorCheckbox then
+            dynamicLayout:Add(procColorCheckbox, SLIDER_SPACING)
+            colorSwatchHolder:SetPoint("LEFT", procColorCheckbox, "RIGHT", 8, 0)
         end
 
         -- Type-specific parameters
