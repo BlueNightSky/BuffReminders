@@ -1594,11 +1594,19 @@ function BuffState.Refresh()
                         and not buff.enchantID
                         and not buff.noExpirationGlow
                         and not hideExpiring
-                        and (buff.buffIdOverride or buff.spellID)
                     then
-                        -- Buff present but maybe expiring (enchants/customCheck-only buffs don't track expiration here)
-                        local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
-                        TrySetEntryExpiring(entry, remaining, selfThreshold, selfGlow)
+                        -- Buff present but maybe expiring
+                        local remaining, expiringCastID
+                        if buff.getExpirationInfo then
+                            remaining, expiringCastID = buff.getExpirationInfo()
+                        elseif buff.buffIdOverride or buff.spellID then
+                            _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
+                        end
+                        if TrySetEntryExpiring(entry, remaining, selfThreshold, selfGlow) then
+                            if expiringCastID then
+                                entry.dynamicIcon = C_Spell.GetSpellTexture(expiringCastID)
+                            end
+                        end
                     end
                 end
             end

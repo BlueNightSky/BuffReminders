@@ -1886,16 +1886,17 @@ local function RenderVisibleEntry(frame, entry)
     -- Get cached glow settings for this entry's category (avoids repeated DB reads)
     local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
 
-    if entry.displayType == "count" then
-        if frame.buffCategory == "consumable" then
-            SetIconDesaturated(frame.icon, false)
+    -- Apply dynamic icon overrides (e.g. rogue poison expiring soonest, role-based shields)
+    if entry.dynamicIcon then
+        frame.icon:SetTexture(entry.dynamicIcon)
+    elseif entry.iconByRole then
+        local texture = GetBuffTexture(frame.spellIDs, entry.iconByRole)
+        if texture then
+            frame.icon:SetTexture(texture)
         end
-        frame.count:SetFont(fontPath, GetFrameFontSize(frame), "OUTLINE")
-        frame.count:SetText(entry.countText or "")
-        frame.count:Show()
-        frame:Show()
-        SetExpirationGlow(frame, entry.shouldGlow, entry.category, cachedGlow)
-    elseif entry.displayType == "expiring" then
+    end
+
+    if entry.displayType == "count" or entry.displayType == "expiring" then
         if frame.buffCategory == "consumable" then
             SetIconDesaturated(frame.icon, false)
         end
@@ -1905,7 +1906,7 @@ local function RenderVisibleEntry(frame, entry)
         frame:Show()
         SetExpirationGlow(frame, entry.shouldGlow, entry.category, cachedGlow)
         -- Show food stat label for expiring food (resolve from cached items)
-        if frame.key == "food" then
+        if entry.displayType == "expiring" and frame.key == "food" then
             local items = frame._cachedItems
             if items == nil then
                 items = BR.SecureButtons.GetConsumableActionItems(frame.buffDef) or false
@@ -1932,14 +1933,6 @@ local function RenderVisibleEntry(frame, entry)
                 end
             end
         else
-            if entry.dynamicIcon then
-                frame.icon:SetTexture(entry.dynamicIcon)
-            elseif entry.iconByRole then
-                local texture = GetBuffTexture(frame.spellIDs, entry.iconByRole)
-                if texture then
-                    frame.icon:SetTexture(texture)
-                end
-            end
             ShowTextFrame(frame, entry.overlayText, entry.shouldGlow, entry.category, cachedGlow)
         end
     end

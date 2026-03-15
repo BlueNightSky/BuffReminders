@@ -159,53 +159,129 @@ local function TargetedClickMacro(buffKey)
     end
 end
 
--- Rogue poison helper: finds the next poison to apply.
+-- Rogue poison state: unified cache for customCheck, icon, clickMacro, and expiration.
+-- Scans all poisons once per frame and stores active/missing/expiration/required counts.
 -- Priority: lethal (Amplifying > Deadly > Instant > Wound), then non-lethal (Atrophic > Numbing > Crippling).
--- Balances categories: applies to whichever has fewer active, prefers lethal when tied.
--- Cached per frame (GetTime) so customCheck, icon, and clickMacro share one evaluation.
 local poisonLethal = { 381664, 2823, 315584, 8679 } -- Amplifying, Deadly, Instant, Wound
 local poisonNonLethal = { 381637, 5761, 3408 } -- Atrophic, Numbing, Crippling
-local poisonCacheTime, poisonCacheResult = -1, nil
 
-local function CountActivePoisonsAndFindMissing(poisons)
-    local active, missing = 0, nil
+-- Cached poison state (refreshed once per frame via GetTime)
+local poisonCache = {
+    time = -1,
+    activeL = 0,
+    activeNL = 0,
+    requiredL = 0,
+    requiredNL = 0,
+    knownL = 0,
+    knownNL = 0,
+    missingL = nil, ---@type number|nil First missing lethal spell ID (by priority)
+    missingNL = nil, ---@type number|nil First missing non-lethal spell ID (by priority)
+    minRemaining = nil, ---@type number|nil Seconds until soonest-expiring poison
+    expiringID = nil, ---@type number|nil Spell ID of the soonest-expiring poison
+    nextCastID = nil, ---@type number|nil Spell ID of the next poison to apply
+}
+
+---Single pass over a poison category: counts known/active, finds first missing, tracks min remaining.
+---@param poisons number[] Spell ID list in priority order
+---@param now number Current GetTime() value
+---@return number active, number known, number|nil missing, number|nil minRemaining, number|nil expiringID
+local function ScanPoisonCategory(poisons, now)
+    local active, known, missing = 0, 0, nil
+    local minRem, expID = nil, nil
     for _, id in ipairs(poisons) do
-        if IsPlayerSpell(id) then
-            local auraData
-            pcall(function()
-                auraData = C_UnitAuras.GetUnitAuraBySpellID("player", id)
-            end)
-            if auraData then
-                active = active + 1
-            elseif not missing then
-                missing = id
+        local isKnown = IsPlayerSpell(id)
+        if isKnown then
+            known = known + 1
+        end
+        local auraData
+        pcall(function()
+            auraData = C_UnitAuras.GetUnitAuraBySpellID("player", id)
+        end)
+        if auraData then
+            active = active + 1
+            if auraData.expirationTime and auraData.expirationTime > 0 then
+                local rem = auraData.expirationTime - now
+                if not minRem or rem < minRem then
+                    minRem = rem
+                    expID = id
+                end
             end
+        elseif isKnown and not missing then
+            missing = id
         end
     end
-    return active, missing
+    return active, known, missing, minRem, expID
+end
+
+---Refresh the poison cache if stale (once per frame).
+local function RefreshPoisonCache()
+    local now = GetTime()
+    if poisonCache.time == now then
+        return
+    end
+    poisonCache.time = now
+
+    local activeL, knownL, missingL, minRemL, expIDL = ScanPoisonCategory(poisonLethal, now)
+    local activeNL, knownNL, missingNL, minRemNL, expIDNL = ScanPoisonCategory(poisonNonLethal, now)
+
+    poisonCache.activeL = activeL
+    poisonCache.activeNL = activeNL
+    poisonCache.knownL = knownL
+    poisonCache.knownNL = knownNL
+    poisonCache.missingL = missingL
+    poisonCache.missingNL = missingNL
+
+    -- Dragon-Tempered Blades (381801): can have 2 of each, otherwise 1
+    local hasDTB = IsPlayerSpell(381801)
+    poisonCache.requiredL = min(knownL, hasDTB and 2 or 1)
+    poisonCache.requiredNL = min(knownNL, hasDTB and 2 or 1)
+
+    -- Min remaining across both categories
+    if minRemL and minRemNL then
+        if minRemL <= minRemNL then
+            poisonCache.minRemaining = minRemL
+            poisonCache.expiringID = expIDL
+        else
+            poisonCache.minRemaining = minRemNL
+            poisonCache.expiringID = expIDNL
+        end
+    elseif minRemL then
+        poisonCache.minRemaining = minRemL
+        poisonCache.expiringID = expIDL
+    elseif minRemNL then
+        poisonCache.minRemaining = minRemNL
+        poisonCache.expiringID = expIDNL
+    else
+        poisonCache.minRemaining = nil
+        poisonCache.expiringID = nil
+    end
+
+    -- Next poison to cast: only when active count is genuinely below required
+    local needL = missingL and activeL < poisonCache.requiredL
+    local needNL = missingNL and activeNL < poisonCache.requiredNL
+
+    if needL and activeL <= activeNL then
+        poisonCache.nextCastID = missingL
+    elseif needNL then
+        poisonCache.nextCastID = missingNL
+    elseif needL then
+        poisonCache.nextCastID = missingL
+    else
+        poisonCache.nextCastID = nil
+    end
 end
 
 ---@return number|nil castID Spell ID of the next poison to apply, or nil if none needed
 local function GetNextPoisonCastID()
-    local now = GetTime()
-    if poisonCacheTime == now then
-        return poisonCacheResult
-    end
-    poisonCacheTime = now
+    RefreshPoisonCache()
+    return poisonCache.nextCastID
+end
 
-    local activeL, missingL = CountActivePoisonsAndFindMissing(poisonLethal)
-    local activeNL, missingNL = CountActivePoisonsAndFindMissing(poisonNonLethal)
-
-    if missingL and activeL <= activeNL then
-        poisonCacheResult = missingL
-    elseif missingNL then
-        poisonCacheResult = missingNL
-    elseif missingL then
-        poisonCacheResult = missingL
-    else
-        poisonCacheResult = nil
-    end
-    return poisonCacheResult
+---@return number|nil remaining Seconds until the soonest-expiring poison expires
+---@return number|nil expiringID Spell ID of the soonest-expiring poison
+local function GetPoisonExpirationInfo()
+    RefreshPoisonCache()
+    return poisonCache.minRemaining, poisonCache.expiringID
 end
 
 ---@type table<string, RaidBuff[]|PresenceBuff[]|TargetedBuff[]|SelfBuff[]|ConsumableBuff[]|CustomBuff[]>
@@ -467,55 +543,22 @@ BR.BUFF_TABLES = {
             class = "ROGUE",
             overlayText = "APPLY\nPOISON",
             customCheck = function()
-                local lethalPoisons = { 315584, 8679, 2823, 381664 } -- Instant, Wound, Deadly, Amplifying
-                local nonLethalPoisons = { 5761, 381637, 3408 } -- Numbing, Atrophic, Crippling
-
-                local knownLethal, knownNonLethal = 0, 0
-                local activeLethal, activeNonLethal = 0, 0
-
-                for _, id in ipairs(lethalPoisons) do
-                    if IsPlayerSpell(id) then
-                        knownLethal = knownLethal + 1
-                    end
-                    local auraData
-                    pcall(function()
-                        auraData = C_UnitAuras.GetUnitAuraBySpellID("player", id)
-                    end)
-                    if auraData then
-                        activeLethal = activeLethal + 1
-                    end
-                end
-
-                for _, id in ipairs(nonLethalPoisons) do
-                    if IsPlayerSpell(id) then
-                        knownNonLethal = knownNonLethal + 1
-                    end
-                    local auraData
-                    pcall(function()
-                        auraData = C_UnitAuras.GetUnitAuraBySpellID("player", id)
-                    end)
-                    if auraData then
-                        activeNonLethal = activeNonLethal + 1
-                    end
-                end
-
+                RefreshPoisonCache()
                 -- Don't show if the player hasn't learned any poisons yet (e.g. low-level rogue)
-                if knownLethal == 0 and knownNonLethal == 0 then
+                if poisonCache.knownL == 0 and poisonCache.knownNL == 0 then
                     return nil
                 end
-
-                -- Dragon-Tempered Blades (381801): can have 2 of each
-                local hasDragonTemperedBlades = IsPlayerSpell(381801)
-
-                -- Only require as many as the player actually knows
-                local requiredLethal = min(knownLethal, hasDragonTemperedBlades and 2 or 1)
-                local requiredNonLethal = min(knownNonLethal, hasDragonTemperedBlades and 2 or 1)
-
-                return activeLethal < requiredLethal or activeNonLethal < requiredNonLethal
+                return poisonCache.activeL < poisonCache.requiredL or poisonCache.activeNL < poisonCache.requiredNL
             end,
             getNextCastID = GetNextPoisonCastID,
+            getExpirationInfo = GetPoisonExpirationInfo,
             clickMacro = function()
                 local castID = GetNextPoisonCastID()
+                if not castID then
+                    -- Nothing missing — fall back to soonest-expiring poison for re-application
+                    local _, expiringID = GetPoisonExpirationInfo()
+                    castID = expiringID
+                end
                 if castID then
                     return "/cast " .. (BR.GetSpellName(castID) or "")
                 end
