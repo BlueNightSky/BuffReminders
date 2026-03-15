@@ -1465,7 +1465,10 @@ function BuffState.Refresh()
             local overrideKey = buff.groupId or buff.key
             readyCheckOk = overrides and overrides[overrideKey] == false
         end
-        local showBuff = presenceVisible and (readyCheckOk or instanceEntryOk) and scope.show
+        local showBuff = presenceVisible
+            and (readyCheckOk or instanceEntryOk)
+            and scope.show
+            and (not buff.groupOnly or #currentValidUnits > 1) -- solo = 1 entry (player only)
         local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
         if (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet) and IsBuffEnabled(buff.key) and showBuff then
             if useGlowDet then

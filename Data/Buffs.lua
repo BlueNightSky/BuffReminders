@@ -37,6 +37,7 @@ local min = math.min
 ---@field showOnInstanceEntry? boolean Also show when entering an instance (not M+)
 ---@field castOnOthers? boolean Buff exists on the target, not the caster (e.g., Soulstone)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
+---@field groupOnly? boolean Only show when in a group (hide when solo)
 
 ---@class TargetedBuff
 ---@field spellID SpellID
@@ -254,6 +255,7 @@ BR.BUFF_TABLES = {
             class = "ROGUE",
             levelRequired = 80,
             overlayText = "NO\nPOISON",
+            groupOnly = true, -- self-buff "roguePoisons" already covers solo
         },
         {
             spellID = 465,
