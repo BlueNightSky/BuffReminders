@@ -254,7 +254,7 @@ BR.BUFF_TABLES = {
             name = "Atrophic/Numbing Poison",
             class = "ROGUE",
             levelRequired = 80,
-            overlayText = "NO\nPOISON",
+            overlayText = "NO\nDR\nPOISON",
             groupOnly = true, -- self-buff "roguePoisons" already covers solo
         },
         {
@@ -465,7 +465,7 @@ BR.BUFF_TABLES = {
             key = "roguePoisons",
             name = "Rogue Poisons",
             class = "ROGUE",
-            overlayText = "NO\nSELF\nPOISON",
+            overlayText = "APPLY\nPOISON",
             customCheck = function()
                 local lethalPoisons = { 315584, 8679, 2823, 381664 } -- Instant, Wound, Deadly, Amplifying
                 local nonLethalPoisons = { 5761, 381637, 3408 } -- Numbing, Atrophic, Crippling
