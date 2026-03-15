@@ -99,7 +99,7 @@ local min = math.min
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 ---@field consumableCategory? string Category key in BR.CONSUMABLE_ITEMS for bag scanning (only set when items exist)
 ---@field freeConsumable? boolean Bypass content gates (always show when enabled)
----@field permanentRuneItemIDs? number[] Item IDs that, if in bags, make this buff essential (bypass content gates)
+---@field permanentRuneItemIDs? number[] Item IDs that, if in bags, make this a free consumable (bypass content gates)
 
 ---@class BuffGroup
 ---@field displayName string
@@ -773,7 +773,6 @@ BR.BUFF_TABLES = {
             overlayText = "NO\nSTONE",
             groupId = "healthstone",
             displayIcon = 538745, -- Healthstone icon
-            readyCheckOnly = true,
             freeConsumable = true,
             clickMacro = function()
                 local spellID = (GetNumGroupMembers() > 0 and IsInInstance()) and 29893 or 6201

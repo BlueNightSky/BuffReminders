@@ -209,7 +209,7 @@ local DefaultSettingKeys = {
     delveFoodOnly = "DisplayRefresh",
     freeConsumableMode = "DisplayRefresh",
     freeConsumableVisibility = "DisplayRefresh",
-    freeConsumableReadyCheckOnly = "DisplayRefresh",
+    healthstoneVisibility = "DisplayRefresh",
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
     showConsumableTooltips = nil, -- No refresh needed, read at tooltip time

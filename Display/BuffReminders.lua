@@ -36,7 +36,7 @@ local addonName, BR = ...
 ---@field delveFoodOnly? boolean
 ---@field freeConsumableMode? "follow"|"override"
 ---@field freeConsumableVisibility? table
----@field freeConsumableReadyCheckOnly? boolean
+---@field healthstoneVisibility? "readyCheck"|"always"|"casterOnly"
 ---@field consumableRebuffWarning? boolean
 ---@field consumableRebuffThreshold? number
 ---@field consumableRebuffColor? number[]
@@ -301,7 +301,7 @@ local defaults = {
             housing = false,
             pvp = true,
         },
-        freeConsumableReadyCheckOnly = true,
+        healthstoneVisibility = "readyCheck",
         consumableDisplayMode = "sub_icons",
         showConsumableTooltips = false,
         petDisplayMode = "generic", -- "generic" or "expanded"
@@ -3005,7 +3005,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 29
+        local DB_VERSION = 30
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3629,6 +3629,22 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             [29] = function()
                 if db.defaults and db.defaults.freeConsumableReadyCheckOnly == false then
                     db.defaults.freeConsumableReadyCheckOnly = true
+                end
+            end,
+            -- [30] Rename freeConsumableReadyCheckOnly → healthstoneVisibility (string mode),
+            -- and clean up hideInPvPMatch from free consumable visibility.
+            [30] = function()
+                if db.defaults then
+                    local old = db.defaults.freeConsumableReadyCheckOnly
+                    if old == true then
+                        db.defaults.healthstoneVisibility = "readyCheck"
+                    elseif old == false then
+                        db.defaults.healthstoneVisibility = "always"
+                    end
+                    db.defaults.freeConsumableReadyCheckOnly = nil
+                    if db.defaults.freeConsumableVisibility then
+                        db.defaults.freeConsumableVisibility.hideInPvPMatch = nil
+                    end
                 end
             end,
         }

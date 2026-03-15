@@ -999,6 +999,44 @@ local function CreateOptionsPanel()
                     return db.defaults.freeConsumableVisibility
                 end
                 catLayout:Space(SECTION_GAP)
+                local hsHeader = catContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                hsHeader:SetText("|cffffcc00Healthstone|r")
+                catLayout:AddText(hsHeader, 12, COMPONENT_GAP)
+
+                local hsReadyCheckHolder = Components.Dropdown(catContent, {
+                    label = "Visibility",
+                    width = 180,
+                    get = function()
+                        return BR.Config.Get("defaults.healthstoneVisibility", "readyCheck")
+                    end,
+                    options = {
+                        {
+                            value = "readyCheck",
+                            label = "Ready check only",
+                            desc = "Show for 15 seconds after a ready check starts",
+                        },
+                        {
+                            value = "casterOnly",
+                            label = "Ready check + warlock always",
+                            desc = "Warlocks always see the reminder; other classes only on ready check",
+                        },
+                        {
+                            value = "always",
+                            label = "Always show",
+                            desc = "Show whenever the content type matches",
+                        },
+                    },
+                    tooltip = {
+                        title = "Healthstone visibility",
+                        desc = "Controls when the healthstone reminder appears.\n\n|cffffcc00Ready check only:|r Only during ready checks (15s window).\n|cffffcc00Ready check + warlock always:|r Warlocks always see it; others only on ready check.\n|cffffcc00Always show:|r Visible whenever you're in matching content.",
+                    },
+                    onChange = function(val)
+                        BR.Config.Set("defaults.healthstoneVisibility", val)
+                    end,
+                })
+                catLayout:Add(hsReadyCheckHolder, nil, COMPONENT_GAP)
+
+                catLayout:Space(SECTION_GAP)
                 local freeHeader = catContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
                 freeHeader:SetText("|cffffcc00Free Consumables|r")
                 catLayout:AddText(freeHeader, 12, COMPONENT_GAP)
@@ -1030,7 +1068,7 @@ local function CreateOptionsPanel()
                     },
                     tooltip = {
                         title = "Free consumable visibility",
-                        desc = "Controls when healthstones (for warlocks) and permanent augment runes are shown. These are free or reusable items that don't get consumed like flasks or food.\n\n|cffffcc00Follow content filters:|r Same visibility as other consumables.\n|cffffcc00Override:|r Set custom visibility and ready check rules below.",
+                        desc = "Controls where healthstones and permanent augment runes are shown.\n\n|cffffcc00Follow content filters:|r Same visibility as other consumables.\n|cffffcc00Override:|r Set custom content type visibility below.",
                     },
                     onChange = function(val)
                         BR.Config.Set("defaults.freeConsumableMode", val)
@@ -1091,46 +1129,6 @@ local function CreateOptionsPanel()
                 end
                 tinsert(BR.RefreshableComponents, freeVisToggles)
                 catLayout:Add(freeVisToggles, nil, COMPONENT_GAP)
-
-                local freeReadyCheckHolder = Components.Checkbox(catContent, {
-                    label = "Show only on ready check",
-                    get = function()
-                        return BR.Config.Get("defaults.freeConsumableReadyCheckOnly", false) == true
-                    end,
-                    enabled = IsFreeOverride,
-                    tooltip = {
-                        title = "Show only on ready check",
-                        desc = "Only show free consumable reminders for 15 seconds after a ready check starts.",
-                    },
-                    onChange = function(checked)
-                        BR.Config.Set("defaults.freeConsumableReadyCheckOnly", checked)
-                    end,
-                })
-                catLayout:Add(freeReadyCheckHolder, nil, COMPONENT_GAP)
-
-                local freeHidePvPHolder = Components.Checkbox(catContent, {
-                    label = "Hide when PvP match starts",
-                    get = function()
-                        local vis = db.defaults and db.defaults.freeConsumableVisibility
-                        return vis and vis.hideInPvPMatch or false
-                    end,
-                    enabled = function()
-                        if not IsFreeOverride() then
-                            return false
-                        end
-                        local vis = db.defaults and db.defaults.freeConsumableVisibility
-                        return not vis or vis.pvp ~= false
-                    end,
-                    tooltip = {
-                        title = "Hide When PvP Match Starts",
-                        desc = "Hide free consumable reminders once a PvP match begins (after prep phase ends).",
-                    },
-                    onChange = function(checked)
-                        EnsureFreeVisibility().hideInPvPMatch = checked
-                        UpdateDisplay()
-                    end,
-                })
-                catLayout:Add(freeHidePvPHolder, nil, COMPONENT_GAP)
 
                 catLayout:SetX(catLayout:GetX() - INDENT)
                 catLayout:Space(SECTION_GAP)
