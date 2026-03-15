@@ -301,7 +301,7 @@ local defaults = {
             housing = false,
             pvp = true,
         },
-        freeConsumableReadyCheckOnly = false,
+        freeConsumableReadyCheckOnly = true,
         consumableDisplayMode = "sub_icons",
         showConsumableTooltips = false,
         petDisplayMode = "generic", -- "generic" or "expanded"
@@ -3005,7 +3005,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 28
+        local DB_VERSION = 29
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3622,6 +3622,13 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                             end
                         end
                     end
+                end
+            end,
+            -- [29] Default free consumables (healthstones, permanent runes) to ready-check-only
+            -- so they don't show the entire instance.
+            [29] = function()
+                if db.defaults and db.defaults.freeConsumableReadyCheckOnly == false then
+                    db.defaults.freeConsumableReadyCheckOnly = true
                 end
             end,
         }
