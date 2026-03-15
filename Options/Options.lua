@@ -2288,9 +2288,9 @@ local function CreateOptionsPanel()
     setLayout:Add(combatHolder, nil, COMPONENT_GAP)
 
     local combatExpiringHolder = Components.Checkbox(settingsContent, {
-        label = "Only expiring buffs in combat",
+        label = "Expiring in combat",
         tooltip = {
-            title = "Hide only expiring buffs in combat",
+            title = "Hide expiring buffs in combat",
             desc = "During combat, hide buffs that are expiring soon and only show completely missing ones",
         },
         get = function()
