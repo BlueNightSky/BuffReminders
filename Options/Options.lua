@@ -1048,36 +1048,23 @@ local function CreateOptionsPanel()
                     return BR.Config.Get("defaults.freeConsumableMode", "override") == "override"
                 end
 
-                local freeConsumablesHolder = Components.Dropdown(catContent, {
-                    label = "Visibility",
-                    width = 160,
+                local freeOverrideHolder = Components.Checkbox(catContent, {
+                    label = "Override content filters",
                     get = function()
-                        return BR.Config.Get("defaults.freeConsumableMode", "override")
+                        return IsFreeOverride()
                     end,
-                    options = {
-                        {
-                            value = "follow",
-                            label = "Follow content filters",
-                            desc = "Same visibility rules as other consumables",
-                        },
-                        {
-                            value = "override",
-                            label = "Override",
-                            desc = "Use custom visibility settings below",
-                        },
-                    },
                     tooltip = {
-                        title = "Free consumable visibility",
-                        desc = "Controls where healthstones and permanent augment runes are shown.\n\n|cffffcc00Follow content filters:|r Same visibility as other consumables.\n|cffffcc00Override:|r Set custom content type visibility below.",
+                        title = "Override content filters",
+                        desc = "When checked, free consumables use their own content type visibility settings below.\n\nWhen unchecked, they follow the same content filters as other consumables.",
                     },
-                    onChange = function(val)
-                        BR.Config.Set("defaults.freeConsumableMode", val)
+                    onChange = function(checked)
+                        BR.Config.Set("defaults.freeConsumableMode", checked and "override" or "follow")
                         Components.RefreshAll()
                     end,
                 })
-                catLayout:Add(freeConsumablesHolder, nil, COMPONENT_GAP)
+                catLayout:Add(freeOverrideHolder, nil, COMPONENT_GAP)
 
-                -- Override controls (indented under dropdown)
+                -- Override controls (indented under checkbox)
                 local INDENT = 12
                 catLayout:SetX(catLayout:GetX() + INDENT)
 
