@@ -160,11 +160,11 @@ local function TargetedClickMacro(buffKey)
 end
 
 -- Rogue poison helper: finds the next poison to apply.
--- Priority: non-lethal (Atrophic > Numbing > Crippling), then lethal (Amplifying > Deadly > Instant > Wound).
--- Balances categories: applies to whichever has fewer active, prefers non-lethal when tied.
+-- Priority: lethal (Amplifying > Deadly > Instant > Wound), then non-lethal (Atrophic > Numbing > Crippling).
+-- Balances categories: applies to whichever has fewer active, prefers lethal when tied.
 -- Cached per frame (GetTime) so customCheck, icon, and clickMacro share one evaluation.
-local poisonNonLethal = { 381637, 5761, 3408 } -- Atrophic, Numbing, Crippling
 local poisonLethal = { 381664, 2823, 315584, 8679 } -- Amplifying, Deadly, Instant, Wound
+local poisonNonLethal = { 381637, 5761, 3408 } -- Atrophic, Numbing, Crippling
 local poisonCacheTime, poisonCacheResult = -1, nil
 
 local function CountActivePoisonsAndFindMissing(poisons)
@@ -193,15 +193,15 @@ local function GetNextPoisonCastID()
     end
     poisonCacheTime = now
 
-    local activeNL, missingNL = CountActivePoisonsAndFindMissing(poisonNonLethal)
     local activeL, missingL = CountActivePoisonsAndFindMissing(poisonLethal)
+    local activeNL, missingNL = CountActivePoisonsAndFindMissing(poisonNonLethal)
 
-    if missingNL and activeNL <= activeL then
-        poisonCacheResult = missingNL
-    elseif missingL then
+    if missingL and activeL <= activeNL then
         poisonCacheResult = missingL
     elseif missingNL then
         poisonCacheResult = missingNL
+    elseif missingL then
+        poisonCacheResult = missingL
     else
         poisonCacheResult = nil
     end
