@@ -1553,7 +1553,7 @@ function BuffState.Refresh()
                 and selfVisible
                 and (not buff.class or buff.class == playerClass)
                 and IsBuffEnabled(settingKey)
-                and (not buff.customCheck or buff.customCheck())
+                and (not buff.customCheck or buff.customCheck(isAuraRestricted))
             then
                 SetEntryText(entry, buff.overlayText, selfGlow)
             end

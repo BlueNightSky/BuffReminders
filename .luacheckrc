@@ -66,7 +66,6 @@ read_globals = {
     "IsShiftKeyDown",
     "NUM_BAG_SLOTS",
     "ReloadUI",
-    "securecallfunction",
     "Settings",
     "SettingsPanel",
     "StaticPopup_Show",

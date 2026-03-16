@@ -74,7 +74,7 @@ local min = math.min
 ---@field displaySpells? SpellID Spell IDs to show icons for in Options checkbox (subset of spellID)
 ---@field iconByRole? table<RoleType, number>
 ---@field infoTooltip? TooltipText
----@field customCheck? fun(): boolean?
+---@field customCheck? fun(isRestricted?: boolean): boolean?
 ---@field getNextCastID? fun(): number|nil -- Returns spell ID of next spell to cast (used for dynamic icon)
 ---@field getPetActions? fun(): PetAction[]?  -- Override pet actions (e.g., wrong pet → Felguard only)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
@@ -487,9 +487,16 @@ BR.BUFF_TABLES = {
                 title = "Instance Entry Reminder",
                 desc = "Briefly shown when entering a dungeon as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds.",
             },
-            customCheck = function()
-                local info = securecallfunction(C_Spell.GetSpellCooldown, 29893)
-                return not info or info.duration == 0
+            customCheck = function(isRestricted)
+                -- Cooldown API returns tainted values during combat/encounters/M+
+                if isRestricted then
+                    return true
+                end
+                local ok, result = pcall(function()
+                    local info = C_Spell.GetSpellCooldown(29893)
+                    return not info or info.duration == 0
+                end)
+                return not ok or result
             end,
         },
         -- Warlock Grimoire of Sacrifice
