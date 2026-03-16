@@ -849,7 +849,7 @@ local function CreateOptionsPanel()
     local defThresholdHolder = Components.Slider(displayBehaviorContent, {
         label = "Threshold",
         min = 0,
-        max = 60,
+        max = 45,
         step = 5,
         get = function()
             return BR.profile.defaults and BR.profile.defaults.expirationThreshold or 15
@@ -2079,7 +2079,7 @@ local function CreateOptionsPanel()
                 label = "Expiration",
                 labelWidth = 56,
                 min = 0,
-                max = 60,
+                max = 45,
                 step = 5,
                 formatValue = function(val)
                     return val == 0 and "Off" or (val .. " min")
