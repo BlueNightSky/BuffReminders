@@ -1444,101 +1444,8 @@ function BuffState.Refresh()
         end
     end
 
-    -- Process presence buffs (need at least 1 person to have them)
-    local presenceVisible = IsCategoryVisibleForContent("presence")
-    local presGlow, presThreshold = GetCategoryGlowSettings("presence")
-    for i, buff in ipairs(PresenceBuffs) do
-        local entry = GetOrCreateEntry(buff.key, "presence", i)
-        local scope = GetTrackingScope(
-            trackingMode,
-            buff.class,
-            "presence",
-            HasCasterForBuff(buff.class, buff.levelRequired),
-            buff.castOnOthers
-        )
-        local instanceEntryOk = buff.showOnInstanceEntry
-            and inInstanceEntry
-            and (not buff.casterClass or buff.casterClass == playerClass)
-        local readyCheckOk = not buff.readyCheckOnly or inReadyCheck
-        if not readyCheckOk and not instanceEntryOk then
-            local overrides = db.readyCheckOnlyOverrides
-            local overrideKey = buff.groupId or buff.key
-            readyCheckOk = overrides and overrides[overrideKey] == false
-        end
-        local showBuff = presenceVisible
-            and (readyCheckOk or instanceEntryOk)
-            and scope.show
-            and (not buff.groupOnly or #currentValidUnits > 1) -- solo = 1 entry (player only)
-        local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
-        if (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet) and IsBuffEnabled(buff.key) and showBuff then
-            if useGlowDet then
-                if IsAnySpellGlowing(buff) then
-                    SetEntryText(entry, buff.overlayText, presGlow)
-                end
-            else
-                local hasBuff, minRemaining, targetEntry = HasPresenceBuff(buff.spellID, scope.playerOnly)
-                if not hasBuff then
-                    SetEntryText(entry, buff.overlayText, presGlow)
-                elseif not buff.noExpirationGlow and not hideExpiring then
-                    TrySetEntryExpiring(entry, minRemaining, presThreshold, presGlow)
-                end
-                -- Track who has castOnOthers buffs for sticky click-to-cast targeting
-                if buff.castOnOthers and hasBuff and not inCombat then
-                    if targetEntry and targetEntry.name then
-                        local existing = lastTargets[buff.key]
-                        if existing then
-                            existing.name = targetEntry.name
-                            existing.class = targetEntry.class
-                        else
-                            lastTargets[buff.key] = { name = targetEntry.name, class = targetEntry.class }
-                        end
-                    else
-                        lastTargets[buff.key] = nil
-                    end
-                    -- If not active, keep old last target so macro still targets them
-                end
-            end
-        end
-    end
-
-    -- Process targeted buffs (player's own buff responsibility)
-    local targetedVisible = IsCategoryVisibleForContent("targeted")
-    local targGlow, targThreshold = GetCategoryGlowSettings("targeted")
-    for i, buff in ipairs(TargetedBuffs) do
-        local entry = GetOrCreateEntry(buff.key, "targeted", i)
-        local settingKey = GetBuffSettingKey(buff)
-
-        local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
-        if
-            (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet)
-            and IsBuffEnabled(settingKey)
-            and targetedVisible
-            and PassesPreChecks(buff, nil, db)
-        then
-            if useGlowDet then
-                if IsAnySpellGlowing(buff) then
-                    SetEntryText(entry, buff.overlayText, targGlow)
-                end
-            else
-                local shouldShow, remaining = ShouldShowTargetedBuff(
-                    buff.spellID,
-                    buff.class,
-                    buff.beneficiaryRole,
-                    buff.requireSpecId,
-                    buff.key,
-                    buff.casterBuffId
-                )
-
-                if shouldShow then
-                    SetEntryText(entry, buff.overlayText, targGlow)
-                elseif shouldShow == false and not hideExpiring then
-                    TrySetEntryExpiring(entry, remaining, targThreshold, targGlow)
-                end
-            end
-        end
-    end
-
     -- Process self buffs (player's own buff on themselves, including weapon imbues)
+    -- Evaluated before presence so suppressedByEntry can reference self entries.
     local selfVisible = IsCategoryVisibleForContent("self")
     local selfGlow, selfThreshold = GetCategoryGlowSettings("self")
     for i, buff in ipairs(SelfBuffs) do
@@ -1608,6 +1515,112 @@ function BuffState.Refresh()
                             end
                         end
                     end
+                end
+            end
+        end
+    end
+
+    -- Process presence buffs (need at least 1 person to have them)
+    local presenceVisible = IsCategoryVisibleForContent("presence")
+    local presGlow, presThreshold = GetCategoryGlowSettings("presence")
+    for i, buff in ipairs(PresenceBuffs) do
+        local entry = GetOrCreateEntry(buff.key, "presence", i)
+        -- If a self-buff entry already covers this, skip entirely
+        local suppressed = false
+        if buff.suppressedByEntry then
+            local suppressor = BuffState.entries[buff.suppressedByEntry]
+            suppressed = suppressor and suppressor.visible
+        end
+        if not suppressed then
+            local scope = GetTrackingScope(
+                trackingMode,
+                buff.class,
+                "presence",
+                HasCasterForBuff(buff.class, buff.levelRequired),
+                buff.castOnOthers
+            )
+            local instanceEntryOk = buff.showOnInstanceEntry
+                and inInstanceEntry
+                and (not buff.casterClass or buff.casterClass == playerClass)
+            local readyCheckOk = not buff.readyCheckOnly or inReadyCheck
+            if not readyCheckOk and not instanceEntryOk then
+                local overrides = db.readyCheckOnlyOverrides
+                local overrideKey = buff.groupId or buff.key
+                readyCheckOk = overrides and overrides[overrideKey] == false
+            end
+            local showBuff = presenceVisible
+                and (readyCheckOk or instanceEntryOk)
+                and scope.show
+                and (not buff.groupOnly or #currentValidUnits > 1) -- solo = 1 entry (player only)
+            local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
+            if
+                (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet)
+                and IsBuffEnabled(buff.key)
+                and showBuff
+            then
+                if useGlowDet then
+                    if IsAnySpellGlowing(buff) then
+                        SetEntryText(entry, buff.overlayText, presGlow)
+                    end
+                else
+                    local hasBuff, minRemaining, targetEntry = HasPresenceBuff(buff.spellID, scope.playerOnly)
+                    if not hasBuff then
+                        SetEntryText(entry, buff.overlayText, presGlow)
+                    elseif not buff.noExpirationGlow and not hideExpiring then
+                        TrySetEntryExpiring(entry, minRemaining, presThreshold, presGlow)
+                    end
+                    -- Track who has castOnOthers buffs for sticky click-to-cast targeting
+                    if buff.castOnOthers and hasBuff and not inCombat then
+                        if targetEntry and targetEntry.name then
+                            local existing = lastTargets[buff.key]
+                            if existing then
+                                existing.name = targetEntry.name
+                                existing.class = targetEntry.class
+                            else
+                                lastTargets[buff.key] = { name = targetEntry.name, class = targetEntry.class }
+                            end
+                        else
+                            lastTargets[buff.key] = nil
+                        end
+                        -- If not active, keep old last target so macro still targets them
+                    end
+                end
+            end
+        end
+    end
+
+    -- Process targeted buffs (player's own buff responsibility)
+    local targetedVisible = IsCategoryVisibleForContent("targeted")
+    local targGlow, targThreshold = GetCategoryGlowSettings("targeted")
+    for i, buff in ipairs(TargetedBuffs) do
+        local entry = GetOrCreateEntry(buff.key, "targeted", i)
+        local settingKey = GetBuffSettingKey(buff)
+
+        local useGlowDet = isAuraRestricted and not IsAuraTrackable(buff) and buff.glowDetectable
+        if
+            (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet)
+            and IsBuffEnabled(settingKey)
+            and targetedVisible
+            and PassesPreChecks(buff, nil, db)
+        then
+            if useGlowDet then
+                if IsAnySpellGlowing(buff) then
+                    SetEntryText(entry, buff.overlayText, targGlow)
+                end
+            else
+                local shouldShow, remaining = ShouldShowTargetedBuff(
+                    buff.spellID,
+                    buff.class,
+                    buff.beneficiaryRole,
+                    buff.requireSpecId,
+                    buff.key,
+                    buff.casterBuffId
+                )
+
+                if shouldShow then
+                    SetEntryText(entry, buff.overlayText, targGlow)
+                elseif shouldShow == false and not hideExpiring then
+                    TrySetEntryExpiring(entry, remaining, targThreshold, targGlow)
                 end
             end
         end

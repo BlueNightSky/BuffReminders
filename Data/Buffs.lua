@@ -38,6 +38,7 @@ local min = math.min
 ---@field castOnOthers? boolean Buff exists on the target, not the caster (e.g., Soulstone)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 ---@field groupOnly? boolean Only show when in a group (hide when solo)
+---@field suppressedByEntry? string Hide when this entry key is already visible (e.g., self buff covers it)
 
 ---@class TargetedBuff
 ---@field spellID SpellID
@@ -332,6 +333,7 @@ BR.BUFF_TABLES = {
             levelRequired = 80,
             overlayText = "NO\nDR\nPOISON",
             groupOnly = true, -- self-buff "roguePoisons" already covers solo
+            suppressedByEntry = "roguePoisons", -- hide when self poison icon is already showing
         },
         {
             spellID = 465,
