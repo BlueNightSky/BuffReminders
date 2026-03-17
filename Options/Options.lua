@@ -559,7 +559,7 @@ local function CreateOptionsPanel()
                         y,
                         spells,
                         buff.groupId,
-                        groupInfo.displayName,
+                        groupInfo and groupInfo.displayName or buff.name,
                         buff.infoTooltip,
                         displayIcon,
                         groupReadyCheckOnly[buff.groupId],
