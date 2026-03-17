@@ -122,6 +122,7 @@ local RootSettings = {
     buffTrackingMode = nil, -- No auto-refresh, manually calls UpdateDisplay
     hideAllInVehicle = nil,
     hideWhileMounted = nil,
+    hideInLegacyInstances = nil,
 }
 
 -- Per-category settings (path = categorySettings.{category}.{key})
@@ -264,6 +265,7 @@ local function ValidatePath(segments)
         or root == "buffTrackingMode"
         or root == "hideAllInVehicle"
         or root == "hideWhileMounted"
+        or root == "hideInLegacyInstances"
     if isRootSetting then
         if #segments == 1 then
             return true, RootSettings[root]

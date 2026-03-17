@@ -263,6 +263,7 @@ local defaults = {
     hidePetWhileMounted = true,
     hideAllInVehicle = false,
     hideWhileMounted = false,
+    hideInLegacyInstances = true,
     petPassiveOnlyInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
@@ -2309,6 +2310,11 @@ UpdateDisplay = function()
         end
 
         if db.hideWhileMounted and IsMounted() then
+            HideAllDisplayFrames()
+            return
+        end
+
+        if db.hideInLegacyInstances and BR.BuffState.IsLegacyInstance() then
             HideAllDisplayFrames()
             return
         end

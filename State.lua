@@ -100,6 +100,9 @@ local inPvPPrepPhase = false
 -- Difficulty cache (invalidated alongside content type)
 local cachedDifficultyKey = nil
 
+-- Legacy loot cache (invalidated alongside content type)
+local cachedIsLegacyInstance = nil
+
 local DUNGEON_DIFFICULTY_KEYS = {
     [1] = "normal", -- Normal
     [2] = "heroic", -- Heroic
@@ -1896,6 +1899,15 @@ function BuffState.GetInVehicle()
     return inVehicle
 end
 
+---Check if the current instance is legacy content (cached, invalidated with content type)
+---@return boolean
+function BuffState.IsLegacyInstance()
+    if cachedIsLegacyInstance == nil then
+        cachedIsLegacyInstance = C_Loot.IsLegacyLootModeEnabled()
+    end
+    return cachedIsLegacyInstance
+end
+
 ---Set the combat/encounter state (single source of truth for aura restrictions)
 ---Called by the Display layer on ENCOUNTER_START, PLAYER_REGEN_DISABLED, etc.
 ---@param state boolean
@@ -1918,6 +1930,7 @@ function BuffState.InvalidateContentTypeCache()
     cachedContentType = nil
     cachedInstanceType = nil
     cachedDifficultyKey = nil
+    cachedIsLegacyInstance = nil
     -- Note: inPvPPrepPhase is NOT reset here — it's managed explicitly by
     -- SetPvPPrepPhase() calls from PLAYER_ENTERING_WORLD and PVP_MATCH_STATE_CHANGED.
     -- Resetting it here would clobber the prep state when ZONE_CHANGED_NEW_AREA's

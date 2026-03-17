@@ -2325,6 +2325,22 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(mountedHolder, nil, COMPONENT_GAP)
 
+    local legacyHolder = Components.Checkbox(settingsContent, {
+        label = "In legacy instances",
+        tooltip = {
+            title = "Hide in legacy instances",
+            desc = "Hide all buff reminders in trivially old instances (where legacy loot is enabled)",
+        },
+        get = function()
+            return BR.profile.hideInLegacyInstances == true
+        end,
+        onChange = function(checked)
+            BR.profile.hideInLegacyInstances = checked
+            UpdateDisplay()
+        end,
+    })
+    setLayout:Add(legacyHolder, nil, COMPONENT_GAP)
+
     setLayout:SetX(setX)
 
     local trackingModeHolder = Components.Dropdown(settingsContent, {
