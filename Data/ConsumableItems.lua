@@ -245,23 +245,6 @@ BR.CONSUMABLE_ITEMS = {
         [181468] = 7, -- Veiled Augment Rune (Shadowlands)
     },
     weapon = {
-        -- TWW 11.0.0
-        [220156] = true, -- Bubbling Wax (Rogue)
-        [222502] = true, -- Ironclaw Whetstone
-        [222503] = true, -- Ironclaw Whetstone (quality 2)
-        [222504] = true, -- Ironclaw Whetstone (quality 3)
-        [222508] = true, -- Ironclaw Weightstone
-        [222509] = true, -- Ironclaw Weightstone (quality 2)
-        [222510] = true, -- Ironclaw Weightstone (quality 3)
-        [224105] = true, -- Algari Mana Oil
-        [224106] = true, -- Algari Mana Oil (quality 2)
-        [224107] = true, -- Algari Mana Oil (quality 3)
-        [224108] = true, -- Oil of Beledar's Grace
-        [224109] = true, -- Oil of Beledar's Grace (quality 2)
-        [224110] = true, -- Oil of Beledar's Grace (quality 3)
-        [224111] = true, -- Oil of Deep Toxins
-        [224112] = true, -- Oil of Deep Toxins (quality 2)
-        [224113] = true, -- Oil of Deep Toxins (quality 3)
         -- Midnight 12.0.0
         [237367] = true, -- Refulgent Weightstone
         [237369] = true, -- Refulgent Weightstone (quality 2)
