@@ -1613,6 +1613,8 @@ local function HideAllDisplayFrames()
             end
         end
     end
+    -- Hide secure click overlays and action buttons (sub-icons)
+    BR.SecureButtons.HideAllSecureFrames()
 end
 
 -- Update the fallback display (shows tracked buffs via action bar glow during PvP/Arena)
