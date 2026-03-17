@@ -1437,6 +1437,7 @@ local function GenerateTestEntries()
         entry.overlayText = nil
         entry.expiringTime = nil
         entry.isEating = nil
+        entry.eatingIconID = nil
         entry.petActions = nil
         entry.iconByRole = nil
         entry.dynamicIcon = nil
@@ -1840,7 +1841,7 @@ local function RenderVisibleEntry(frame, entry)
     -- never reads a live flag that can change mid-cycle.
     if entry.isEating then
         SetIconDesaturated(frame.icon, false)
-        frame.icon:SetTexture(EATING_ICON)
+        frame.icon:SetTexture(entry.eatingIconID or EATING_ICON)
         frame._br_eating_icon = true
         if entry.eatingExpirationTime then
             -- Seed initial text, then hand off to per-frame OnUpdate for smooth countdown
