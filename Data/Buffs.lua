@@ -811,6 +811,7 @@ BR.BUFF_TABLES = {
             overlayText = "NO\nTEA",
             groupId = "sanguithorn",
             consumableCategory = "sanguithorn",
+            displayIcon = 7548960,
             eatingSpellID = 1277461,
             eatingIconID = 7548956,
         },
