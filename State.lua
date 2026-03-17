@@ -100,7 +100,7 @@ local inPvPPrepPhase = false
 -- Difficulty cache (invalidated alongside content type)
 local cachedDifficultyKey = nil
 
--- Legacy loot cache (invalidated alongside content type)
+-- Legacy loot cache (populated alongside content type, invalidated together)
 local cachedIsLegacyInstance = nil
 
 local DUNGEON_DIFFICULTY_KEYS = {
@@ -543,6 +543,7 @@ local function GetCurrentContentType()
         end
     end
 
+    cachedIsLegacyInstance = C_Loot.IsLegacyLootModeEnabled()
     return cachedContentType
 end
 
@@ -1899,13 +1900,13 @@ function BuffState.GetInVehicle()
     return inVehicle
 end
 
----Check if the current instance is legacy content (cached, invalidated with content type)
+---Check if the current instance is legacy content (cached alongside content type)
 ---@return boolean
 function BuffState.IsLegacyInstance()
     if cachedIsLegacyInstance == nil then
-        cachedIsLegacyInstance = C_Loot.IsLegacyLootModeEnabled()
+        GetCurrentContentType() -- populates cachedIsLegacyInstance
     end
-    return cachedIsLegacyInstance
+    return cachedIsLegacyInstance or false
 end
 
 ---Set the combat/encounter state (single source of truth for aura restrictions)
