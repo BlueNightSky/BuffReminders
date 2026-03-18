@@ -89,6 +89,7 @@ read_globals = {
     "UnitIsUnit",
     "UnitIsVisible",
     "UnitLevel",
+    "UnitRace",
 
     "strsplit",
     "strtrim",

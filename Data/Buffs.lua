@@ -122,6 +122,16 @@ local min = math.min
 ---@field requireItemID? number    -- Only show if this item is equipped or in bags
 ---@field loadConditions? LoadConditions  -- Per-buff content visibility (nil = show everywhere)
 
+---Check if the player is NOT an Earthen dwarf (they have permanent Well Fed from Ingest Minerals)
+---@return boolean
+local function IsNotEarthen()
+    if not BR.playerRace then
+        local _, raceToken = UnitRace("player")
+        BR.playerRace = raceToken
+    end
+    return BR.playerRace ~= "EarthenDwarf"
+end
+
 ---Check if the player is inside a delve (difficultyID 208)
 ---@return boolean
 local function IsInDelve()
@@ -802,6 +812,7 @@ BR.BUFF_TABLES = {
             groupId = "food",
             consumableCategory = "food",
             displayIcon = 136000,
+            visibilityCondition = IsNotEarthen,
         },
         -- Sanguithorn Tea (additional food, stacks with regular food)
         {
@@ -814,6 +825,7 @@ BR.BUFF_TABLES = {
             displayIcon = 7548960,
             eatingSpellID = 1277461,
             eatingIconID = 7548956,
+            visibilityCondition = IsNotEarthen,
         },
         -- Delve Food (only when inside a delve with Brann or Valeera)
         {
