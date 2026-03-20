@@ -493,9 +493,15 @@ local function RefreshConsumableCache()
         local allowedSet = itemSets[category]
         tsort(items, function(a, b)
             -- If items have numeric priority values, sort by priority first (lower = better)
+            -- Numeric priorities (e.g., fleeting flasks = 1) come before non-numeric (true = regular)
             local aPri = allowedSet and allowedSet[a.itemID]
             local bPri = allowedSet and allowedSet[b.itemID]
-            if type(aPri) == "number" and type(bPri) == "number" and aPri ~= bPri then
+            local aNum = type(aPri) == "number"
+            local bNum = type(bPri) == "number"
+            if aNum ~= bNum then
+                return aNum
+            end
+            if aNum and bNum and aPri ~= bPri then
                 return aPri < bPri
             end
             if a.count == b.count then
