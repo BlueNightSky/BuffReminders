@@ -1163,7 +1163,7 @@ local function ShouldShowConsumableBuff(buff)
             if hasBuff then
                 local CM = BR.ConsumableMemory
                 if CM and buff.consumableCategory and not CM.IsFleetingSpell(id) then
-                    CM.Remember(GetPlayerSpecId(), buff.consumableCategory, id)
+                    CM.Remember(GetPlayerSpecId(), buff.consumableCategory, id, true)
                 end
                 return false, remaining -- Has at least one of the consumable buffs
             end
