@@ -7,7 +7,8 @@ local _, BR = ...
 -- can sort the preferred item first. Three detection paths feed into this module:
 --
 -- 1. State.lua (ShouldShowConsumableBuff) — spell-based consumables (flasks, runes, tea)
---    Calls ConsumableMemory.Remember() when an active buff is detected.
+--    Calls ConsumableMemory.Remember() with updateOnly=true (refreshes existing preference,
+--    never creates new entries — prevents leaking preferences across spec switches).
 --
 -- 2. PostClick handlers (SecureButtons.lua) — addon click-to-cast
 --    Calls ConsumableMemory.RememberChoice() when a consumable button is clicked.
@@ -53,11 +54,12 @@ end
 -- REMEMBER / READ
 -- ============================================================================
 
----Remember a consumable spell for the current spec. Skips if already set.
+---Remember a consumable spell for the current spec.
 ---@param specId number Player's current specialization ID
 ---@param category string Consumable category (e.g., "flask", "food", "weapon")
 ---@param spellID number The spell ID to remember
-local function Remember(specId, category, spellID)
+---@param updateOnly? boolean When true, only update an existing entry (never create new spec/category memory)
+local function Remember(specId, category, spellID, updateOnly)
     if not specId or not category or not spellID then
         return
     end
@@ -65,6 +67,11 @@ local function Remember(specId, category, spellID)
     local mem = db.rememberedConsumables
     -- Fast path: already remembered (common case during steady-state)
     if mem and mem[specId] and mem[specId][category] == spellID then
+        return
+    end
+    -- In updateOnly mode, only overwrite an existing entry (don't create new spec/category memory).
+    -- This prevents passive buff detection from leaking preferences across spec switches.
+    if updateOnly and not (mem and mem[specId] and mem[specId][category]) then
         return
     end
     if not mem then
