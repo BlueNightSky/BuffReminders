@@ -182,34 +182,6 @@ local function HideLastTargetTooltip()
     end
 end
 
----Save the clicked consumable itemID so it sorts first next time for this spec.
----@param itemID number? The item that was clicked
----@param buffFrame table? The buff frame the click originated from
-local function RememberConsumableChoice(itemID, buffFrame)
-    if not itemID or not buffFrame or buffFrame.buffCategory ~= "consumable" then
-        return
-    end
-    -- Extra frames (expanded mode) have keys like "food_extra_1"; resolve via mainFrame
-    local resolvedFrame = buffFrame.mainFrame or buffFrame
-    local cat = BR.BUFF_KEY_TO_CATEGORY[resolvedFrame.key]
-    local specId = BR.StateHelpers and BR.StateHelpers.GetPlayerSpecId()
-    if not cat or not specId then
-        return
-    end
-    local pdb = BR.profile
-    if not pdb.rememberedConsumables then
-        pdb.rememberedConsumables = {}
-    end
-    if not pdb.rememberedConsumables[specId] then
-        pdb.rememberedConsumables[specId] = {}
-    end
-    pdb.rememberedConsumables[specId][cat] = itemID
-    -- Force cache re-sort so the next display update reflects the new priority
-    if BR.SecureButtons and BR.SecureButtons.InvalidateConsumableCache then
-        BR.SecureButtons.InvalidateConsumableCache()
-    end
-end
-
 -- ============================================================================
 -- CLICK-TO-CAST OVERLAY
 -- ============================================================================
@@ -241,7 +213,7 @@ local function CreateClickOverlay(frame)
         end
     end)
     overlay:SetScript("PostClick", function(self)
-        RememberConsumableChoice(self.itemID, frame)
+        BR.ConsumableMemory.RememberChoice(self.itemID, frame)
         C_Timer.After(0.3, function()
             if not InCombatLockdown() then
                 BR.BuffState.InvalidateItemCache()
@@ -411,7 +383,7 @@ local function CreateActionButton()
     end)
     -- Refresh display shortly after click so the consumed buff disappears quickly
     btn:SetScript("PostClick", function(self)
-        RememberConsumableChoice(self.itemID, self._br_buff_frame)
+        BR.ConsumableMemory.RememberChoice(self.itemID, self._br_buff_frame)
         C_Timer.After(0.3, function()
             if not InCombatLockdown() then
                 BR.BuffState.InvalidateItemCache()
@@ -477,9 +449,7 @@ local function RefreshConsumableCache()
         return
     end
 
-    local db = BR.profile
     local specId = BR.StateHelpers and BR.StateHelpers.GetPlayerSpecId()
-    local specMemory = specId and (db.rememberedConsumables or {})[specId]
     local itemSets = BR.CONSUMABLE_ITEMS or {}
     -- Scan all bags once, bucket items by consumable category
     local buckets = {} -- category → { [itemID] = { count, icon } }
@@ -523,6 +493,11 @@ local function RefreshConsumableCache()
                                     bucket.foodHearty = entry.hearty
                                 end
                             end
+                            -- Store the spell this item casts (for auto-remember reverse lookup)
+                            local okSpell, _, useSpellID = pcall(GetItemSpell, itemID)
+                            if okSpell and useSpellID then
+                                bucket.useSpellID = useSpellID
+                            end
                             buckets[category][itemID] = bucket
                         end
                     end
@@ -530,6 +505,9 @@ local function RefreshConsumableCache()
             end
         end
     end
+
+    -- Auto-remember food/weapon consumed outside addon (count-delta tracking)
+    BR.ConsumableMemory.DetectConsumedItems(buckets, specId)
 
     -- Convert buckets to sorted arrays
     wipe(consumableCache)
@@ -539,7 +517,7 @@ local function RefreshConsumableCache()
             items[#items + 1] = item
         end
         local allowedSet = itemSets[category]
-        local remembered = specMemory and specMemory[category]
+        local rememberedSpell = BR.ConsumableMemory.GetRemembered(specId, category)
         tsort(items, function(a, b)
             -- If items have numeric priority values, sort by priority first (lower = better)
             -- Numeric priorities (e.g., fleeting flasks = 1) come before non-numeric (true = regular)
@@ -553,10 +531,10 @@ local function RefreshConsumableCache()
             if aNum and bNum and aPri ~= bPri then
                 return aPri < bPri
             end
-            -- Remembered consumable for this spec sorts above non-remembered
-            if remembered then
-                local aRem = a.itemID == remembered
-                local bRem = b.itemID == remembered
+            -- Remembered consumable spell for this spec sorts above non-remembered
+            if rememberedSpell then
+                local aRem = a.useSpellID == rememberedSpell
+                local bRem = b.useSpellID == rememberedSpell
                 if aRem ~= bRem then
                     return aRem
                 end
@@ -568,6 +546,9 @@ local function RefreshConsumableCache()
         end)
         consumableCache[category] = items
     end
+
+    -- Snapshot current counts for next delta comparison
+    BR.ConsumableMemory.SnapshotCounts(buckets)
 end
 
 -- Map buff key → CONSUMABLE_ITEMS category key (derived from buff definitions in Data/Buffs.lua)
@@ -601,7 +582,7 @@ local function UpdateConsumableButtons(frame, actionItems, clickable, startIndex
         return
     end
     startIndex = startIndex or 1
-    if not actionItems or #actionItems < startIndex + 1 then
+    if not actionItems or #actionItems < startIndex then
         if frame.actionButtons then
             for _, btn in ipairs(frame.actionButtons) do
                 btn._br_visible = false

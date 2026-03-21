@@ -262,3 +262,16 @@ BR.CONSUMABLE_ITEMS = {
         [257752] = true, -- Weighted Boomshots (quality 2)
     },
 }
+
+-- Fleeting flask item IDs. These sort first by numeric priority but should NOT be
+-- remembered — they would overwrite the user's regular flask preference.
+BR.FLEETING_FLASK_ITEMS = {
+    [245926] = true, -- Fleeting Flask of Thalassian Resistance
+    [245927] = true, -- Fleeting Flask of Thalassian Resistance (quality 2)
+    [245928] = true, -- Fleeting Flask of the Shattered Sun
+    [245929] = true, -- Fleeting Flask of the Shattered Sun (quality 2)
+    [245930] = true, -- Fleeting Flask of the Blood Knights
+    [245931] = true, -- Fleeting Flask of the Blood Knights (quality 2)
+    [245932] = true, -- Fleeting Flask of the Magisters
+    [245933] = true, -- Fleeting Flask of the Magisters (quality 2)
+}

@@ -46,6 +46,7 @@ read_globals = {
     "GetInstanceInfo",
     "GetInventoryItemID",
     "GetItemInfoInstant",
+    "GetItemSpell",
     "GetMaxLevelForPlayerExpansion",
     "GetPetActionInfo",
     "GetCursorPosition",

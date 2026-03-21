@@ -1161,6 +1161,10 @@ local function ShouldShowConsumableBuff(buff)
         for _, id in ipairs(spellList) do
             local hasBuff, remaining = UnitHasBuff("player", id)
             if hasBuff then
+                local CM = BR.ConsumableMemory
+                if CM and buff.consumableCategory and not CM.IsFleetingSpell(id) then
+                    CM.Remember(GetPlayerSpecId(), buff.consumableCategory, id)
+                end
                 return false, remaining -- Has at least one of the consumable buffs
             end
         end
@@ -1986,6 +1990,7 @@ end
 BR.StateHelpers = {
     GetPlayerSpecId = GetPlayerSpecId,
     FormatRemainingTime = FormatRemainingTime,
+    IsPlayerEating = IsPlayerEating, -- used by ConsumableMemory at runtime
     UpdateEatingState = UpdateEatingState,
     ScanEatingState = ScanEatingState,
     GetEatingExpirationTime = GetEatingExpirationTime,
