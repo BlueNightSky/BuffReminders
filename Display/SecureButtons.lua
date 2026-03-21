@@ -434,6 +434,9 @@ end
 -- Consumable item cache: only rescan bags when BAG_UPDATE_DELAYED fires
 local consumableCache = {} -- key → items array (or nil)
 local consumableCacheDirty = true
+-- Previous item counts per category, for detecting which item was consumed between refreshes.
+-- Structure: previousCounts[category][itemID] = { count = N, useSpellID = S }
+local previousCounts = {}
 
 local function InvalidateConsumableCache()
     consumableCacheDirty = true
@@ -448,6 +451,10 @@ end
 ---@param buffFrame table? The buff frame the click originated from
 RememberConsumableChoice = function(itemID, buffFrame)
     if not itemID or not buffFrame or buffFrame.buffCategory ~= "consumable" then
+        return
+    end
+    -- Skip fleeting flasks — they sort first by design
+    if BR.FLEETING_FLASK_ITEMS and BR.FLEETING_FLASK_ITEMS[itemID] then
         return
     end
     local ok, _, useSpellID = pcall(GetItemSpell, itemID)
@@ -547,6 +554,40 @@ local function RefreshConsumableCache()
         end
     end
 
+    -- Auto-remember: detect consumed items by comparing counts with previous refresh.
+    -- Only for categories that State.lua can't auto-detect via buff spells (food, weapon).
+    -- Spell-based consumables (flasks, runes, tea) are handled by State.lua directly.
+    if specId then
+        local isEating = BR.StateHelpers and BR.StateHelpers.IsPlayerEating and BR.StateHelpers.IsPlayerEating()
+        for category, oldItems in pairs(previousCounts) do
+            if category == "food" or category == "weapon" then
+                for itemID, old in pairs(oldItems) do
+                    if old.useSpellID then
+                        local newBucket = buckets[category] and buckets[category][itemID]
+                        local newCount = newBucket and newBucket.count or 0
+                        if newCount < old.count then
+                            -- Food: only remember if player is eating (skip vendoring/discarding)
+                            if category ~= "food" or isEating then
+                                local mem = db.rememberedConsumables
+                                if not mem or not mem[specId] or mem[specId][category] ~= old.useSpellID then
+                                    if not mem then
+                                        mem = {}
+                                        db.rememberedConsumables = mem
+                                    end
+                                    if not mem[specId] then
+                                        mem[specId] = {}
+                                    end
+                                    mem[specId][category] = old.useSpellID
+                                    specMemory = mem[specId]
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     -- Convert buckets to sorted arrays
     wipe(consumableCache)
     for category, entries in pairs(buckets) do
@@ -584,6 +625,30 @@ local function RefreshConsumableCache()
             return a.count > b.count
         end)
         consumableCache[category] = items
+    end
+
+    -- Snapshot current counts for next delta comparison (reuse existing tables to reduce GC)
+    for category, catTable in pairs(previousCounts) do
+        if not buckets[category] then
+            previousCounts[category] = nil
+        else
+            wipe(catTable)
+        end
+    end
+    for category, entries in pairs(buckets) do
+        if not previousCounts[category] then
+            previousCounts[category] = {}
+        end
+        local catTable = previousCounts[category]
+        for itemID, item in pairs(entries) do
+            local prev = catTable[itemID]
+            if prev then
+                prev.count = item.count
+                prev.useSpellID = item.useSpellID
+            else
+                catTable[itemID] = { count = item.count, useSpellID = item.useSpellID }
+            end
+        end
     end
 end
 

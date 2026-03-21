@@ -1150,15 +1150,36 @@ local function IsFreeConsumableVisible(db)
     return true
 end
 
+-- Spell IDs from fleeting flasks that should not be remembered —
+-- they sort first by numeric priority, remembering them would overwrite the user's
+-- regular flask preference. Built lazily from BR.FLEETING_FLASK_ITEMS.
+local fleetingSpellIDs = nil
+local function IsFleetingSpell(activeSpellID)
+    if not fleetingSpellIDs then
+        fleetingSpellIDs = {}
+        for itemID in pairs(BR.FLEETING_FLASK_ITEMS or {}) do
+            local ok, _, spellID = pcall(GetItemSpell, itemID)
+            if ok and spellID then
+                fleetingSpellIDs[spellID] = true
+            end
+        end
+    end
+    return fleetingSpellIDs[activeSpellID]
+end
+
 ---Remember which consumable spell the player has active, so the display layer can
 ---sort the matching item first (even if the consumable was used outside the addon).
 ---Handles spell-based consumables (flasks, runes, tea). Food and weapon enchants are
----covered by RememberConsumableChoice in SecureButtons.lua (PostClick path).
+---covered by RememberConsumableChoice in SecureButtons.lua (PostClick path) and
+---count-delta tracking in RefreshConsumableCache.
 ---@param buff table Consumable buff definition
 ---@param activeSpellID number The spell ID that was found active on the player
 local function RememberActiveConsumableSpell(buff, activeSpellID)
     local cat = buff.consumableCategory
     if not cat then
+        return
+    end
+    if IsFleetingSpell(activeSpellID) then
         return
     end
     local specId = GetPlayerSpecId()
@@ -2018,6 +2039,7 @@ end
 BR.StateHelpers = {
     GetPlayerSpecId = GetPlayerSpecId,
     FormatRemainingTime = FormatRemainingTime,
+    IsPlayerEating = IsPlayerEating,
     UpdateEatingState = UpdateEatingState,
     ScanEatingState = ScanEatingState,
     GetEatingExpirationTime = GetEatingExpirationTime,
