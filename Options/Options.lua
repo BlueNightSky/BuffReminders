@@ -3782,7 +3782,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
 
     local requireItemHint = sectionsFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     requireItemHint:SetPoint("LEFT", requireItemContainer, "RIGHT", 5, 0)
-    requireItemHint:SetText("(hide if not owned)")
+    requireItemHint:SetText("item ID — hide if not owned/equipped")
 
     local glowModeOptions = {
         { value = "whenGlowing", label = "Detect when glowing" },
