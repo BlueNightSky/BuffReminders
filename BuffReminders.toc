@@ -29,18 +29,18 @@ Libs\LibDBIcon-1.0\lib.xml
 Libs\AceDB-3.0\AceDB-3.0.lua
 Libs\LibDualSpec-1.0\LibDualSpec-1.0.lua
 
-Core.lua
+Core\Core.lua
 Core\Profiles.lua
 Data\Buffs.lua
 Data\CombatSafeSpells.lua
 Data\ConsumableItems.lua
 Data\Pets.lua
-ConsumableMemory.lua
-State.lua
+Core\ConsumableMemory.lua
+Core\State.lua
 UI\Components.lua
 UI\Glow.lua
 Display\BuffReminders.lua
-Display\ImportExport.lua
+Core\ImportExport.lua
 Display\Movers.lua
 Display\SecureButtons.lua
 Options\Options.lua
