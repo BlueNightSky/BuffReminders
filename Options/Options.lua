@@ -1156,6 +1156,29 @@ local function CreateOptionsPanel()
             catLayout:Add(showTextHolder, nil, COMPONENT_GAP)
         end
 
+        -- Missing count only (raid only)
+        if category == "raid" then
+            local missingCountHolder = Components.Checkbox(catContent, {
+                label = "Show missing count only",
+                get = function()
+                    return db.showMissingCountOnly == true
+                end,
+                tooltip = {
+                    title = "Show missing count only",
+                    desc = 'Show only the number of missing buffs (e.g., "1") instead of the full count (e.g., "19/20")',
+                },
+                enabled = function()
+                    local cs = db.categorySettings and db.categorySettings[category]
+                    return not cs or cs.showText ~= false
+                end,
+                onChange = function(checked)
+                    BR.Config.Set("showMissingCountOnly", checked)
+                    Components.RefreshAll()
+                end,
+            })
+            catLayout:Add(missingCountHolder, nil, COMPONENT_GAP)
+        end
+
         -- "BUFF!" text (raid only, grouped under Icons)
         if category == "raid" then
             local reminderHolder = Components.Checkbox(catContent, {

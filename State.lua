@@ -1416,6 +1416,7 @@ function BuffState.Refresh()
     currentWeaponEnchants.offHandExpiration = offExp
 
     local trackingMode = db.buffTrackingMode
+    local missingCountOnly = db.showMissingCountOnly
     -- Aura API is restricted in combat/encounters (inCombat set by Display layer),
     -- during M+ keystones, and in PvP instances (except during prep phase before gates open).
     -- Ensure content type cache is populated before checking (avoids one-frame flicker after invalidation).
@@ -1439,7 +1440,8 @@ function BuffState.Refresh()
                 entry.visible = true
                 entry.displayType = "count"
                 local buffed = total - missing
-                entry.countText = scope.playerOnly and "" or (buffed .. "/" .. total)
+                entry.countText = scope.playerOnly and ""
+                    or (missingCountOnly and tostring(missing) or (buffed .. "/" .. total))
                 entry.shouldGlow = raidGlow
                 if minRemaining and minRemaining < raidThreshold then
                     entry.expiringTime = minRemaining

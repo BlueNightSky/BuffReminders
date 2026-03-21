@@ -123,6 +123,7 @@ local RootSettings = {
     hideAllInVehicle = nil,
     hideWhileMounted = nil,
     hideInLegacyInstances = nil,
+    showMissingCountOnly = "DisplayRefresh",
 }
 
 -- Per-category settings (path = categorySettings.{category}.{key})

@@ -265,6 +265,7 @@ local defaults = {
     hideAllInVehicle = false,
     hideWhileMounted = false,
     hideInLegacyInstances = true,
+    showMissingCountOnly = false,
     petPassiveOnlyInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
