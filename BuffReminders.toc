@@ -35,6 +35,7 @@ Data\Buffs.lua
 Data\CombatSafeSpells.lua
 Data\ConsumableItems.lua
 Data\Pets.lua
+ConsumableMemory.lua
 State.lua
 UI\Components.lua
 UI\Glow.lua

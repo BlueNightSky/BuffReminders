@@ -182,8 +182,6 @@ local function HideLastTargetTooltip()
     end
 end
 
-local RememberConsumableChoice -- forward declaration; defined after InvalidateConsumableCache
-
 -- ============================================================================
 -- CLICK-TO-CAST OVERLAY
 -- ============================================================================
@@ -215,7 +213,7 @@ local function CreateClickOverlay(frame)
         end
     end)
     overlay:SetScript("PostClick", function(self)
-        RememberConsumableChoice(self.itemID, frame)
+        BR.ConsumableMemory.RememberChoice(self.itemID, frame)
         C_Timer.After(0.3, function()
             if not InCombatLockdown() then
                 BR.BuffState.InvalidateItemCache()
@@ -385,7 +383,7 @@ local function CreateActionButton()
     end)
     -- Refresh display shortly after click so the consumed buff disappears quickly
     btn:SetScript("PostClick", function(self)
-        RememberConsumableChoice(self.itemID, self._br_buff_frame)
+        BR.ConsumableMemory.RememberChoice(self.itemID, self._br_buff_frame)
         C_Timer.After(0.3, function()
             if not InCombatLockdown() then
                 BR.BuffState.InvalidateItemCache()
@@ -434,52 +432,8 @@ end
 -- Consumable item cache: only rescan bags when BAG_UPDATE_DELAYED fires
 local consumableCache = {} -- key → items array (or nil)
 local consumableCacheDirty = true
--- Previous item counts per category, for detecting which item was consumed between refreshes.
--- Structure: previousCounts[category][itemID] = { count = N, useSpellID = S }
-local previousCounts = {}
 
 local function InvalidateConsumableCache()
-    consumableCacheDirty = true
-end
-
----Save the clicked consumable's spell so it sorts first next time for this spec.
----Covers consumable types that State.lua can't auto-detect (food, weapon enchants).
----Spell-based consumables (flasks, runes, tea) are handled by
----RememberActiveConsumableSpell in State.lua (auto-detects on state refresh).
----Both paths write to db.rememberedConsumables[specId][category] = spellID.
----@param itemID number? The item that was clicked
----@param buffFrame table? The buff frame the click originated from
-RememberConsumableChoice = function(itemID, buffFrame)
-    if not itemID or not buffFrame or buffFrame.buffCategory ~= "consumable" then
-        return
-    end
-    -- Skip fleeting flasks — they sort first by design
-    if BR.FLEETING_FLASK_ITEMS and BR.FLEETING_FLASK_ITEMS[itemID] then
-        return
-    end
-    local ok, _, useSpellID = pcall(GetItemSpell, itemID)
-    if not ok or not useSpellID then
-        return
-    end
-    local resolvedFrame = buffFrame.mainFrame or buffFrame
-    local cat = BR.BUFF_KEY_TO_CATEGORY[resolvedFrame.key]
-    local specId = BR.StateHelpers and BR.StateHelpers.GetPlayerSpecId()
-    if not cat or not specId then
-        return
-    end
-    local pdb = BR.profile
-    local mem = pdb.rememberedConsumables
-    if mem and mem[specId] and mem[specId][cat] == useSpellID then
-        return
-    end
-    if not mem then
-        mem = {}
-        pdb.rememberedConsumables = mem
-    end
-    if not mem[specId] then
-        mem[specId] = {}
-    end
-    mem[specId][cat] = useSpellID
     consumableCacheDirty = true
 end
 
@@ -495,9 +449,7 @@ local function RefreshConsumableCache()
         return
     end
 
-    local db = BR.profile
     local specId = BR.StateHelpers and BR.StateHelpers.GetPlayerSpecId()
-    local specMemory = specId and (db.rememberedConsumables or {})[specId]
     local itemSets = BR.CONSUMABLE_ITEMS or {}
     -- Scan all bags once, bucket items by consumable category
     local buckets = {} -- category → { [itemID] = { count, icon } }
@@ -554,39 +506,8 @@ local function RefreshConsumableCache()
         end
     end
 
-    -- Auto-remember: detect consumed items by comparing counts with previous refresh.
-    -- Only for categories that State.lua can't auto-detect via buff spells (food, weapon).
-    -- Spell-based consumables (flasks, runes, tea) are handled by State.lua directly.
-    if specId then
-        local isEating = BR.StateHelpers and BR.StateHelpers.IsPlayerEating and BR.StateHelpers.IsPlayerEating()
-        for category, oldItems in pairs(previousCounts) do
-            if category == "food" or category == "weapon" then
-                for itemID, old in pairs(oldItems) do
-                    if old.useSpellID then
-                        local newBucket = buckets[category] and buckets[category][itemID]
-                        local newCount = newBucket and newBucket.count or 0
-                        if newCount < old.count then
-                            -- Food: only remember if player is eating (skip vendoring/discarding)
-                            if category ~= "food" or isEating then
-                                local mem = db.rememberedConsumables
-                                if not mem or not mem[specId] or mem[specId][category] ~= old.useSpellID then
-                                    if not mem then
-                                        mem = {}
-                                        db.rememberedConsumables = mem
-                                    end
-                                    if not mem[specId] then
-                                        mem[specId] = {}
-                                    end
-                                    mem[specId][category] = old.useSpellID
-                                    specMemory = mem[specId]
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
+    -- Auto-remember food/weapon consumed outside addon (count-delta tracking)
+    BR.ConsumableMemory.DetectConsumedItems(buckets, specId)
 
     -- Convert buckets to sorted arrays
     wipe(consumableCache)
@@ -596,8 +517,7 @@ local function RefreshConsumableCache()
             items[#items + 1] = item
         end
         local allowedSet = itemSets[category]
-        -- rememberedConsumables now stores spell IDs (set by State.lua when a buff is detected)
-        local rememberedSpell = specMemory and specMemory[category]
+        local rememberedSpell = BR.ConsumableMemory.GetRemembered(specId, category)
         tsort(items, function(a, b)
             -- If items have numeric priority values, sort by priority first (lower = better)
             -- Numeric priorities (e.g., fleeting flasks = 1) come before non-numeric (true = regular)
@@ -627,29 +547,8 @@ local function RefreshConsumableCache()
         consumableCache[category] = items
     end
 
-    -- Snapshot current counts for next delta comparison (reuse existing tables to reduce GC)
-    for category, catTable in pairs(previousCounts) do
-        if not buckets[category] then
-            previousCounts[category] = nil
-        else
-            wipe(catTable)
-        end
-    end
-    for category, entries in pairs(buckets) do
-        if not previousCounts[category] then
-            previousCounts[category] = {}
-        end
-        local catTable = previousCounts[category]
-        for itemID, item in pairs(entries) do
-            local prev = catTable[itemID]
-            if prev then
-                prev.count = item.count
-                prev.useSpellID = item.useSpellID
-            else
-                catTable[itemID] = { count = item.count, useSpellID = item.useSpellID }
-            end
-        end
-    end
+    -- Snapshot current counts for next delta comparison
+    BR.ConsumableMemory.SnapshotCounts(buckets)
 end
 
 -- Map buff key → CONSUMABLE_ITEMS category key (derived from buff definitions in Data/Buffs.lua)
