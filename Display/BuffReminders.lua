@@ -1076,7 +1076,7 @@ local function CreateBuffFrame(buff, category)
 
     -- Stack count (bottom-right, WoW-standard item count style) for consumables
     frame.stackCount = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
-    frame.stackCount:SetPoint("BOTTOMRIGHT", -5, 4)
+    frame.stackCount:SetPoint("BOTTOMRIGHT", -1, 2)
     frame.stackCount:Hide()
 
     -- Frame alpha
@@ -1151,7 +1151,7 @@ local function GetOrCreateExtraFrame(frame, index)
 
     -- Stack count (bottom-right, same as main frame)
     extra.stackCount = extra:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
-    extra.stackCount:SetPoint("BOTTOMRIGHT", -5, 4)
+    extra.stackCount:SetPoint("BOTTOMRIGHT", -1, 2)
     extra.stackCount:Hide()
 
     -- Count text (for consistency, though expanded frames mainly use stackCount)
