@@ -1150,6 +1150,37 @@ local function IsFreeConsumableVisible(db)
     return true
 end
 
+---Remember which consumable spell the player has active, so the display layer can
+---sort the matching item first (even if the consumable was used outside the addon).
+---Handles spell-based consumables (flasks, runes, tea). Food and weapon enchants are
+---covered by RememberConsumableChoice in SecureButtons.lua (PostClick path).
+---@param buff table Consumable buff definition
+---@param activeSpellID number The spell ID that was found active on the player
+local function RememberActiveConsumableSpell(buff, activeSpellID)
+    local cat = buff.consumableCategory
+    if not cat then
+        return
+    end
+    local specId = GetPlayerSpecId()
+    if not specId then
+        return
+    end
+    -- Fast path: already remembered (common case during steady-state)
+    local db = BR.profile
+    local mem = db.rememberedConsumables
+    if mem and mem[specId] and mem[specId][cat] == activeSpellID then
+        return
+    end
+    if not mem then
+        mem = {}
+        db.rememberedConsumables = mem
+    end
+    if not mem[specId] then
+        mem[specId] = {}
+    end
+    mem[specId][cat] = activeSpellID
+end
+
 ---Check if player is missing a consumable buff, weapon enchant, or inventory item (returns true if missing)
 ---@param buff table Consumable buff definition
 ---@return boolean shouldShow
@@ -1161,6 +1192,7 @@ local function ShouldShowConsumableBuff(buff)
         for _, id in ipairs(spellList) do
             local hasBuff, remaining = UnitHasBuff("player", id)
             if hasBuff then
+                RememberActiveConsumableSpell(buff, id)
                 return false, remaining -- Has at least one of the consumable buffs
             end
         end

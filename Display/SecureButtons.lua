@@ -182,33 +182,7 @@ local function HideLastTargetTooltip()
     end
 end
 
----Save the clicked consumable itemID so it sorts first next time for this spec.
----@param itemID number? The item that was clicked
----@param buffFrame table? The buff frame the click originated from
-local function RememberConsumableChoice(itemID, buffFrame)
-    if not itemID or not buffFrame or buffFrame.buffCategory ~= "consumable" then
-        return
-    end
-    -- Extra frames (expanded mode) have keys like "food_extra_1"; resolve via mainFrame
-    local resolvedFrame = buffFrame.mainFrame or buffFrame
-    local cat = BR.BUFF_KEY_TO_CATEGORY[resolvedFrame.key]
-    local specId = BR.StateHelpers and BR.StateHelpers.GetPlayerSpecId()
-    if not cat or not specId then
-        return
-    end
-    local pdb = BR.profile
-    if not pdb.rememberedConsumables then
-        pdb.rememberedConsumables = {}
-    end
-    if not pdb.rememberedConsumables[specId] then
-        pdb.rememberedConsumables[specId] = {}
-    end
-    pdb.rememberedConsumables[specId][cat] = itemID
-    -- Force cache re-sort so the next display update reflects the new priority
-    if BR.SecureButtons and BR.SecureButtons.InvalidateConsumableCache then
-        BR.SecureButtons.InvalidateConsumableCache()
-    end
-end
+local RememberConsumableChoice -- forward declaration; defined after InvalidateConsumableCache
 
 -- ============================================================================
 -- CLICK-TO-CAST OVERLAY
@@ -465,6 +439,43 @@ local function InvalidateConsumableCache()
     consumableCacheDirty = true
 end
 
+---Save the clicked consumable's spell so it sorts first next time for this spec.
+---Covers consumable types that State.lua can't auto-detect (food, weapon enchants).
+---Spell-based consumables (flasks, runes, tea) are handled by
+---RememberActiveConsumableSpell in State.lua (auto-detects on state refresh).
+---Both paths write to db.rememberedConsumables[specId][category] = spellID.
+---@param itemID number? The item that was clicked
+---@param buffFrame table? The buff frame the click originated from
+RememberConsumableChoice = function(itemID, buffFrame)
+    if not itemID or not buffFrame or buffFrame.buffCategory ~= "consumable" then
+        return
+    end
+    local ok, _, useSpellID = pcall(GetItemSpell, itemID)
+    if not ok or not useSpellID then
+        return
+    end
+    local resolvedFrame = buffFrame.mainFrame or buffFrame
+    local cat = BR.BUFF_KEY_TO_CATEGORY[resolvedFrame.key]
+    local specId = BR.StateHelpers and BR.StateHelpers.GetPlayerSpecId()
+    if not cat or not specId then
+        return
+    end
+    local pdb = BR.profile
+    local mem = pdb.rememberedConsumables
+    if mem and mem[specId] and mem[specId][cat] == useSpellID then
+        return
+    end
+    if not mem then
+        mem = {}
+        pdb.rememberedConsumables = mem
+    end
+    if not mem[specId] then
+        mem[specId] = {}
+    end
+    mem[specId][cat] = useSpellID
+    consumableCacheDirty = true
+end
+
 ---Scan bags for all consumable categories and populate the cache.
 local function RefreshConsumableCache()
     if not consumableCacheDirty then
@@ -523,6 +534,11 @@ local function RefreshConsumableCache()
                                     bucket.foodHearty = entry.hearty
                                 end
                             end
+                            -- Store the spell this item casts (for auto-remember reverse lookup)
+                            local okSpell, _, useSpellID = pcall(GetItemSpell, itemID)
+                            if okSpell and useSpellID then
+                                bucket.useSpellID = useSpellID
+                            end
                             buckets[category][itemID] = bucket
                         end
                     end
@@ -539,7 +555,8 @@ local function RefreshConsumableCache()
             items[#items + 1] = item
         end
         local allowedSet = itemSets[category]
-        local remembered = specMemory and specMemory[category]
+        -- rememberedConsumables now stores spell IDs (set by State.lua when a buff is detected)
+        local rememberedSpell = specMemory and specMemory[category]
         tsort(items, function(a, b)
             -- If items have numeric priority values, sort by priority first (lower = better)
             -- Numeric priorities (e.g., fleeting flasks = 1) come before non-numeric (true = regular)
@@ -553,10 +570,10 @@ local function RefreshConsumableCache()
             if aNum and bNum and aPri ~= bPri then
                 return aPri < bPri
             end
-            -- Remembered consumable for this spec sorts above non-remembered
-            if remembered then
-                local aRem = a.itemID == remembered
-                local bRem = b.itemID == remembered
+            -- Remembered consumable spell for this spec sorts above non-remembered
+            if rememberedSpell then
+                local aRem = a.useSpellID == rememberedSpell
+                local bRem = b.useSpellID == rememberedSpell
                 if aRem ~= bRem then
                     return aRem
                 end
