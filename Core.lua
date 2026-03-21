@@ -213,6 +213,7 @@ local DefaultSettingKeys = {
     healthstoneVisibility = "DisplayRefresh",
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
+    consumableTextScale = "VisualsRefresh",
     showConsumableTooltips = nil, -- No refresh needed, read at tooltip time
     -- Pet display mode
     petDisplayMode = "DisplayRefresh",

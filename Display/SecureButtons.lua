@@ -360,16 +360,25 @@ local QUALITY_INFO = {
     [3] = { text = "R3", r = 1.00, g = 0.82, b = 0.00 }, -- Gold
 }
 
+---Compute consumable text font size from scale percentage.
+---@param mainIconSize number The consumable category's main icon size
+---@return number fontSize
+local function ComputeConsumableFontSize(mainIconSize)
+    local d = BR.profile and BR.profile.defaults
+    local scale = d and d.consumableTextScale or 20
+    return max(6, floor(mainIconSize * scale / 100))
+end
+
 ---Set or hide a quality pip overlay text based on crafted quality.
 ---@param overlay FontString The overlay text to update
 ---@param craftedQuality number? The crafted quality tier (1-3) or nil
----@param size number The parent icon size (used for font sizing)
-local function SetQualityOverlay(overlay, craftedQuality, size)
+---@param size number The parent icon size (used for auto font sizing fallback)
+---@param fontSize number? Explicit font size (from ComputeConsumableFontSize)
+local function SetQualityOverlay(overlay, craftedQuality, size, fontSize)
     local info = craftedQuality and QUALITY_INFO[craftedQuality]
     if info then
-        -- Scale font with icon size (minimum 8px font)
         local fontPath = BR.Display.GetFontPath()
-        local fontSize = max(8, size * 0.25)
+        fontSize = fontSize or max(8, size * 0.25)
         overlay:SetFont(fontPath, fontSize, "OUTLINE")
         overlay:SetText(info.text)
         overlay:SetTextColor(info.r, info.g, info.b, 1)
@@ -811,6 +820,7 @@ local function SyncSecureButtons()
                         end
                     end
                     if visibleCount > 0 then
+                        local cFontSize = ComputeConsumableFontSize(catSettings.iconSize or 64)
                         local idx = 0
                         for _, btn in ipairs(frame.actionButtons) do
                             if btn._br_visible then
@@ -861,8 +871,8 @@ local function SyncSecureButtons()
                                     btn.count:SetText(
                                         btn._br_count and btn._br_count > 1 and tostring(btn._br_count) or ""
                                     )
-                                    btn.count:SetFont(fontPath, max(10, floor(size * 0.45)), "OUTLINE")
-                                    SetQualityOverlay(btn.qualityOverlay, btn._br_craftedQuality, size)
+                                    btn.count:SetFont(fontPath, cFontSize, "OUTLINE")
+                                    SetQualityOverlay(btn.qualityOverlay, btn._br_craftedQuality, size, cFontSize)
                                     btn._br_needs_sync = false
                                 end
                                 -- Activate combat state driver on first show (buttons start with "hide" driver)
@@ -1365,5 +1375,6 @@ BR.SecureButtons = {
     HideSecureFramesForCatKey = HideSecureFramesForCatKey,
     ScheduleSecureSync = ScheduleSecureSync,
     SetQualityOverlay = SetQualityOverlay,
+    ComputeConsumableFontSize = ComputeConsumableFontSize,
     ReapplyPetSpecIconIfHovered = ReapplyPetSpecIconIfHovered,
 }

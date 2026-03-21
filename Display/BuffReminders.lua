@@ -41,6 +41,7 @@ local addonName, BR = ...
 ---@field consumableRebuffThreshold? number
 ---@field consumableRebuffColor? number[]
 ---@field consumableDisplayMode? "icon_only"|"sub_icons"|"expanded"
+---@field consumableTextScale? number
 ---@field petDisplayMode? "generic"|"expanded"
 ---@field petLabels? boolean
 ---@field petLabelScale? number
@@ -304,6 +305,7 @@ local defaults = {
         },
         healthstoneVisibility = "readyCheck",
         consumableDisplayMode = "sub_icons",
+        consumableTextScale = 20,
         showConsumableTooltips = false,
         petDisplayMode = "generic", -- "generic" or "expanded"
         petLabels = true,
@@ -1726,12 +1728,13 @@ local EATING_ICON = BR.EATING_AURA_ICON
 ---@param frame table
 ---@param label string? Food stat label (e.g. "M/V", "Crit")
 ---@param hearty boolean? Whether the food is hearty
-local function ApplyFoodFrameStyle(frame, label, hearty)
+local function ApplyFoodFrameStyle(frame, label, hearty, fontSize)
     if not label then
         return
     end
-    local size = frame:GetWidth()
-    local fontSize = max(8, size * 0.22)
+    if not fontSize then
+        fontSize = BR.SecureButtons.ComputeConsumableFontSize(frame:GetWidth())
+    end
     if not frame.foodLabel then
         frame.foodLabel = frame:CreateFontString(nil, "OVERLAY")
         frame.foodLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
@@ -1795,15 +1798,18 @@ local function ResolveConsumableFrame(frame)
     if items and items[1] then
         frame.icon:SetTexture(items[1].icon)
         SetIconDesaturated(frame.icon, false)
+        local mainSize = frame:GetWidth()
+        local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(mainSize)
         if frame.qualityOverlay then
-            BR.SecureButtons.SetQualityOverlay(frame.qualityOverlay, items[1].craftedQuality, frame:GetWidth())
+            BR.SecureButtons.SetQualityOverlay(frame.qualityOverlay, items[1].craftedQuality, mainSize, cFontSize)
         end
         frame.count:Hide()
+        frame.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
         frame.stackCount:SetText(items[1].count)
         frame.stackCount:Show()
         -- Apply food stat label
         if frame.key == "food" then
-            ApplyFoodFrameStyle(frame, items[1].foodLabel, items[1].foodHearty)
+            ApplyFoodFrameStyle(frame, items[1].foodLabel, items[1].foodHearty, cFontSize)
         end
         return "items"
     end
@@ -1996,6 +2002,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
             local itemCount = #items - 1
             local isSideways = subIconSide == "LEFT" or subIconSide == "RIGHT"
 
+            local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(iconSize)
             for i = 2, #items do
                 local idx = i - 2
                 local extra = GetOrCreateExtraFrame(frame, i - 1)
@@ -2003,9 +2010,9 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra:SetSize(size, size)
                 extra.icon:SetTexture(items[i].icon)
                 if extra.qualityOverlay then
-                    BR.SecureButtons.SetQualityOverlay(extra.qualityOverlay, items[i].craftedQuality, size)
+                    BR.SecureButtons.SetQualityOverlay(extra.qualityOverlay, items[i].craftedQuality, size, cFontSize)
                 end
-                extra.stackCount:SetFont(fontPath, max(10, floor(size * 0.45)), "OUTLINE")
+                extra.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
                 extra.stackCount:SetText(items[i].count > 1 and tostring(items[i].count) or "")
                 extra.stackCount:Show()
                 extra.count:Hide()
@@ -2055,14 +2062,22 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         if displayMode == "expanded" and items and #items > 1 then
             local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
             local isFood = frame.key == "food"
+            local expandedSize = frame:GetWidth()
+            local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(expandedSize)
             for i = 2, #items do
                 local extra = GetOrCreateExtraFrame(frame, i - 1)
                 extra:SetParent(parentFrame)
-                extra:SetSize(frame:GetWidth(), frame:GetHeight())
+                extra:SetSize(expandedSize, frame:GetHeight())
                 extra.icon:SetTexture(items[i].icon)
                 if extra.qualityOverlay then
-                    BR.SecureButtons.SetQualityOverlay(extra.qualityOverlay, items[i].craftedQuality, frame:GetWidth())
+                    BR.SecureButtons.SetQualityOverlay(
+                        extra.qualityOverlay,
+                        items[i].craftedQuality,
+                        expandedSize,
+                        cFontSize
+                    )
                 end
+                extra.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
                 extra.stackCount:SetText(items[i].count)
                 extra.count:Hide()
                 local showText = ShouldShowText(frame.buffCategory)
@@ -2077,7 +2092,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 if isFood then
                     ClearFoodFrameStyle(extra)
                     if showText then
-                        ApplyFoodFrameStyle(extra, items[i].foodLabel, items[i].foodHearty)
+                        ApplyFoodFrameStyle(extra, items[i].foodLabel, items[i].foodHearty, cFontSize)
                     end
                 end
                 frameList[#frameList + 1] = extra
@@ -2673,7 +2688,7 @@ local function UpdateVisuals()
 
         -- Food label + hearty badge font update
         if frame.foodLabel then
-            local flSize = max(8, size * 0.22)
+            local flSize = BR.SecureButtons.ComputeConsumableFontSize(size)
             frame.foodLabel:SetFont(fontPath, flSize, "OUTLINE")
             frame.foodHeartyBadge:SetFont(fontPath, flSize, "OUTLINE")
         end
@@ -3659,15 +3674,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             end
         end
         db.dbVersion = DB_VERSION
-
-        -- Login message for missing consumables
-        C_Timer.After(5, function()
-            if db.showLoginMessages ~= false then
-                print(
-                    "|cff00ccffBuffReminders:|r There are a lot of new consumables for Midnight, and I might have missed some of those. If you notice a missing one, please report it on Discord (|cff7289da/br|r > Join Discord)."
-                )
-            end
-        end)
 
         -- Deep copy defaults for non-defaults tables
         DeepCopyDefault(defaults, db)

@@ -1552,6 +1552,26 @@ local function CreateOptionsPanel()
 
         -- Item display mode (consumable only, grouped with icon options)
         if category == "consumable" then
+            -- Consumable text scale (count + quality labels as % of icon size)
+            local consumableTextScaleHolder = Components.Slider(catContent, {
+                label = "Text scale",
+                min = 5,
+                max = 80,
+                step = 1,
+                suffix = "%",
+                get = function()
+                    return BR.Config.Get("defaults.consumableTextScale", 20)
+                end,
+                tooltip = {
+                    title = "Consumable text scale",
+                    desc = "Font size for item counts and quality (R1/R2/R3) labels as a percentage of icon size.",
+                },
+                onChange = function(val)
+                    BR.Config.Set("defaults.consumableTextScale", val)
+                end,
+            })
+            catLayout:Add(consumableTextScaleHolder, nil, COMPONENT_GAP)
+
             local updateDisplayModePreview -- forward declaration for preview update
             local updateSubIconSideVisibility -- forward declaration for sub-icon side visibility
             local displayModeHolder = Components.Dropdown(catContent, {
