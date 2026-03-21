@@ -8,6 +8,8 @@ local addonName, BR = ...
 ---@field iconSize number
 ---@field iconWidth? number
 ---@field textSize? number
+---@field textOffsetX? number
+---@field textOffsetY? number
 ---@field iconAlpha number
 ---@field textAlpha number
 ---@field textColor number[]
@@ -567,6 +569,8 @@ local function GetCategorySettings(category)
             iconSize = globalDefaults.iconSize or 64,
             iconWidth = globalDefaults.iconWidth,
             textSize = globalDefaults.textSize, -- nil = auto (derived from iconSize)
+            textOffsetX = globalDefaults.textOffsetX or 0,
+            textOffsetY = globalDefaults.textOffsetY or 0,
             iconAlpha = globalDefaults.iconAlpha or 1,
             textAlpha = globalDefaults.textAlpha or 1,
             textColor = globalDefaults.textColor or { 1, 1, 1 },
@@ -598,6 +602,8 @@ local function GetCategorySettings(category)
         result.iconSize = (catSettings and catSettings.iconSize) or 64
         result.iconWidth = catSettings and catSettings.iconWidth
         result.textSize = (catSettings and catSettings.textSize) -- nil = auto
+        result.textOffsetX = (catSettings and catSettings.textOffsetX) or 0
+        result.textOffsetY = (catSettings and catSettings.textOffsetY) or 0
         result.iconAlpha = (catSettings and catSettings.iconAlpha) or 1
         result.textAlpha = (catSettings and catSettings.textAlpha) or 1
         result.textColor = (catSettings and catSettings.textColor) or { 1, 1, 1 }
@@ -611,6 +617,8 @@ local function GetCategorySettings(category)
         result.iconSize = globalDefaults.iconSize or 64
         result.iconWidth = globalDefaults.iconWidth
         result.textSize = globalDefaults.textSize -- nil = auto
+        result.textOffsetX = globalDefaults.textOffsetX or 0
+        result.textOffsetY = globalDefaults.textOffsetY or 0
         result.iconAlpha = globalDefaults.iconAlpha or 1
         result.textAlpha = globalDefaults.textAlpha or 1
         result.textColor = globalDefaults.textColor or { 1, 1, 1 }
@@ -1062,7 +1070,7 @@ local function CreateBuffFrame(buff, category)
     local textColor = catSettings.textColor or { 1, 1, 1 }
     local textAlpha = catSettings.textAlpha or 1
     frame.count = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalLarge")
-    frame.count:SetPoint("CENTER", 0, 0)
+    frame.count:SetPoint("CENTER", catSettings.textOffsetX or 0, catSettings.textOffsetY or 0)
     frame.count:SetTextColor(textColor[1], textColor[2], textColor[3], textAlpha)
     frame.count:SetFont(fontPath, GetFontSize(1, catSettings.textSize, catSettings.iconSize), "OUTLINE")
 
@@ -2678,6 +2686,10 @@ local function UpdateVisuals()
         local width = GetEffectiveWidth(catSettings.iconWidth, size)
         frame:SetSize(width, size)
         frame.count:SetFont(fontPath, GetFrameFontSize(frame, 1), "OUTLINE")
+
+        -- Text position offset
+        frame.count:ClearAllPoints()
+        frame.count:SetPoint("CENTER", catSettings.textOffsetX or 0, catSettings.textOffsetY or 0)
 
         -- Text color and alpha
         local tc = catSettings.textColor or { 1, 1, 1 }

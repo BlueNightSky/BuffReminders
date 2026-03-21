@@ -134,6 +134,8 @@ local CategorySettingKeys = {
     iconZoom = "VisualsRefresh",
     borderSize = "VisualsRefresh",
     textSize = "VisualsRefresh",
+    textOffsetX = "VisualsRefresh",
+    textOffsetY = "VisualsRefresh",
     iconAlpha = "VisualsRefresh",
     textAlpha = "VisualsRefresh",
     textColor = "VisualsRefresh",
@@ -170,8 +172,9 @@ local CategorySettingKeys = {
     glowXOffset = "VisualsRefresh",
     glowYOffset = "VisualsRefresh",
     split = "FramesReparent",
-    clickable = nil, -- No auto-refresh, handled manually via UpdateClickOverlays
-    clickableHighlight = nil, -- No auto-refresh, handled manually via UpdateClickOverlays
+    position = false, -- No auto-refresh, saved directly by movers
+    clickable = false, -- No auto-refresh, handled manually via UpdateClickOverlays
+    clickableHighlight = false, -- No auto-refresh, handled manually via UpdateClickOverlays
     showOnlyOnReadyCheck = "DisplayRefresh",
 }
 
@@ -183,6 +186,8 @@ local DefaultSettingKeys = {
     iconZoom = "VisualsRefresh",
     borderSize = "VisualsRefresh",
     textSize = "VisualsRefresh",
+    textOffsetX = "VisualsRefresh",
+    textOffsetY = "VisualsRefresh",
     iconAlpha = "VisualsRefresh",
     textAlpha = "VisualsRefresh",
     textColor = "VisualsRefresh",
@@ -250,7 +255,7 @@ local DynamicRoots = {
 ---Check if a config path is valid
 ---@param segments string[] Path segments
 ---@return boolean isValid
----@return string? refreshType
+---@return string|false|nil refreshType
 local function ValidatePath(segments)
     if #segments == 0 then
         return false, nil
@@ -313,53 +318,8 @@ local function ValidatePath(segments)
         if #segments == 3 then
             local setting = segments[3]
             -- Check if it's a known category setting key (including those with nil refresh)
-            local knownKeys = {
-                "position",
-                "iconSize",
-                "iconWidth",
-                "iconZoom",
-                "borderSize",
-                "textSize",
-                "iconAlpha",
-                "textAlpha",
-                "textColor",
-                "showExpirationGlow",
-                "expirationThreshold",
-                "spacing",
-                "growDirection",
-                "showBuffReminder",
-                "buffTextSize",
-                "showText",
-                "useCustomAppearance",
-                "useCustomGlow",
-                "glowType",
-                "glowColor",
-                "glowSize",
-                "glowPixelLines",
-                "glowPixelFrequency",
-                "glowPixelLength",
-                "glowAutocastParticles",
-                "glowAutocastFrequency",
-                "glowAutocastScale",
-                "glowBorderFrequency",
-                "glowProcDuration",
-                "glowProcStartAnim",
-                "glowProcUseCustomColor",
-                "glowXOffset",
-                "glowYOffset",
-                "priority",
-                "split",
-                "clickable",
-                "clickableHighlight",
-                "subIconSide",
-                "showOnlyOnReadyCheck",
-                "anchorFrame",
-                "anchorPoint",
-            }
-            for _, key in ipairs(knownKeys) do
-                if setting == key then
-                    return true, CategorySettingKeys[setting]
-                end
+            if CategorySettingKeys[setting] ~= nil then
+                return true, CategorySettingKeys[setting]
             end
             return false, nil
         end
@@ -378,7 +338,7 @@ end
 ---Check if a config path is valid and get its refresh type
 ---@param path string Dot-separated path
 ---@return boolean isValid
----@return string? refreshType
+---@return string|false|nil refreshType
 function BR.Config.IsValidPath(path)
     local segments = {}
     for segment in path:gmatch("[^.]+") do
@@ -564,6 +524,8 @@ local AppearanceKeys = {
     iconSize = true,
     iconWidth = true,
     textSize = true,
+    textOffsetX = true,
+    textOffsetY = true,
     iconAlpha = true,
     textAlpha = true,
     textColor = true,
