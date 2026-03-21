@@ -618,7 +618,7 @@ local function UpdateConsumableButtons(frame, actionItems, clickable, startIndex
         return
     end
     startIndex = startIndex or 1
-    if not actionItems or #actionItems < startIndex + 1 then
+    if not actionItems or #actionItems < startIndex then
         if frame.actionButtons then
             for _, btn in ipairs(frame.actionButtons) do
                 btn._br_visible = false
