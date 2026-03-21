@@ -1968,7 +1968,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         end
     end
 
-    if (entry.displayType ~= "text" and entry.displayType ~= "expiring") or entry.isEating then
+    if entry.displayType ~= "text" and entry.displayType ~= "expiring" and not entry.isEating then
         return
     end
     if not BUFF_KEY_TO_CATEGORY[frame.key] or not frame:IsShown() then
@@ -3940,6 +3940,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Invalidate caches when player changes spec
         BR.BuffState.InvalidateSpellCache()
         BR.PetHelpers.InvalidatePetActions()
+        BR.SecureButtons.InvalidateConsumableCache()
         BR.SecureButtons.RefreshOverlaySpells()
         UpdateDisplay() -- cache invalidation + immediate feedback
         -- Spells can become available shortly after spec swap; refresh once more
