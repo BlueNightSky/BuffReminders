@@ -916,16 +916,6 @@ local function CreateOptionsPanel()
                     OnCategoryVisibilityChange()
                     Components.RefreshAll()
                 end,
-                disabledSubToggles = category == "consumable" and {
-                    pvpType = {
-                        arena = {
-                            tooltip = {
-                                title = "Arena",
-                                desc = "Consumables cannot be used in arena",
-                            },
-                        },
-                    },
-                } or nil,
             })
             catLayout:Add(visToggles, nil, SECTION_GAP)
 
@@ -1094,16 +1084,6 @@ local function CreateOptionsPanel()
                     onChange = function()
                         UpdateDisplay()
                     end,
-                    disabledSubToggles = {
-                        pvpType = {
-                            arena = {
-                                tooltip = {
-                                    title = "Arena",
-                                    desc = "Consumables cannot be used in arena",
-                                },
-                            },
-                        },
-                    },
                 })
                 local origVisRefresh = freeVisToggles.Refresh
                 function freeVisToggles:Refresh()

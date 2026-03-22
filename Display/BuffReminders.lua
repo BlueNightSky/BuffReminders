@@ -384,7 +384,7 @@ local defaults = {
             housing = false,
             pvp = true,
             hideInPvPMatch = true,
-            pvpType = { arena = false, bg = true },
+            pvpType = { arena = true, bg = true },
             scenarioDifficulty = {
                 delves = true,
                 others = false,
@@ -3028,7 +3028,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 30
+        local DB_VERSION = 31
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3668,6 +3668,14 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     if db.defaults.freeConsumableVisibility then
                         db.defaults.freeConsumableVisibility.hideInPvPMatch = nil
                     end
+                end
+            end,
+            -- [31] Arena consumable restriction now handled at data layer (disabledInCompetitivePvP);
+            -- re-enable the arena toggle so healthstones can show via category visibility.
+            [31] = function()
+                local vis = db.categoryVisibility and db.categoryVisibility.consumable
+                if vis and vis.pvpType and vis.pvpType.arena == false then
+                    vis.pvpType.arena = true
                 end
             end,
         }

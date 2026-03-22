@@ -99,6 +99,7 @@ local inPvPPrepPhase = false
 
 -- Difficulty cache (invalidated alongside content type)
 local cachedDifficultyKey = nil
+local cachedCompetitivePvP = nil -- arena or rated BG
 
 -- Legacy loot cache (populated alongside content type, invalidated together)
 local cachedIsLegacyInstance = nil
@@ -1151,6 +1152,23 @@ local function IsFreeConsumableVisible(db)
     return true
 end
 
+---Check if the player is in competitive PvP (arena or rated battleground)
+---Consumables flagged disabledInCompetitivePvP are hidden here.
+---@return boolean
+local function IsInCompetitivePvP()
+    if cachedCompetitivePvP ~= nil then
+        return cachedCompetitivePvP
+    end
+    local contentType = GetCurrentContentType()
+    if contentType ~= "pvp" then
+        cachedCompetitivePvP = false
+        return false
+    end
+    local result = cachedInstanceType == "arena" or C_PvP.IsRatedMap() == true
+    cachedCompetitivePvP = result
+    return result
+end
+
 ---Check if player is missing a consumable buff, weapon enchant, or inventory item (returns true if missing)
 ---@param buff table Consumable buff definition
 ---@return boolean shouldShow
@@ -1688,6 +1706,7 @@ function BuffState.Refresh()
     -- In follow mode, healthstones use consumable category content gates (without ready check)
     local consumableContentVisible = freeMode == "follow" and IsCategoryVisibleForContent("consumable", true) or false
     local freeRcMode = db.defaults and db.defaults.healthstoneVisibility or "readyCheck"
+    local competitivePvP = IsInCompetitivePvP()
     for i, buff in ipairs(Consumables) do
         local entry = GetOrCreateEntry(buff.key, "consumable", i)
         local settingKey = buff.groupId or buff.key
@@ -1709,6 +1728,7 @@ function BuffState.Refresh()
             (not isAuraRestricted or IsAuraTrackable(buff) or useGlowDet)
             and IsBuffEnabled(settingKey)
             and (consumableVisible or isFreeConsumable or (buff.freeConsumable and consumableContentVisible))
+            and not (competitivePvP and buff.disabledInCompetitivePvP)
             and freeReadyCheckOk
             and hasCaster
             and PassesPreChecks(buff, nil, db)
@@ -1935,6 +1955,7 @@ function BuffState.InvalidateContentTypeCache()
     cachedContentType = nil
     cachedInstanceType = nil
     cachedDifficultyKey = nil
+    cachedCompetitivePvP = nil
     cachedIsLegacyInstance = nil
     -- Note: inPvPPrepPhase is NOT reset here — it's managed explicitly by
     -- SetPvPPrepPhase() calls from PLAYER_ENTERING_WORLD and PVP_MATCH_STATE_CHANGED.

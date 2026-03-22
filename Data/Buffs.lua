@@ -102,6 +102,7 @@ local min = math.min
 ---@field consumableCategory? string Category key in BR.CONSUMABLE_ITEMS for bag scanning (only set when items exist)
 ---@field freeConsumable? boolean Bypass content gates (always show when enabled)
 ---@field permanentRuneItemIDs? number[] Item IDs that, if in bags, make this a free consumable (bypass content gates)
+---@field disabledInCompetitivePvP? boolean Unusable in arenas and rated BGs
 
 ---@class BuffGroup
 ---@field displayName string
@@ -772,6 +773,8 @@ BR.BUFF_TABLES = {
     },
     ---@type CustomBuff[]
     custom = {},
+    -- Consumables are disabled in arenas and rated BGs (disabledInCompetitivePvP = true)
+    -- unless explicitly allowed (e.g. healthstone). See IsInCompetitivePvP() in State.lua.
     ---@type ConsumableBuff[]
     consumable = {
         -- Augment Rune (The War Within + Midnight)
@@ -791,6 +794,7 @@ BR.BUFF_TABLES = {
             permanentRuneItemIDs = { 243191, 259085 }, -- Ethereal (TWW), Void-Touched (Midnight)
             groupId = "rune",
             consumableCategory = "rune",
+            disabledInCompetitivePvP = true,
         },
         -- Flasks (The War Within + Midnight)
         {
@@ -822,6 +826,7 @@ BR.BUFF_TABLES = {
             overlayText = "NO\nFLASK",
             groupId = "flask",
             consumableCategory = "flask",
+            disabledInCompetitivePvP = true,
         },
         -- Food (all expansions - detected by icon ID)
         {
@@ -833,6 +838,7 @@ BR.BUFF_TABLES = {
             consumableCategory = "food",
             displayIcon = 136000,
             visibilityCondition = IsNotEarthen,
+            disabledInCompetitivePvP = true,
         },
         -- Sanguithorn Tea (additional food, stacks with regular food)
         {
@@ -846,6 +852,7 @@ BR.BUFF_TABLES = {
             eatingSpellID = 1277461,
             eatingIconID = 7548956,
             visibilityCondition = IsNotEarthen,
+            disabledInCompetitivePvP = true,
         },
         -- Delve Food (only when inside a delve with Brann or Valeera)
         {
@@ -860,6 +867,7 @@ BR.BUFF_TABLES = {
                 desc = "Only shown inside delves when Brann or Valeera are in your party.\n\nExpiration glow is disabled for this buff because its short 10-minute duration would cause it to always glow.",
             },
             visibilityCondition = BR.IsInDelve,
+            disabledInCompetitivePvP = true,
         },
         -- Healthstone (checks inventory, free consumable for warlocks)
         {
@@ -896,6 +904,7 @@ BR.BUFF_TABLES = {
                 433583, -- Rite of Adjuration
                 433568, -- Rite of Sanctification
             },
+            disabledInCompetitivePvP = true,
         },
         -- Weapon Buff (Off-Hand) - only shown when off-hand slot has a weapon
         {
@@ -918,6 +927,7 @@ BR.BUFF_TABLES = {
             visibilityCondition = function()
                 return BR.BuffState.HasOffHandWeapon()
             end,
+            disabledInCompetitivePvP = true,
         },
     },
 }
