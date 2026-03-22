@@ -325,11 +325,16 @@ local ACTION_ICON_SCALE = 0.45
 local ACTION_ICON_MIN = 18
 local ACTION_ICON_OFFSET = -6
 
--- Quality text and colors for crafted consumables (rank 1/2/3)
-local QUALITY_INFO = {
-    [1] = { text = "R1", r = 0.73, g = 0.46, b = 0.26 }, -- Bronze
-    [2] = { text = "R2", r = 0.75, g = 0.75, b = 0.75 }, -- Silver
-    [3] = { text = "R3", r = 1.00, g = 0.82, b = 0.00 }, -- Gold
+-- Badge text → color for buff frame bottom-left overlay (hearty + quality + fleeting badges)
+-- R1 = best (gold), R2 = middle (silver), R3 = lowest (bronze), F1/F2/F3 = fleeting, H = hearty
+local BADGE_COLORS = {
+    H = { r = 0.4, g = 0.7, b = 1 }, -- Hearty (cyan)
+    F1 = { r = 0.4, g = 0.7, b = 1 }, -- Fleeting R1 (cyan)
+    F2 = { r = 0.4, g = 0.7, b = 1 }, -- Fleeting R2 (cyan)
+    F3 = { r = 0.4, g = 0.7, b = 1 }, -- Fleeting R3 (cyan)
+    R1 = { r = 1.00, g = 0.82, b = 0.00 }, -- Gold (highest)
+    R2 = { r = 0.75, g = 0.75, b = 0.75 }, -- Silver
+    R3 = { r = 0.73, g = 0.46, b = 0.26 }, -- Bronze (lowest)
 }
 
 ---Compute consumable text font size from scale percentage.
@@ -339,28 +344,6 @@ local function ComputeConsumableFontSize(mainIconSize)
     local d = BR.profile and BR.profile.defaults
     local scale = d and d.consumableTextScale or 20
     return max(6, floor(mainIconSize * scale / 100))
-end
-
----Set or hide a quality pip overlay text based on crafted quality.
----@param overlay FontString The overlay text to update
----@param craftedQuality number? The crafted quality tier (1-3) or nil
----@param size number The parent icon size (used for auto font sizing fallback)
----@param fontSize number? Explicit font size (from ComputeConsumableFontSize)
-local function SetQualityOverlay(overlay, craftedQuality, size, fontSize)
-    local info = craftedQuality and QUALITY_INFO[craftedQuality]
-    if info then
-        local fontPath = BR.Display.GetFontPath()
-        fontSize = fontSize or max(8, size * 0.25)
-        overlay:SetFont(fontPath, fontSize, "OUTLINE")
-        overlay:SetText(info.text)
-        overlay:SetTextColor(info.r, info.g, info.b, 1)
-        -- Position in top-left corner, kept inside icon boundaries
-        overlay:ClearAllPoints()
-        overlay:SetPoint("TOPLEFT", overlay:GetParent(), "TOPLEFT", 2, -2)
-        overlay:Show()
-    else
-        overlay:Hide()
-    end
 end
 
 ---Create a small SecureActionButton for the consumable item row.
@@ -404,9 +387,6 @@ local function CreateActionButton()
     btn.highlight:SetAllPoints()
     btn.highlight:SetTexCoord(BR.TEXCOORD_INSET, 1 - BR.TEXCOORD_INSET, BR.TEXCOORD_INSET, 1 - BR.TEXCOORD_INSET)
     btn.highlight:SetColorTexture(1, 1, 1, 0.2)
-
-    btn.qualityOverlay = btn:CreateFontString(nil, "OVERLAY")
-    btn.qualityOverlay:Hide()
 
     btn:SetScript("OnEnter", function(self)
         if not BR.profile or not BR.profile.defaults then
@@ -460,7 +440,8 @@ local function RefreshConsumableCache()
             local itemID = C_Container.GetContainerItemID(bag, slot)
             if itemID then
                 for category, allowedSet in pairs(itemSets) do
-                    if allowedSet[itemID] and not (buckets[category] and buckets[category][itemID]) then
+                    local allowedEntry = allowedSet[itemID]
+                    if allowedEntry and not (buckets[category] and buckets[category][itemID]) then
                         if not buckets[category] then
                             buckets[category] = {}
                         end
@@ -469,29 +450,15 @@ local function RefreshConsumableCache()
                         if count > 0 then
                             local info = C_Container.GetContainerItemInfo(bag, slot)
                             local icon = info and info.iconFileID or nil
-                            local itemLink = info and info.hyperlink
-                            local cq = nil
-                            if itemLink then
-                                -- Parse crafted quality tier from the embedded atlas in the item link
-                                -- e.g. |A:Professions-ChatIcon-Quality-Tier2:17:15::1|a → tier 2
-                                local tier = tostring(itemLink):match("Professions%-ChatIcon%-Quality%-Tier(%d)")
-                                if tier then
-                                    cq = tonumber(tier)
-                                end
-                            end
                             local bucket = {
                                 itemID = itemID,
                                 count = count,
                                 icon = icon,
-                                craftedQuality = cq,
                             }
-                            -- Read food stat label and hearty flag from item table
-                            if category == "food" then
-                                local entry = allowedSet[itemID]
-                                if type(entry) == "table" then
-                                    bucket.foodLabel = entry.label
-                                    bucket.foodHearty = entry.hearty
-                                end
+                            -- Read stat label and badge from item table
+                            if type(allowedEntry) == "table" then
+                                bucket.statLabel = allowedEntry.label
+                                bucket.badge = allowedEntry.badge
                             end
                             -- Store the spell this item casts (for auto-remember reverse lookup)
                             local okSpell, _, useSpellID = pcall(GetItemSpell, itemID)
@@ -519,17 +486,17 @@ local function RefreshConsumableCache()
         local allowedSet = itemSets[category]
         local rememberedSpell = BR.ConsumableMemory.GetRemembered(specId, category)
         tsort(items, function(a, b)
-            -- If items have numeric priority values, sort by priority first (lower = better)
-            -- Numeric priorities (e.g., fleeting flasks = 1) come before non-numeric (true = regular)
+            -- If items have priority values, sort by priority first (lower = better)
+            -- Priority entries (e.g., fleeting flasks) come before non-priority (regular)
             local aPri = allowedSet and allowedSet[a.itemID]
             local bPri = allowedSet and allowedSet[b.itemID]
-            local aNum = type(aPri) == "number"
-            local bNum = type(bPri) == "number"
-            if aNum ~= bNum then
-                return aNum
+            local aNum = type(aPri) == "number" and aPri or (type(aPri) == "table" and aPri.priority) or nil
+            local bNum = type(bPri) == "number" and bPri or (type(bPri) == "table" and bPri.priority) or nil
+            if (aNum ~= nil) ~= (bNum ~= nil) then
+                return aNum ~= nil
             end
-            if aNum and bNum and aPri ~= bPri then
-                return aPri < bPri
+            if aNum and bNum and aNum ~= bNum then
+                return aNum < bNum
             end
             -- Remembered consumable spell for this spec sorts above non-remembered
             if rememberedSpell then
@@ -609,8 +576,6 @@ local function UpdateConsumableButtons(frame, actionItems, clickable, startIndex
 
         btn.itemID = item.itemID
         btn.icon:SetTexture(item.icon or 134400)
-        btn._br_craftedQuality = item.craftedQuality
-
         -- Dirty tracking: skip redundant SetAttribute calls
         if btn._br_action_item ~= item.itemID then
             if frame.key == "weaponBuff" or frame.key == "weaponBuffOH" then
@@ -853,7 +818,6 @@ local function SyncSecureButtons()
                                         btn._br_count and btn._br_count > 1 and tostring(btn._br_count) or ""
                                     )
                                     btn.count:SetFont(fontPath, cFontSize, "OUTLINE")
-                                    SetQualityOverlay(btn.qualityOverlay, btn._br_craftedQuality, size, cFontSize)
                                     btn._br_needs_sync = false
                                 end
                                 -- Activate combat state driver on first show (buttons start with "hide" driver)
@@ -1355,7 +1319,7 @@ BR.SecureButtons = {
     HideAllSecureFrames = HideAllSecureFrames,
     HideSecureFramesForCatKey = HideSecureFramesForCatKey,
     ScheduleSecureSync = ScheduleSecureSync,
-    SetQualityOverlay = SetQualityOverlay,
     ComputeConsumableFontSize = ComputeConsumableFontSize,
+    BADGE_COLORS = BADGE_COLORS,
     ReapplyPetSpecIconIfHovered = ReapplyPetSpecIconIfHovered,
 }

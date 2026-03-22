@@ -103,8 +103,8 @@ local addonName, BR = ...
 ---@field count FontString
 ---@field stackCount FontString
 ---@field buffText? FontString
----@field foodLabel? FontString
----@field foodHeartyBadge? FontString
+---@field statLabel? FontString                  -- Consumable stat label (top-left)
+---@field badgeLabel? FontString                  -- Consumable badge (bottom-left): hearty "H" or quality R1/R2/R3
 ---@field isPlayerBuff? boolean
 ---@field buffCategory? CategoryName
 ---@field glowTexture? Texture
@@ -122,7 +122,6 @@ local addonName, BR = ...
 ---@field _br_pet_name_text? FontString    -- Pet name label below icon
 ---@field _br_pet_family_text? FontString  -- Pet spec label below name
 ---@field _br_pet_extra_text? FontString   -- Spirit Beast label below spec
----@field qualityOverlay? FontString         -- Quality rank text (R1/R2/R3) for consumable frames
 ---@field _cachedItems? table|false         -- Per-cycle cache for GetConsumableActionItems result
 
 -- Lua stdlib locals (avoid repeated global lookups in hot paths)
@@ -854,11 +853,14 @@ end
 ---@param cachedGlow? {typeIndex: number, color: number[], size: number}
 ---@return boolean true (for anyVisible chaining)
 local function ShowTextFrame(frame, overlayText, shouldGlow, category, cachedGlow)
-    -- Hide stackCount/qualityOverlay — ShowTextFrame can be called from fallback paths
+    -- Hide stackCount/overlays — ShowTextFrame can be called from fallback paths
     -- (UpdateFallbackDisplay) that don't go through RenderVisibleEntry's cleanup.
     frame.stackCount:Hide()
-    if frame.qualityOverlay then
-        frame.qualityOverlay:Hide()
+    if frame.statLabel then
+        frame.statLabel:Hide()
+    end
+    if frame.badgeLabel then
+        frame.badgeLabel:Hide()
     end
     if overlayText then
         frame.count:SetFont(fontPath, GetFrameFontSize(frame, OVERLAY_TEXT_SCALE), "OUTLINE")
@@ -1052,9 +1054,6 @@ local function CreateBuffFrame(buff, category)
     local texture = displayIcon or GetBuffTexture(buff.spellID, buff.iconByRole)
     CreateIconTextures(frame, texture)
 
-    frame.qualityOverlay = frame:CreateFontString(nil, "OVERLAY")
-    frame.qualityOverlay:Hide()
-
     -- Register with Masque — provide Normal texture so skins like Caith can style it
     if masqueGroup then
         masqueGroup:AddButton(frame, {
@@ -1136,9 +1135,6 @@ local function GetOrCreateExtraFrame(frame, index)
     extra:SetSize(iconWidth, iconSize)
 
     CreateIconTextures(extra, nil)
-
-    extra.qualityOverlay = extra:CreateFontString(nil, "OVERLAY")
-    extra.qualityOverlay:Hide()
 
     if masqueGroup then
         masqueGroup:AddButton(extra, {
@@ -1733,47 +1729,54 @@ end
 -- Eating icon texture ID (from State.lua, matches the eating channel aura icon)
 local EATING_ICON = BR.EATING_AURA_ICON
 
----Apply food visual styling (stat label + hearty badge) to a frame.
+---Apply consumable overlays (stat label top-left, badge bottom-left) to a frame.
 ---@param frame table
----@param label string? Food stat label (e.g. "M/V", "Crit")
----@param hearty boolean? Whether the food is hearty
-local function ApplyFoodFrameStyle(frame, label, hearty, fontSize)
-    if not label then
+---@param item table Bucket item with .statLabel and .badge fields
+---@param fontSize number? Explicit font size (computed from icon width if nil)
+local function ApplyConsumableOverlays(frame, item, fontSize)
+    if not item.statLabel and not item.badge then
         return
     end
     if not fontSize then
         fontSize = BR.SecureButtons.ComputeConsumableFontSize(frame:GetWidth())
     end
-    if not frame.foodLabel then
-        frame.foodLabel = frame:CreateFontString(nil, "OVERLAY")
-        frame.foodLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
+    if item.statLabel then
+        if not frame.statLabel then
+            frame.statLabel = frame:CreateFontString(nil, "OVERLAY")
+            frame.statLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
+        end
+        frame.statLabel:SetFont(fontPath, fontSize, "OUTLINE")
+        frame.statLabel:SetTextColor(1, 1, 1, 1)
+        frame.statLabel:SetText(item.statLabel)
+        frame.statLabel:Show()
+    elseif frame.statLabel then
+        frame.statLabel:Hide()
     end
-    frame.foodLabel:SetFont(fontPath, fontSize, "OUTLINE")
-    frame.foodLabel:SetTextColor(1, 1, 1, 1)
-    frame.foodLabel:SetText(label)
-    frame.foodLabel:Show()
-    if not frame.foodHeartyBadge then
-        frame.foodHeartyBadge = frame:CreateFontString(nil, "OVERLAY")
-        frame.foodHeartyBadge:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 2, 2)
-    end
-    if hearty then
-        frame.foodHeartyBadge:SetFont(fontPath, fontSize, "OUTLINE")
-        frame.foodHeartyBadge:SetTextColor(0.4, 0.7, 1, 1)
-        frame.foodHeartyBadge:SetText("H")
-        frame.foodHeartyBadge:Show()
-    else
-        frame.foodHeartyBadge:Hide()
+    if item.badge then
+        local bc = BR.SecureButtons.BADGE_COLORS[item.badge]
+        if bc then
+            if not frame.badgeLabel then
+                frame.badgeLabel = frame:CreateFontString(nil, "OVERLAY")
+                frame.badgeLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 2, 2)
+            end
+            frame.badgeLabel:SetFont(fontPath, fontSize, "OUTLINE")
+            frame.badgeLabel:SetTextColor(bc.r, bc.g, bc.b, 1)
+            frame.badgeLabel:SetText(item.badge)
+            frame.badgeLabel:Show()
+        end
+    elseif frame.badgeLabel then
+        frame.badgeLabel:Hide()
     end
 end
 
----Clear food visual styling from a frame.
+---Clear consumable overlays from a frame.
 ---@param frame table
-local function ClearFoodFrameStyle(frame)
-    if frame.foodLabel then
-        frame.foodLabel:Hide()
+local function ClearConsumableOverlays(frame)
+    if frame.statLabel then
+        frame.statLabel:Hide()
     end
-    if frame.foodHeartyBadge then
-        frame.foodHeartyBadge:Hide()
+    if frame.badgeLabel then
+        frame.badgeLabel:Hide()
     end
 end
 
@@ -1809,21 +1812,15 @@ local function ResolveConsumableFrame(frame)
         SetIconDesaturated(frame.icon, false)
         local mainSize = frame:GetWidth()
         local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(mainSize)
-        if frame.qualityOverlay then
-            BR.SecureButtons.SetQualityOverlay(frame.qualityOverlay, items[1].craftedQuality, mainSize, cFontSize)
-        end
         frame.count:Hide()
         frame.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
         frame.stackCount:SetText(items[1].count)
         frame.stackCount:Show()
-        -- Apply food stat label
-        if frame.key == "food" then
-            ApplyFoodFrameStyle(frame, items[1].foodLabel, items[1].foodHearty, cFontSize)
-        end
+        ApplyConsumableOverlays(frame, items[1], cFontSize)
         return "items"
     end
     -- No items: fall back icon to buff definition
-    ClearFoodFrameStyle(frame)
+    ClearConsumableOverlays(frame)
     local def = frame.buffDef
     local fallback = def and (def.displayIcon or def.buffIconID)
     if type(fallback) == "table" then
@@ -1831,9 +1828,6 @@ local function ResolveConsumableFrame(frame)
     end
     if fallback then
         frame.icon:SetTexture(fallback)
-    end
-    if frame.qualityOverlay then
-        frame.qualityOverlay:Hide()
     end
     if (BR.profile.defaults or {}).showConsumablesWithoutItems then
         SetIconDesaturated(frame.icon, true)
@@ -1846,14 +1840,11 @@ end
 -- Returns true if the frame was shown, false if it was skipped (e.g. consumable
 -- with no bag items and showConsumablesWithoutItems off).
 local function RenderVisibleEntry(frame, entry)
-    -- Clear food styling at the start of each render (re-applied by relevant paths below)
-    ClearFoodFrameStyle(frame)
+    -- Clear consumable overlays at the start of each render (re-applied by relevant paths below)
+    ClearConsumableOverlays(frame)
 
-    -- Hide stack count and quality overlay by default; only the consumable-with-items path shows them
+    -- Hide stack count by default; only the consumable-with-items path shows it
     frame.stackCount:Hide()
-    if frame.qualityOverlay then
-        frame.qualityOverlay:Hide()
-    end
 
     -- Eating override: state provides isEating as a snapshot, so the display
     -- never reads a live flag that can change mid-cycle.
@@ -1924,15 +1915,15 @@ local function RenderVisibleEntry(frame, entry)
         frame.count:Show()
         frame:Show()
         SetExpirationGlow(frame, entry.shouldGlow, entry.category, cachedGlow)
-        -- Show food stat label for expiring food (resolve from cached items)
-        if entry.displayType == "expiring" and frame.key == "food" then
+        -- Show consumable stat label for expiring consumables (resolve from cached items)
+        if entry.displayType == "expiring" and BUFF_KEY_TO_CATEGORY[frame.key] then
             local items = frame._cachedItems
             if items == nil then
                 items = BR.SecureButtons.GetConsumableActionItems(frame.buffDef) or false
                 frame._cachedItems = items
             end
             if items and items[1] then
-                ApplyFoodFrameStyle(frame, items[1].foodLabel, items[1].foodHearty)
+                ApplyConsumableOverlays(frame, items[1])
             end
         end
     else -- "text"
@@ -1960,12 +1951,7 @@ local function RenderVisibleEntry(frame, entry)
     if not ShouldShowText(frame.buffCategory) then
         frame.count:Hide()
         frame.stackCount:Hide()
-        if frame.foodLabel then
-            frame.foodLabel:Hide()
-        end
-        if frame.foodHeartyBadge then
-            frame.foodHeartyBadge:Hide()
-        end
+        ClearConsumableOverlays(frame)
     end
     return true
 end
@@ -2018,9 +2004,6 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra:SetParent(frame)
                 extra:SetSize(size, size)
                 extra.icon:SetTexture(items[i].icon)
-                if extra.qualityOverlay then
-                    BR.SecureButtons.SetQualityOverlay(extra.qualityOverlay, items[i].craftedQuality, size, cFontSize)
-                end
                 extra.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
                 extra.stackCount:SetText(items[i].count > 1 and tostring(items[i].count) or "")
                 extra.stackCount:Show()
@@ -2070,7 +2053,6 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         BR.SecureButtons.UpdateConsumableButtons(frame, nil)
         if displayMode == "expanded" and items and #items > 1 then
             local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
-            local isFood = frame.key == "food"
             local expandedSize = frame:GetWidth()
             local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(expandedSize)
             for i = 2, #items do
@@ -2078,14 +2060,6 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra:SetParent(parentFrame)
                 extra:SetSize(expandedSize, frame:GetHeight())
                 extra.icon:SetTexture(items[i].icon)
-                if extra.qualityOverlay then
-                    BR.SecureButtons.SetQualityOverlay(
-                        extra.qualityOverlay,
-                        items[i].craftedQuality,
-                        expandedSize,
-                        cFontSize
-                    )
-                end
                 extra.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
                 extra.stackCount:SetText(items[i].count)
                 extra.count:Hide()
@@ -2097,12 +2071,10 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 end
                 extra:Show()
                 SetExpirationGlow(extra, entry.shouldGlow, entry.category, cachedGlow)
-                -- Apply food label to expanded extra frames (clear first to handle toggle-off)
-                if isFood then
-                    ClearFoodFrameStyle(extra)
-                    if showText then
-                        ApplyFoodFrameStyle(extra, items[i].foodLabel, items[i].foodHearty, cFontSize)
-                    end
+                -- Apply consumable overlays (clear first to handle toggle-off)
+                ClearConsumableOverlays(extra)
+                if showText then
+                    ApplyConsumableOverlays(extra, items[i], cFontSize)
                 end
                 frameList[#frameList + 1] = extra
             end
@@ -2699,11 +2671,15 @@ local function UpdateVisuals()
         -- Frame alpha
         frame:SetAlpha(catSettings.iconAlpha or 1)
 
-        -- Food label + hearty badge font update
-        if frame.foodLabel then
+        -- Consumable overlay font update
+        if frame.statLabel or frame.badgeLabel then
             local flSize = BR.SecureButtons.ComputeConsumableFontSize(size)
-            frame.foodLabel:SetFont(fontPath, flSize, "OUTLINE")
-            frame.foodHeartyBadge:SetFont(fontPath, flSize, "OUTLINE")
+            if frame.statLabel then
+                frame.statLabel:SetFont(fontPath, flSize, "OUTLINE")
+            end
+            if frame.badgeLabel then
+                frame.badgeLabel:SetFont(fontPath, flSize, "OUTLINE")
+            end
         end
         if frame.buffText then
             -- Raid BUFF! text
@@ -2726,12 +2702,7 @@ local function UpdateVisuals()
         -- Per-category text visibility
         if not ShouldShowText(frame.buffCategory) then
             frame.count:Hide()
-            if frame.foodLabel then
-                frame.foodLabel:Hide()
-            end
-            if frame.foodHeartyBadge then
-                frame.foodHeartyBadge:Hide()
-            end
+            ClearConsumableOverlays(frame)
         end
 
         -- Update extra frames (expanded consumable display mode)
