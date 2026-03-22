@@ -331,6 +331,9 @@ local defaults = {
             housing = false,
             pvp = true,
             hideInPvPMatch = true,
+            raidDifficulty = {
+                lfr = false,
+            },
         },
         presence = {
             openWorld = true,
@@ -340,6 +343,9 @@ local defaults = {
             housing = false,
             pvp = true,
             hideInPvPMatch = true,
+            raidDifficulty = {
+                lfr = false,
+            },
         },
         targeted = {
             openWorld = false,
