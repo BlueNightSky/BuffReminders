@@ -273,6 +273,7 @@ local function ValidatePath(segments)
         or root == "hideAllInVehicle"
         or root == "hideWhileMounted"
         or root == "hideInLegacyInstances"
+        or root == "showMissingCountOnly"
     if isRootSetting then
         if #segments == 1 then
             return true, RootSettings[root]
