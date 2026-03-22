@@ -2802,7 +2802,11 @@ local function CreateOptionsPanel()
     local lockBtn = CreateButton(btnHolder, "Unlock", function()
         BR.Display.ToggleLock()
         Components.RefreshAll()
-    end, { title = "Lock / Unlock", desc = "Unlock to show anchor handles for repositioning buff frames." })
+    end, { title = "Lock / Unlock", desc = "Unlock to show anchor handles for repositioning buff frames." }, {
+        border = { 0.7, 0.58, 0, 1 },
+        borderHover = { 1, 0.82, 0, 1 },
+        text = { 1, 0.82, 0, 1 },
+    })
     lockBtn:SetSize(BTN_WIDTH, 22)
     lockBtn:SetPoint("RIGHT", btnHolder, "CENTER", -4, 0)
 
