@@ -142,8 +142,9 @@ local cachedSpecId = nil
 -- Player role cache (invalidated on PLAYER_SPECIALIZATION_CHANGED)
 local cachedPlayerRole = nil
 
--- Off-hand weapon cache (invalidated on equipment/spec change)
-local cachedHasOffHandWeapon = nil
+-- Off-hand slot type cache (invalidated on equipment/spec change)
+-- Populated together from a single GetInventoryItemID + GetItemInfoInstant call
+local cachedOffHandType = nil -- nil = not yet checked, "weapon" | "shield" | "none"
 
 -- Item ownership cache (invalidated on BAG_UPDATE_DELAYED, PLAYER_EQUIPMENT_CHANGED)
 ---@type table<number, boolean>
@@ -1389,9 +1390,6 @@ function BuffState.Refresh()
     -- Cache Display.IsSpellGlowing once per refresh cycle (State.lua loads before Display)
     cachedIsSpellGlowing = BR.Display and BR.Display.IsSpellGlowing
 
-    -- Invalidate off-hand weapon cache each refresh cycle (cheap lazy re-check)
-    cachedHasOffHandWeapon = nil
-
     -- Reset all entries to not visible
     for _, entry in pairs(BuffState.entries) do
         entry.visible = false
@@ -1961,24 +1959,47 @@ function BuffState.InvalidateSpellCache()
     cachedPlayerRole = nil
 end
 
+local function ResolveOffHandType()
+    if cachedOffHandType == nil then
+        local offhandItemID = GetInventoryItemID("player", 17) -- INVSLOT_OFFHAND
+        if not offhandItemID then
+            cachedOffHandType = "none"
+        else
+            local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(offhandItemID)
+            if itemClassID == 2 then -- Enum.ItemClass.Weapon
+                cachedOffHandType = "weapon"
+            elseif itemClassID == 4 and itemSubClassID == 6 then -- Armor + Shield
+                cachedOffHandType = "shield"
+            else
+                cachedOffHandType = "none"
+            end
+        end
+    end
+end
+
 ---Check if off-hand slot has a weapon (cached)
 ---@return boolean
 function BuffState.HasOffHandWeapon()
-    if cachedHasOffHandWeapon == nil then
-        local offhandItemID = GetInventoryItemID("player", 17) -- INVSLOT_OFFHAND
-        if not offhandItemID then
-            cachedHasOffHandWeapon = false
-        else
-            local _, _, _, _, _, itemClassID = GetItemInfoInstant(offhandItemID)
-            cachedHasOffHandWeapon = itemClassID == 2 -- Enum.ItemClass.Weapon
-        end
-    end
-    return cachedHasOffHandWeapon
+    ResolveOffHandType()
+    return cachedOffHandType == "weapon"
 end
 
----Invalidate off-hand weapon cache (call on PLAYER_EQUIPMENT_CHANGED, PLAYER_SPECIALIZATION_CHANGED)
+---Check if off-hand slot has a shield (cached)
+---@return boolean
+function BuffState.HasShield()
+    ResolveOffHandType()
+    return cachedOffHandType == "shield"
+end
+
+---Get the cached off-hand enchant ID from the current refresh cycle
+---@return number|nil
+function BuffState.GetOffHandEnchantID()
+    return currentWeaponEnchants.offHandID
+end
+
+---Invalidate off-hand weapon/shield cache (call on PLAYER_EQUIPMENT_CHANGED, PLAYER_SPECIALIZATION_CHANGED)
 function BuffState.InvalidateOffHandCache()
-    cachedHasOffHandWeapon = nil
+    cachedOffHandType = nil
 end
 
 ---Invalidate item ownership cache (call on BAG_UPDATE_DELAYED, PLAYER_EQUIPMENT_CHANGED)

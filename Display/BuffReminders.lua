@@ -3780,6 +3780,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateContentTypeCache()
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidateSpecCache()
+        BR.BuffState.InvalidateOffHandCache()
         -- Sync flags with current state (in case of reload)
         inCombat = InCombatLockdown()
         isResting = IsResting()
@@ -3929,6 +3930,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         end
         -- Invalidate caches when player changes spec
         BR.BuffState.InvalidateSpellCache()
+        BR.BuffState.InvalidateOffHandCache()
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.InvalidateConsumableCache()
         BR.SecureButtons.RefreshOverlaySpells()
@@ -3952,6 +3954,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.PetHelpers.InvalidatePetActions()
     elseif event == "PLAYER_EQUIPMENT_CHANGED" then
         BR.BuffState.InvalidateItemCache()
+        BR.BuffState.InvalidateOffHandCache()
         SetDirty()
     elseif event == "BAG_UPDATE_DELAYED" then
         BR.BuffState.InvalidateItemCache()

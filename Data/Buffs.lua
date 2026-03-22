@@ -594,7 +594,7 @@ BR.BUFF_TABLES = {
             buffIdOverride = { 232698, 194249 },
             noExpirationGlow = true, -- Voidform (short duration) replaces Shadowform; don't warn
         },
-        -- Shaman weapon imbues (alphabetical: Earthliving, Flametongue, Windfury)
+        -- Shaman weapon imbues (alphabetical: Earthliving, Flametongue, Tidecaller's Guard, Windfury)
         {
             spellID = 382021,
             key = "earthlivingWeapon",
@@ -612,6 +612,26 @@ BR.BUFF_TABLES = {
             overlayText = "NO\nFT",
             enchantID = 5400,
             groupId = "shamanImbues",
+        },
+        {
+            spellID = 457481,
+            key = "tidecallersGuard",
+            name = "Tidecaller's Guard",
+            class = "SHAMAN",
+            overlayText = "NO\nTG",
+            enchantID = 7528,
+            requireSpecId = 264, -- Restoration
+            groupId = "shamanImbues",
+            customCheck = function()
+                if not IsPlayerSpell(457481) then
+                    return nil
+                end
+                -- Only relevant when a shield is equipped
+                if not BR.BuffState.HasShield() then
+                    return nil
+                end
+                return BR.BuffState.GetOffHandEnchantID() ~= 7528
+            end,
         },
         {
             spellID = 33757,
