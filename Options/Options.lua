@@ -1221,6 +1221,45 @@ local function CreateOptionsPanel()
                 end,
             })
             buffTextSizeHolder:SetPoint("LEFT", reminderHolder, "LEFT", 210, 0)
+
+            local buffTextOffsetXHolder = Components.Slider(catContent, {
+                label = '"BUFF!" X',
+                labelWidth = 60,
+                min = -40,
+                max = 40,
+                get = function()
+                    local cs = db.categorySettings and db.categorySettings.raid
+                    return (cs and cs.buffTextOffsetX) or 0
+                end,
+                enabled = function()
+                    local cs = db.categorySettings and db.categorySettings.raid
+                    return not cs or cs.showBuffReminder ~= false
+                end,
+                onChange = function(val)
+                    BR.Config.Set("categorySettings.raid.buffTextOffsetX", val)
+                end,
+            })
+
+            local buffTextOffsetYHolder = Components.Slider(catContent, {
+                label = '"BUFF!" Y',
+                labelWidth = 60,
+                min = -40,
+                max = 40,
+                get = function()
+                    local cs = db.categorySettings and db.categorySettings.raid
+                    return (cs and cs.buffTextOffsetY) or 0
+                end,
+                enabled = function()
+                    local cs = db.categorySettings and db.categorySettings.raid
+                    return not cs or cs.showBuffReminder ~= false
+                end,
+                onChange = function(val)
+                    BR.Config.Set("categorySettings.raid.buffTextOffsetY", val)
+                end,
+            })
+
+            buffTextOffsetYHolder:SetPoint("LEFT", buffTextOffsetXHolder, "LEFT", 210, 0)
+            catLayout:Add(buffTextOffsetXHolder, nil, COMPONENT_GAP)
         end
 
         -- Click to cast checkbox
