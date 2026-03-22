@@ -307,7 +307,7 @@ local defaults = {
         },
         healthstoneVisibility = "readyCheck",
         consumableDisplayMode = "sub_icons",
-        consumableTextScale = 20,
+        consumableTextScale = 25,
         showConsumableTooltips = false,
         petDisplayMode = "generic", -- "generic" or "expanded"
         petLabels = true,

@@ -1583,7 +1583,7 @@ local function CreateOptionsPanel()
                 step = 1,
                 suffix = "%",
                 get = function()
-                    return BR.Config.Get("defaults.consumableTextScale", 20)
+                    return BR.Config.Get("defaults.consumableTextScale", 25)
                 end,
                 tooltip = {
                     title = "Consumable text scale",

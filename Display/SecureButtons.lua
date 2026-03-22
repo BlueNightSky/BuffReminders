@@ -342,7 +342,7 @@ local BADGE_COLORS = {
 ---@return number fontSize
 local function ComputeConsumableFontSize(mainIconSize)
     local d = BR.profile and BR.profile.defaults
-    local scale = d and d.consumableTextScale or 20
+    local scale = d and d.consumableTextScale or 25
     return max(6, floor(mainIconSize * scale / 100))
 end
 
