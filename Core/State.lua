@@ -1195,6 +1195,7 @@ end
 ---@param buff table Consumable buff definition
 ---@return boolean shouldShow
 ---@return number? remainingTime seconds remaining if buff is present and has a duration
+---@return number? activeSpellID the specific spell ID that matched (for multi-spell consumables)
 local function ShouldShowConsumableBuff(buff)
     -- Check buff auras by spell ID
     if buff.spellID then
@@ -1206,7 +1207,7 @@ local function ShouldShowConsumableBuff(buff)
                 if CM and buff.consumableCategory and not CM.IsFleetingSpell(id) then
                     CM.Remember(GetPlayerSpecId(), buff.consumableCategory, id, true)
                 end
-                return false, remaining -- Has at least one of the consumable buffs
+                return false, remaining, id -- Has at least one of the consumable buffs
             end
         end
     end
@@ -1760,11 +1761,16 @@ function BuffState.Refresh()
                     SetEntryText(entry, buff.overlayText, consGlow)
                 end
             else
-                local shouldShow, remainingTime = ShouldShowConsumableBuff(buff)
+                local shouldShow, remainingTime, activeSpellID = ShouldShowConsumableBuff(buff)
                 if shouldShow then
                     SetEntryText(entry, buff.overlayText, consGlow)
                 elseif not buff.noExpirationGlow and not hideExpiring then
-                    TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow)
+                    if TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow) then
+                        if activeSpellID and type(buff.spellID) == "table" then
+                            local ok, tex = pcall(C_Spell.GetSpellTexture, activeSpellID)
+                            entry.dynamicIcon = ok and tex or nil
+                        end
+                    end
                 end
                 -- Eating state for food entries (display uses this for icon override + countdown)
                 if entry.visible and buff.key == "food" then
