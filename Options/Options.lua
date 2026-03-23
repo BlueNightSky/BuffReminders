@@ -3468,6 +3468,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     local CONTENT_LEFT = 20
     local ROWS_START_Y = -60
     local editingBuff = existingKey and BR.profile.customBuffs[existingKey] or nil
+    local noop = function() end
 
     local existingSpellIDs = {}
     if editingBuff then
@@ -3488,7 +3489,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     })
 
     local spellRows, nameBox, overlayBox
-    local castSpellEditBox, castItemEditBox, macroEditBox, requireItemEditBox
+    local castSpellEditBox, castItemEditBox, macroEditBox, requireItemEditBox, requireItemModeDropdown
 
     modal:SetScript("OnHide", function()
         if spellRows then
@@ -3739,7 +3740,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     requireSpellKnownToggle = Components.Toggle(sectionsFrame, {
         label = "Only if spell known",
         checked = editingBuff and editingBuff.requireSpellKnown or false,
-        onChange = function() end,
+        onChange = noop,
     })
     secLayout:AddRow({ { showIconToggle, 0 }, { requireSpellKnownToggle, 210 } }, COMPONENT_GAP)
 
@@ -3763,7 +3764,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             selected = selectedSpecId,
             width = 130,
             labelWidth = 70,
-            onChange = function() end,
+            onChange = noop,
         })
         specDropdownHolder:SetPoint("TOPLEFT", sectionsFrame, "TOPLEFT", 210, classRowY)
     end
@@ -3803,9 +3804,25 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         requireItemEditBox:SetText(tostring(editingBuff.requireItemID))
     end
 
+    local requireItemModeOptions = {
+        { value = "owned", label = "Equipped/Bags" },
+        { value = "equipped", label = "Equipped" },
+        { value = "bags", label = "In bags" },
+    }
+    local currentRequireItemMode = editingBuff and editingBuff.requireItemMode or "owned"
+    requireItemModeDropdown = Components.Dropdown(sectionsFrame, {
+        label = "",
+        labelWidth = 0,
+        options = requireItemModeOptions,
+        selected = currentRequireItemMode,
+        width = 120,
+        onChange = noop,
+    })
+    requireItemModeDropdown:SetPoint("LEFT", requireItemContainer, "RIGHT", 5, 0)
+
     local requireItemHint = sectionsFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    requireItemHint:SetPoint("LEFT", requireItemContainer, "RIGHT", 5, 0)
-    requireItemHint:SetText("item ID — hide if not owned/equipped")
+    requireItemHint:SetPoint("LEFT", requireItemModeDropdown, "RIGHT", 5, 0)
+    requireItemHint:SetText("item ID — hide if not found")
 
     local glowModeOptions = {
         { value = "whenGlowing", label = "Detect when glowing" },
@@ -3822,7 +3839,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             title = "Action bar glow fallback",
             desc = "Fallback detection using action bar spell glows during M+/PvP/combat when buff API is restricted. Disable if you only want buff presence tracking.",
         },
-        onChange = function() end,
+        onChange = noop,
     })
     secLayout:Add(glowModeDropdown, nil, COMPONENT_GAP)
 
@@ -3874,7 +3891,7 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             end,
         },
         noAutoRefresh = true,
-        onChange = function() end,
+        onChange = noop,
     })
     secLayout:Add(visToggles, nil, COMPONENT_GAP)
 
@@ -4224,6 +4241,8 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
             castItemID = castItemIDValue,
             castMacro = castMacroValue,
             requireItemID = tonumber(strtrim(requireItemEditBox:GetText())) or nil,
+            requireItemMode = requireItemModeDropdown:GetValue() ~= "owned" and requireItemModeDropdown:GetValue()
+                or nil,
             loadConditions = savedLoadConditions,
         }
 
@@ -4236,6 +4255,8 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
         end
 
         modal:Hide()
+        -- requireItemMode may have changed; clear cached item ownership so the new mode is evaluated
+        BR.BuffState.InvalidateItemCache()
         if refreshPanelCallback then
             refreshPanelCallback()
         end

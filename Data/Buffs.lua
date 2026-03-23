@@ -120,7 +120,8 @@ local min = math.min
 ---@field castSpellID? number       -- Spell to cast on click (separate from tracked aura)
 ---@field castItemID? number        -- Item to use on click
 ---@field castMacro? string         -- Raw macro text for click action
----@field requireItemID? number    -- Only show if this item is equipped or in bags
+---@field requireItemID? number    -- Only show if this item is owned/equipped/in bags (see requireItemMode)
+---@field requireItemMode? "owned"|"equipped"|"bags" -- How to check requireItemID: "owned" (default) = bags or equipped, "equipped" = equipped only, "bags" = bags only
 ---@field loadConditions? LoadConditions  -- Per-buff content visibility (nil = show everywhere)
 
 ---Check if the player is NOT an Earthen dwarf (they have permanent Well Fed from Ingest Minerals)

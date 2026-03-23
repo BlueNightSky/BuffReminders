@@ -316,29 +316,52 @@ local function IsPlayerSpellCached(spellID)
     return knows
 end
 
----Check if player has an item equipped or in bags (cached)
+---Check if player has an item equipped (slots 1-19)
 ---@param itemID number
 ---@return boolean
-local function HasItemInBagsOrEquipped(itemID)
+local function HasItemEquipped(itemID)
+    for slot = 1, 19 do
+        if GetInventoryItemID("player", slot) == itemID then
+            return true
+        end
+    end
+    return false
+end
+
+---Check if player has an item in bags (excludes equipped items)
+---@param itemID number
+---@return boolean
+local function HasItemInBags(itemID)
+    local ok, count = pcall(C_Item.GetItemCount, itemID)
+    if not ok or not count or count <= 0 then
+        return false
+    end
+    -- GetItemCount includes equipped items; subtract if equipped
+    if HasItemEquipped(itemID) then
+        count = count - 1
+    end
+    return count > 0
+end
+
+---Check if player has an item based on mode (cached)
+---@param itemID number
+---@param mode? "owned"|"equipped"|"bags" -- "owned" (default) = bags or equipped
+---@return boolean
+local function HasItemByMode(itemID, mode)
     if cachedItemOwnership[itemID] ~= nil then
         return cachedItemOwnership[itemID]
     end
-    local owned = false
-    -- Check bags first via C_Item.GetItemCount
-    local ok, count = pcall(C_Item.GetItemCount, itemID)
-    if ok and count and count > 0 then
-        owned = true
-    else
-        -- Check equipment slots 1-19
-        for slot = 1, 19 do
-            if GetInventoryItemID("player", slot) == itemID then
-                owned = true
-                break
-            end
-        end
+    local result
+    if mode == "equipped" then
+        result = HasItemEquipped(itemID)
+    elseif mode == "bags" then
+        result = HasItemInBags(itemID)
+    else -- "owned" or nil (default)
+        local ok, count = pcall(C_Item.GetItemCount, itemID)
+        result = (ok and count ~= nil and count > 0) or HasItemEquipped(itemID)
     end
-    cachedItemOwnership[itemID] = owned
-    return owned
+    cachedItemOwnership[itemID] = result
+    return result
 end
 
 -- ============================================================================
@@ -1110,7 +1133,7 @@ local function IsFreeConsumable(buff)
     end
     if buff.permanentRuneItemIDs then
         for _, itemID in ipairs(buff.permanentRuneItemIDs) do
-            if HasItemInBagsOrEquipped(itemID) then
+            if HasItemByMode(itemID) then
                 return true
             end
         end
@@ -1797,7 +1820,7 @@ function BuffState.Refresh()
 
         if shouldProcess then
             local gateItemID = buff.requireItemID or buff.castItemID
-            if gateItemID and not HasItemInBagsOrEquipped(gateItemID) then
+            if gateItemID and not HasItemByMode(gateItemID, buff.requireItemMode) then
                 shouldProcess = false
             end
         end
