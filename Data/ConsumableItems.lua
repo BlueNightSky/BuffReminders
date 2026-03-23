@@ -170,9 +170,6 @@ BR.CONSUMABLE_ITEMS = {
         -- [260286] = true, -- Shrooms and Nectar
         -- [260299] = true, -- Roasted Abyssal Eel
     },
-    sanguithorn = {
-        [242299] = true, -- Sanguithorn Tea
-    },
     -- Flask entries: { label, badge } for regular, { label, badge, priority } for fleeting/cauldron
     -- badge = quality rank (R1/R2/R3), priority = sort order (fleeting sort first)
     flask = {

@@ -24,7 +24,6 @@ local _, BR = ...
 ---@field rebuffWarning boolean?             -- Consumable rebuff pulsing border?
 ---@field isEating boolean?                 -- Food entry: player is currently eating
 ---@field eatingExpirationTime number?      -- GetTime()-based expiration of eating aura
----@field eatingIconID number?             -- Icon ID override for eating aura display
 ---@field petActions PetActionList?           -- Expanded pet summon actions
 ---@field dynamicIcon number|string|nil      -- Dynamic icon texture override (e.g. next poison to cast)
 
@@ -1441,7 +1440,6 @@ function BuffState.Refresh()
         entry.rebuffWarning = nil -- legacy field, still cleared for safety
         entry.isEating = nil
         entry.eatingExpirationTime = nil
-        entry.eatingIconID = nil
         entry.petActions = nil
         entry.dynamicIcon = nil
     end
@@ -1773,17 +1771,6 @@ function BuffState.Refresh()
                     entry.isEating = IsPlayerEating()
                     if entry.isEating then
                         entry.eatingExpirationTime = GetEatingExpirationTime()
-                    end
-                end
-                -- Eating state for spell-based eating (e.g. Sanguithorn Tea)
-                if entry.visible and buff.eatingSpellID then
-                    local ok, auraData = pcall(C_UnitAuras.GetUnitAuraBySpellID, "player", buff.eatingSpellID)
-                    if ok and auraData then
-                        entry.isEating = true
-                        entry.eatingIconID = buff.eatingIconID
-                        if auraData.expirationTime and auraData.expirationTime ~= 0 then
-                            entry.eatingExpirationTime = auraData.expirationTime
-                        end
                     end
                 end
             end

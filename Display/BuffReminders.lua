@@ -1459,7 +1459,6 @@ local function GenerateTestEntries()
         entry.overlayText = nil
         entry.expiringTime = nil
         entry.isEating = nil
-        entry.eatingIconID = nil
         entry.petActions = nil
         entry.iconByRole = nil
         entry.dynamicIcon = nil
@@ -1864,7 +1863,7 @@ local function RenderVisibleEntry(frame, entry)
     -- never reads a live flag that can change mid-cycle.
     if entry.isEating then
         SetIconDesaturated(frame.icon, false)
-        frame.icon:SetTexture(entry.eatingIconID or EATING_ICON)
+        frame.icon:SetTexture(EATING_ICON)
         frame._br_eating_icon = true
         if entry.eatingExpirationTime then
             -- Seed initial text, then hand off to per-frame OnUpdate for smooth countdown
@@ -3028,7 +3027,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 31
+        local DB_VERSION = 32
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3676,6 +3675,20 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 local vis = db.categoryVisibility and db.categoryVisibility.consumable
                 if vis and vis.pvpType and vis.pvpType.arena == false then
                     vis.pvpType.arena = true
+                end
+            end,
+
+            -- [32] Remove sanguithorn tea (reverted by Blizzard)
+            [32] = function()
+                if db.enabledBuffs then
+                    db.enabledBuffs.sanguithorn = nil
+                end
+                if db.rememberedConsumables then
+                    for _, specMem in pairs(db.rememberedConsumables) do
+                        if type(specMem) == "table" then
+                            specMem.sanguithorn = nil
+                        end
+                    end
                 end
             end,
         }

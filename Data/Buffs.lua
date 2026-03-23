@@ -841,20 +841,6 @@ BR.BUFF_TABLES = {
             visibilityCondition = IsNotEarthen,
             disabledInCompetitivePvP = true,
         },
-        -- Sanguithorn Tea (additional food, stacks with regular food)
-        {
-            spellID = 1269152,
-            key = "sanguithorn",
-            name = "Sanguithorn Tea",
-            overlayText = "NO\nTEA",
-            groupId = "sanguithorn",
-            consumableCategory = "sanguithorn",
-            displayIcon = 7548960,
-            eatingSpellID = 1277461,
-            eatingIconID = 7548956,
-            visibilityCondition = IsNotEarthen,
-            disabledInCompetitivePvP = true,
-        },
         -- Delve Food (only when inside a delve with Brann or Valeera)
         {
             spellID = 442522,
@@ -956,7 +942,6 @@ BR.BuffGroups = {
     healthstone = { displayName = "Healthstone" },
     rune = { displayName = "Augment Rune" },
     weaponBuff = { displayName = "Weapon Buff" },
-    sanguithorn = { displayName = "Sanguithorn Tea" },
 }
 
 -- Classes that benefit from each buff
