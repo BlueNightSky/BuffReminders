@@ -497,6 +497,31 @@ local function UnitHasBuff(unit, spellIDs)
     return false, nil, nil
 end
 
+---Scan player-cast buffs on a unit looking for a specific spellID.
+---Used as a fallback when GetUnitAuraBySpellID returns another player's instance
+---(e.g., two Aug Evokers both casting Blistering Scales on the same tank).
+---The "HELPFUL|PLAYER" filter narrows iteration to only the player's own buffs.
+---@param unit string
+---@param spellID number
+---@return boolean found
+---@return number? remainingTime
+local function UnitHasBuffFromPlayer(unit, spellID)
+    local i = 1
+    local auraData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|PLAYER")
+    while auraData do
+        if auraData.spellId == spellID then
+            local remaining
+            if auraData.expirationTime and auraData.expirationTime > 0 then
+                remaining = auraData.expirationTime - GetTime()
+            end
+            return true, remaining
+        end
+        i = i + 1
+        auraData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|PLAYER")
+    end
+    return false, nil
+end
+
 ---Format remaining time in seconds to a short string (e.g., "5m" or "30s")
 ---@param seconds number
 ---@return string
@@ -863,16 +888,25 @@ local function IsPlayerBuffActive(spellID, role)
         if data.isPlayer or includeNPCsInCounting then
             if not role or UnitGroupRolesAssigned(data.unit) == role then
                 local hasBuff, remaining, sourceUnit = UnitHasBuff(data.unit, spellID)
-                if hasBuff and sourceUnit and UnitIsUnit(sourceUnit, "player") then
-                    -- Track first non-player target for last target cache
-                    if not targetEntry and not UnitIsUnit(data.unit, "player") then
-                        targetEntry = data
+                if hasBuff then
+                    local isFromPlayer = sourceUnit and UnitIsUnit(sourceUnit, "player")
+                    if not isFromPlayer then
+                        -- GetUnitAuraBySpellID returns one instance; if another player cast the
+                        -- same spell (e.g. two Aug Evokers), our instance may be hidden behind
+                        -- theirs. Fall back to a full aura scan to find our own cast.
+                        isFromPlayer, remaining = UnitHasBuffFromPlayer(data.unit, spellID)
                     end
-                    if not remaining then
-                        return true, nil, targetEntry
-                    end
-                    if not minRemaining or remaining < minRemaining then
-                        minRemaining = remaining
+                    if isFromPlayer then
+                        -- Track first non-player target for last target cache
+                        if not targetEntry and not UnitIsUnit(data.unit, "player") then
+                            targetEntry = data
+                        end
+                        if not remaining then
+                            return true, nil, targetEntry
+                        end
+                        if not minRemaining or remaining < minRemaining then
+                            minRemaining = remaining
+                        end
                     end
                 end
             end
