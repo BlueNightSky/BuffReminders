@@ -1,6 +1,6 @@
-.PHONY: all lint format check typecheck
+.PHONY: all lint format check typecheck locales
 
-all: typecheck lint format
+all: typecheck lint format locales
 
 lint:
 	luacheck .
@@ -11,5 +11,8 @@ format:
 typecheck:
 	lua-language-server --check . --checklevel=Warning
 
-check: typecheck lint
+locales:
+	@scripts/check-locales.sh
+
+check: typecheck lint locales
 	stylua --check --glob '!ignored/**' --glob '*.lua' .

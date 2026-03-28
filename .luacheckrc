@@ -55,6 +55,7 @@ read_globals = {
     "GetUnitName",
     "GetSpecialization",
     "GetSpecializationInfo",
+    "GetLocale",
     "GetSpecializationInfoForClassID",
     "GetSpecializationRole",
     "GetTime",

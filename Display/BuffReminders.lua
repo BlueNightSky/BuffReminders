@@ -131,6 +131,9 @@ local floor, max, min = math.floor, math.max, math.min
 local random = math.random
 local tinsert, tremove, tsort, tconcat = table.insert, table.remove, table.sort, table.concat
 
+-- Localization
+local L = BR.L
+
 -- Shared constants (from Core.lua)
 local DEFAULT_BORDER_SIZE = BR.DEFAULT_BORDER_SIZE
 local DEFAULT_ICON_ZOOM = BR.DEFAULT_ICON_ZOOM
@@ -525,13 +528,13 @@ local previouslyVisibleKeys = {} ---@type table<string, boolean>
 local lastMainSignature = ""
 local lastSplitSignatures = {} ---@type table<string, string>
 local CATEGORY_LABELS = {
-    raid = "Raid",
-    presence = "Presence",
-    targeted = "Targeted",
-    self = "Self",
-    pet = "Pet",
-    consumable = "Consumable",
-    custom = "Custom",
+    raid = L["Category.Raid"],
+    presence = L["Category.Presence"],
+    targeted = L["Category.Targeted"],
+    self = L["Category.Self"],
+    pet = L["Category.Pet"],
+    consumable = L["Category.Consumable"],
+    custom = L["Category.Custom"],
 }
 
 -- Export for Options.lua and split modules
@@ -1108,7 +1111,7 @@ local function CreateBuffFrame(buff, category)
             "OUTLINE"
         )
         frame.buffText:SetTextColor(textColor[1], textColor[2], textColor[3], textAlpha)
-        frame.buffText:SetText("BUFF!")
+        frame.buffText:SetText(L["Overlay.Buff"])
         if raidCs and raidCs.showBuffReminder == false then
             frame.buffText:Hide()
         end
@@ -2881,21 +2884,21 @@ local function SlashHandler(msg)
         BR.profile.locked = true
         BR.Movers.HideAll()
         BR.Components.RefreshAll()
-        print("|cff00ccffBuffReminders:|r Frames locked.")
+        print("|cff00ccffBuffReminders:|r " .. L["Display.FramesLocked"])
     elseif cmd == "unlock" then
         BR.profile.locked = false
         BR.Movers.UpdateAnchor()
         BR.Components.RefreshAll()
-        print("|cff00ccffBuffReminders:|r Frames unlocked.")
+        print("|cff00ccffBuffReminders:|r " .. L["Display.FramesUnlocked"])
     elseif cmd == "minimap" then
         BR.aceDB.global.minimap.hide = not BR.aceDB.global.minimap.hide
         if BR.MinimapButton then
             if BR.aceDB.global.minimap.hide then
                 BR.MinimapButton.Icon:Hide("BuffReminders")
-                print("|cff00ccffBuffReminders:|r Minimap icon hidden.")
+                print("|cff00ccffBuffReminders:|r " .. L["Display.MinimapHidden"])
             else
                 BR.MinimapButton.Icon:Show("BuffReminders")
-                print("|cff00ccffBuffReminders:|r Minimap icon shown.")
+                print("|cff00ccffBuffReminders:|r " .. L["Display.MinimapShown"])
             end
         end
         BR.Components.RefreshAll()
@@ -3768,12 +3771,12 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
         local desc = settingsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
         desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-        desc:SetText("Track missing buffs at a glance.")
+        desc:SetText(L["Display.Description"])
 
         local openBtn = CreateFrame("Button", nil, settingsPanel, "UIPanelButtonTemplate")
         openBtn:SetSize(150, 24)
         openBtn:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -16)
-        openBtn:SetText("Open Options")
+        openBtn:SetText(L["Display.OpenOptions"])
         openBtn:SetScript("OnClick", function()
             BR.Options.Toggle()
             -- Close the WoW settings panel properly (HideUIPanel handles keyboard focus cleanup)
@@ -3784,7 +3787,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
         local slashInfo = settingsPanel:CreateFontString(nil, "ARTWORK", "GameFontDisable")
         slashInfo:SetPoint("TOPLEFT", openBtn, "BOTTOMLEFT", 0, -12)
-        slashInfo:SetText("Slash commands: /br, /br lock, /br unlock, /br test, /br minimap")
+        slashInfo:SetText(L["Display.SlashCommands"])
 
         local category = Settings.RegisterCanvasLayoutCategory(settingsPanel, settingsPanel.name)
         Settings.RegisterAddOnCategory(category)
@@ -3806,8 +3809,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 end,
                 OnTooltipShow = function(tooltip)
                     tooltip:AddLine("BuffReminders")
-                    tooltip:AddLine("|cFFCFCFCFLeft click|r: Options")
-                    tooltip:AddLine("|cFFCFCFCFRight click|r: Test mode")
+                    tooltip:AddLine(L["Display.MinimapLeftClick"])
+                    tooltip:AddLine(L["Display.MinimapRightClick"])
                     local owner = tooltip:GetOwner()
                     if owner and owner:GetParent() == Minimap then
                         tooltip:AddLine("|cFF808080/br minimap|r |cFF808080to toggle this icon|r")

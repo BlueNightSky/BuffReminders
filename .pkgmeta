@@ -8,6 +8,7 @@ ignore:
   - .luarc.json
   - .styluaignore
   - stylua.toml
+  - scripts
   - Makefile
   - README.md
   - CURSEFORGE.md

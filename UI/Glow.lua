@@ -137,11 +137,13 @@ end
 -- GLOW TYPES (Pixel, AutoCast, Border)
 -- ============================================================================
 
+local L = BR.L
+
 BR.Glow.Types = {
-    { name = "Pixel" },
-    { name = "AutoCast" },
-    { name = "Border" },
-    { name = "Proc" },
+    { name = L["Glow.Pixel"] },
+    { name = L["Glow.AutoCast"] },
+    { name = L["Glow.Border"] },
+    { name = L["Glow.Proc"] },
 }
 
 local GLOW_START = {

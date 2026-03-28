@@ -90,7 +90,7 @@ Components use factory functions with `get`/`enabled`/`onChange` callbacks. When
 
 ```lua
 Components.Slider(parent, {
-    label = "Icon Size",
+    label = L["Options.IconSize"],
     min = 32, max = 128, step = 1,
     get = function() return BR.Config.Get("categorySettings.main.iconSize", 64) end,
     enabled = function() return someCondition() end,
@@ -118,3 +118,20 @@ end
 ```
 
 Always check for `nil` before indexing into nested tables — a user's DB may predate the field entirely.
+
+### Localization
+
+**Never hardcode user-facing English strings in source files.** All display text must go through `BR.L`.
+
+Keys use PascalCase dot notation (`L["Options.ClickToCast"]`, `L["Overlay.NoFlask"]`). Each source file that shows text to users needs `local L = BR.L` at the top.
+
+**To add a new string:**
+
+1. Define it in `Locales/enUS.lua`: `english["Section.Key"] = "English text"`
+2. Add translations to all 10 locale files: `L["Section.Key"] = "Translated text"`
+3. Use `L["Section.Key"]` in the source file
+4. Run `make` — the `locales` target verifies all keys are in sync
+
+**Don't localize:** spell names (WoW API handles those), config keys, frame names, internal identifiers.
+
+**Overlay text** (`Overlay.*` keys) must be very short (2-4 chars per line) to fit on small buff icons.
