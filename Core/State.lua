@@ -86,6 +86,9 @@ local inInstanceEntry = false
 -- Vehicle state (set via SetInVehicle)
 local inVehicle = false
 
+-- Consumables dismissed state (transient, resets on instance change / reload)
+local consumablesDismissed = false
+
 -- Combat/encounter state (set via SetInCombat by the Display layer)
 -- IMPORTANT: This flag is the single source of truth for "are aura queries restricted?"
 -- within State.lua. It covers BOTH combat lockdown AND boss encounters.
@@ -1786,6 +1789,12 @@ function BuffState.Refresh()
     local freeVisible = freeMode == "override" and IsFreeConsumableVisible(db) or false
     -- In follow mode, healthstones use consumable category content gates (without ready check)
     local consumableContentVisible = freeMode == "follow" and IsCategoryVisibleForContent("consumable", true) or false
+    -- Dismiss overrides all consumable visibility (transient, resets on instance change)
+    if consumablesDismissed then
+        consumableVisible = false
+        freeVisible = false
+        consumableContentVisible = false
+    end
     local freeRcMode = db.defaults and db.defaults.healthstoneVisibility or "readyCheck"
     local competitivePvP = IsInCompetitivePvP()
     for i, buff in ipairs(Consumables) do
@@ -2012,6 +2021,18 @@ function BuffState.IsLegacyInstance()
         GetCurrentContentType() -- populates cachedIsLegacyInstance
     end
     return cachedIsLegacyInstance or false
+end
+
+---Set whether consumable reminders are dismissed (transient, resets on instance change)
+---@param state boolean
+function BuffState.SetConsumablesDismissed(state)
+    consumablesDismissed = state
+end
+
+---Get whether consumable reminders are dismissed
+---@return boolean
+function BuffState.GetConsumablesDismissed()
+    return consumablesDismissed
 end
 
 ---Set the combat/encounter state (single source of truth for aura restrictions)

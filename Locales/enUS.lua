@@ -155,6 +155,7 @@ english["Display.OpenOptions"] = "Open Options"
 english["Display.SlashCommands"] = "Slash commands: /br, /br lock, /br unlock, /br test, /br minimap"
 english["Display.MinimapLeftClick"] = "|cFFCFCFCFLeft click|r: Options"
 english["Display.MinimapRightClick"] = "|cFFCFCFCFRight click|r: Test mode"
+english["Display.DismissConsumables"] = "Hide consumable reminders until next loading screen"
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS

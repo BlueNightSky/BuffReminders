@@ -488,6 +488,7 @@ local readyCheckTimer = nil
 local instanceEntryTimer = nil
 local SOULWELL_SPELL_IDS = { [29893] = true, [6201] = true } -- Create Soulwell, Create Healthstone
 local ClearInstanceEntryState -- forward declaration
+local HideDismissFrames -- forward declaration
 local testMode = false
 local eventFrame -- forward declaration; created later in file, referenced by StartUpdates
 
@@ -1661,6 +1662,8 @@ local function HideAllDisplayFrames()
     end
     -- Hide secure click overlays and action buttons (sub-icons)
     BR.SecureButtons.HideAllSecureFrames()
+    -- Hide dismiss button
+    HideDismissFrames()
 end
 
 -- Update the fallback display (shows tracked buffs via action bar glow during PvP/Arena)
@@ -2294,6 +2297,85 @@ end
 --     end
 -- end
 
+-- ============================================================================
+-- CONSUMABLE DISMISS BUTTON
+-- ============================================================================
+
+local GameTooltip = GameTooltip
+local dismissButton -- small X badge overlaid on the last consumable icon
+local reusableDismissFrameList = {} -- reused each cycle to avoid allocation in split mode
+
+local function GetOrCreateDismissButton()
+    if dismissButton then
+        return dismissButton
+    end
+    local btn = CreateFrame("Button", "BuffReminders_DismissConsumables", UIParent)
+    btn:SetSize(16, 16)
+    btn:EnableMouse(true)
+    btn:RegisterForClicks("LeftButtonUp")
+
+    local bg = btn:CreateTexture(nil, "BACKGROUND")
+    bg:SetPoint("TOPLEFT", 3, -3)
+    bg:SetPoint("BOTTOMRIGHT", -3, 3)
+    bg:SetColorTexture(0, 0, 0, 0.6)
+
+    local icon = btn:CreateTexture(nil, "OVERLAY")
+    icon:SetAllPoints()
+    icon:SetTexture([[Interface\RAIDFRAME\ReadyCheck-NotReady]])
+    icon:SetAlpha(0.8)
+
+    btn:SetScript("OnClick", function()
+        BR.BuffState.SetConsumablesDismissed(true)
+        UpdateDisplay()
+    end)
+    btn:SetScript("OnEnter", function(self)
+        icon:SetAlpha(1)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine(L["Display.DismissConsumables"], 0.8, 0.8, 0.8)
+        GameTooltip:Show()
+    end)
+    btn:SetScript("OnLeave", function()
+        icon:SetAlpha(0.8)
+        GameTooltip:Hide()
+    end)
+    btn:SetFrameStrata("MEDIUM")
+    btn:Hide()
+    dismissButton = btn
+    return btn
+end
+
+--- Show the dismiss badge on the top-right corner of the last consumable frame.
+local function PositionDismissButton(frameList)
+    -- Find the last consumable frame in the list
+    local lastConsumableFrame = nil
+    for i = #frameList, 1, -1 do
+        local f = frameList[i]
+        if f.buffCategory == "consumable" then
+            lastConsumableFrame = f
+            break
+        end
+    end
+    if not lastConsumableFrame then
+        return
+    end
+
+    local btn = GetOrCreateDismissButton()
+    local iconSize = lastConsumableFrame:GetHeight()
+    local btnSize = max(floor(iconSize * 0.3), 12)
+    btn:SetSize(btnSize, btnSize)
+    btn:SetParent(lastConsumableFrame)
+    btn:SetFrameLevel(lastConsumableFrame:GetFrameLevel() + 10)
+    btn:ClearAllPoints()
+    btn:SetPoint("TOPRIGHT", lastConsumableFrame, "TOPRIGHT", 3, 3)
+    btn:Show()
+end
+
+HideDismissFrames = function()
+    if dismissButton then
+        dismissButton:Hide()
+    end
+end
+
 -- Update the display
 UpdateDisplay = function()
     if not mainFrame then
@@ -2443,11 +2525,38 @@ UpdateDisplay = function()
         previouslyVisibleKeys[key] = true
     end
 
+    -- Consumable dismiss button: show X badge on last visible consumable icon
+    local consumableEntries = not testMode and visibleByCategory["consumable"]
+    local hasConsumableFrames = consumableEntries and #consumableEntries > 0
+    local consumableSplit = IsCategorySplit("consumable")
+
     -- Position main container
     PositionMainContainer(reusableMainBuffs)
 
     -- Handle split category frames with no visible buffs
     PositionSplitCategories(visibleByCategory)
+
+    -- Show dismiss badge on the last visible consumable icon
+    if hasConsumableFrames then
+        local frameList
+        if consumableSplit then
+            wipe(reusableDismissFrameList)
+            for _, entry in ipairs(consumableEntries) do
+                local f = buffFrames[entry.key]
+                if f and f:IsShown() then
+                    reusableDismissFrameList[#reusableDismissFrameList + 1] = f
+                end
+            end
+            frameList = reusableDismissFrameList
+        else
+            frameList = reusableMainBuffs
+        end
+        PositionDismissButton(frameList)
+    else
+        if dismissButton then
+            dismissButton:Hide()
+        end
+    end
 
     if not anyVisible then
         HideAllDisplayFrames()
@@ -3840,6 +3949,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             BR.MinimapButton = { Icon = LDBIcon, DataObj = dataObj }
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
+        -- Reset consumable dismiss on instance change
+        BR.BuffState.SetConsumablesDismissed(false)
         -- Invalidate caches on zone change (spec may have auto-switched on entry)
         BR.BuffState.InvalidateContentTypeCache()
         BR.BuffState.InvalidateSpellCache()
