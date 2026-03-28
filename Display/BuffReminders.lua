@@ -709,6 +709,7 @@ end
 
 -- Use functions from State.lua
 local FormatRemainingTime = BR.StateHelpers.FormatRemainingTime
+local FormatEatingTime = BR.StateHelpers.FormatEatingTime
 
 local GetPlayerRole = BR.BuffState.GetPlayerRole
 
@@ -1894,7 +1895,7 @@ local function RenderVisibleEntry(frame, entry)
             local remaining = entry.eatingExpirationTime - GetTime()
             if remaining > 0 then
                 frame.count:SetFont(fontPath, GetFrameFontSize(frame), "OUTLINE")
-                frame.count:SetText(FormatRemainingTime(remaining))
+                frame.count:SetText(FormatEatingTime(remaining))
                 frame.count:Show()
             else
                 frame.count:Hide()
@@ -1905,7 +1906,7 @@ local function RenderVisibleEntry(frame, entry)
                 frame:SetScript("OnUpdate", function()
                     local rem = expTime - GetTime()
                     if rem > 0 then
-                        frame.count:SetText(FormatRemainingTime(rem))
+                        frame.count:SetText(FormatEatingTime(rem))
                     else
                         frame.count:Hide()
                         frame:SetScript("OnUpdate", nil)

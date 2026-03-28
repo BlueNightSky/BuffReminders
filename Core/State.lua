@@ -46,6 +46,7 @@ end
 -- Localization (resolved once at load time)
 local FMT_MINUTES = BR.L["Overlay.MinutesFormat"]
 local FMT_LESS_THAN_ONE = BR.L["Overlay.LessThanOneMinute"]
+local FMT_SECONDS = BR.L["Overlay.SecondsFormat"]
 
 -- Buff tables from Buffs.lua (via BR namespace)
 local BUFF_TABLES = BR.BUFF_TABLES
@@ -547,6 +548,18 @@ local function FormatRemainingTime(seconds)
         return format(FMT_MINUTES, mins)
     else
         return FMT_LESS_THAN_ONE
+    end
+end
+
+---Format remaining time for eating countdown (always shows real value, e.g., "5m" or "23s")
+---@param seconds number
+---@return string
+local function FormatEatingTime(seconds)
+    local mins = ceil(seconds / 60)
+    if mins > 1 then
+        return format(FMT_MINUTES, mins)
+    else
+        return format(FMT_SECONDS, ceil(seconds))
     end
 end
 
@@ -2100,6 +2113,7 @@ end
 BR.StateHelpers = {
     GetPlayerSpecId = GetPlayerSpecId,
     FormatRemainingTime = FormatRemainingTime,
+    FormatEatingTime = FormatEatingTime,
     IsPlayerEating = IsPlayerEating, -- used by ConsumableMemory at runtime
     UpdateEatingState = UpdateEatingState,
     ScanEatingState = ScanEatingState,

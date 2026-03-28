@@ -81,6 +81,7 @@ english["Overlay.NoWeaponBuff"] = "NO\nWEAPON\nBUFF"
 english["Overlay.Buff"] = "BUFF!"
 english["Overlay.MinutesFormat"] = "%dm"
 english["Overlay.LessThanOneMinute"] = "<1m"
+english["Overlay.SecondsFormat"] = "%ds"
 
 -- ============================================================================
 -- BUFF GROUP DISPLAY NAMES
