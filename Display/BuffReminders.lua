@@ -3023,8 +3023,10 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Deep copy default values for missing keys (skips 'defaults' sub-table, served by metatable)
         local function DeepCopyDefault(source, target)
             for k, v in pairs(source) do
-                if k == "defaults" then
-                    -- Skip: served by metatable __index
+                if k == "minimap" then -- luacheck: ignore 542
+                    -- Skip: lives in AceDB global, not per-profile
+                elseif k == "defaults" then
+                    -- Skip value copy (served by metatable __index), but ensure the table exists
                     if target[k] == nil then
                         target[k] = {}
                     end
@@ -3051,7 +3053,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 32
+        local DB_VERSION = 33
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3551,9 +3553,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 end
             end,
 
-            -- [20] Clean up minimap from profile (now in AceDB global)
-            -- Note: DeepCopyDefault re-adds minimap from code defaults, so the
-            -- canonical cleanup is after DeepCopyDefault (below), not here.
+            -- [20] (no-op, minimap cleanup now handled by DeepCopyDefault skip)
             [20] = function() end,
 
             -- [21] Enable delve food by default (was opt-in, now opt-out)
@@ -3715,6 +3715,14 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     end
                 end
             end,
+
+            -- [33] Clean up stale keys that were previously removed after DeepCopyDefault
+            [33] = function()
+                db.hidePetWhileMounted = nil
+                if db.defaults and db.defaults.textSize == 12 then
+                    db.defaults.textSize = nil
+                end
+            end,
         }
 
         -- Run pending migrations
@@ -3728,20 +3736,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
         -- Deep copy defaults for non-defaults tables
         DeepCopyDefault(defaults, db)
-
-        -- minimap lives in AceDB global, not per-profile; DeepCopyDefault re-adds it
-        -- from the code defaults table, so clean it up after every DeepCopy.
-        db.minimap = nil
-
-        -- hidePetWhileMounted removed — pets are always hidden while mounted now
-        db.hidePetWhileMounted = nil
-
-        -- Migration: textSize was 12 in defaults but never used (font size was derived from
-        -- iconSize * 0.32). Now nil means "auto-derive from iconSize". Clean up the old value
-        -- so users get the auto behavior instead of a hardcoded 12.
-        if db.defaults and db.defaults.textSize == 12 then
-            db.defaults.textSize = nil
-        end
 
         -- Initialize custom buffs storage and populate BUFF_TABLES.custom
         if not db.customBuffs then

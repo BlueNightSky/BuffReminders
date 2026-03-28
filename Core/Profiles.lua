@@ -211,8 +211,6 @@ function BR.Profiles.RefreshAfterProfileChange()
     -- Deep copy defaults into the new profile (materializes keys for pairs() iteration)
     if BR.Display and BR.Display.DeepCopyDefault and BR.Display.defaults then
         BR.Display.DeepCopyDefault(BR.Display.defaults, BR.profile)
-        -- minimap lives in AceDB global, not per-profile; DeepCopyDefault re-adds it
-        BR.profile.minimap = nil
     end
 
     -- Rebuild custom buffs if present
