@@ -128,6 +128,7 @@ local addonName, BR = ...
 
 -- Lua stdlib locals (avoid repeated global lookups in hot paths)
 local floor, max, min = math.floor, math.max, math.min
+local format = string.format
 local random = math.random
 local tinsert, tremove, tsort, tconcat = table.insert, table.remove, table.sort, table.concat
 
@@ -711,6 +712,20 @@ local FormatRemainingTime = BR.StateHelpers.FormatRemainingTime
 
 local GetPlayerRole = BR.BuffState.GetPlayerRole
 
+-- Spell texture cache (textures are immutable per session, mirrors spellNameCache in Core.lua)
+local spellTextureCache = {}
+
+-- Reusable single-element buffer to avoid { spellID } allocations in hot loops.
+-- SAFETY: callers must consume the result immediately — the buffer is overwritten on next call.
+local singleSpellBuf = {}
+local function AsSpellList(val)
+    if type(val) == "table" then
+        return val
+    end
+    singleSpellBuf[1] = val
+    return singleSpellBuf
+end
+
 ---Get spell texture (handles table of spellIDs and role-based icons)
 ---@param spellIDs SpellID
 ---@param iconByRole? table<RoleType, number>
@@ -732,10 +747,16 @@ local function GetBuffTexture(spellIDs, iconByRole)
     if IconOverrides[id] then
         return IconOverrides[id]
     end
+    -- Return cached texture or fetch and cache
+    local cached = spellTextureCache[id]
+    if cached ~= nil then
+        return cached or nil
+    end
     local texture
     pcall(function()
         texture = C_Spell.GetSpellTexture(id)
     end)
+    spellTextureCache[id] = texture or false
     return texture
 end
 
@@ -745,7 +766,7 @@ local glowSpellToBuff = {}
 
 --- Register a buff's spellID(s) in the glow fallback lookup table
 local function RegisterGlowBuff(buff, catName)
-    local ids = type(buff.spellID) == "table" and buff.spellID or { buff.spellID }
+    local ids = AsSpellList(buff.spellID)
     for _, id in ipairs(ids) do
         if id and id ~= 0 then
             glowSpellToBuff[id] = { buff = buff, category = catName }
@@ -2103,8 +2124,9 @@ end
 ---@param frame BuffFrame
 ---@param petAction PetAction?
 local function UpdatePetLabels(frame, petAction)
-    local showLabels = (BR.profile.defaults or {}).petLabels ~= false
-    local petClassVis = (BR.profile.defaults or {}).petLabelClasses
+    local defs = BR.profile.defaults or {}
+    local showLabels = defs.petLabels ~= false
+    local petClassVis = defs.petLabelClasses
     local classLabelsOff = playerClass and petClassVis and petClassVis[playerClass] == false
     if not petAction or not showLabels or classLabelsOff then
         if frame._br_pet_label_key then
@@ -2123,14 +2145,8 @@ local function UpdatePetLabels(frame, petAction)
     end
 
     -- Early out if nothing changed since last call
-    local scale = (BR.profile.defaults or {}).petLabelScale or 100
-    local cacheKey = petAction.key
-        .. ":"
-        .. (petAction.label or "")
-        .. ":"
-        .. (petAction.petFamily or "")
-        .. ":"
-        .. scale
+    local scale = defs.petLabelScale or 100
+    local cacheKey = format("%s:%s:%s:%d", petAction.key, petAction.label or "", petAction.petFamily or "", scale)
     if frame._br_pet_label_key == cacheKey then
         return
     end
