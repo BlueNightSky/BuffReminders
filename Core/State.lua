@@ -28,8 +28,13 @@ local _, BR = ...
 ---@field dynamicIcon number|string|nil      -- Dynamic icon texture override (e.g. next poison to cast)
 
 -- Lua stdlib locals (avoid repeated global lookups in hot paths)
-local floor = math.floor
+local ceil = math.ceil
+local format = string.format
 local tinsert = table.insert
+
+-- Localization (resolved once at load time)
+local FMT_MINUTES = BR.L["Overlay.MinutesFormat"]
+local FMT_LESS_THAN_ONE = BR.L["Overlay.LessThanOneMinute"]
 
 -- Buff tables from Buffs.lua (via BR namespace)
 local BUFF_TABLES = BR.BUFF_TABLES
@@ -522,15 +527,15 @@ local function UnitHasBuffFromPlayer(unit, spellID)
     return false, nil
 end
 
----Format remaining time in seconds to a short string (e.g., "5m" or "30s")
+---Format remaining time in seconds to a short string (e.g., "5m" or "<1m")
 ---@param seconds number
 ---@return string
 local function FormatRemainingTime(seconds)
-    local mins = floor(seconds / 60)
-    if mins > 0 then
-        return mins .. "m"
+    local mins = ceil(seconds / 60)
+    if mins > 1 then
+        return format(FMT_MINUTES, mins)
     else
-        return floor(seconds) .. "s"
+        return FMT_LESS_THAN_ONE
     end
 end
 

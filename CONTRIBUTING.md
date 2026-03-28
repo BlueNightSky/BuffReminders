@@ -80,6 +80,24 @@ BR.CallbackRegistry:RegisterCallback("VisualsRefresh", function()
 end)
 ```
 
+### Cache Global Lookups
+
+Lua resolves globals through table lookups on every access. In hot paths (OnUpdate handlers, per-member loops, refresh cycles), cache globals as file-scope locals:
+
+```lua
+-- Lua stdlib
+local ceil = math.ceil
+local format = string.format
+local tinsert = table.insert
+
+-- WoW API
+local GetTime = GetTime
+local UnitClass = UnitClass
+
+-- Locale strings (never change at runtime)
+local FMT_MINUTES = L["Overlay.MinutesFormat"]
+```
+
 ### State / Display Separation
 
 State computes what buffs are missing (pure data, no UI). Display renders frames based on state (no state mutation). State never imports display.
