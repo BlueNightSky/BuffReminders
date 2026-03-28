@@ -506,7 +506,7 @@ BR.BUFF_TABLES = {
             customCheck = function(isRestricted)
                 -- Cooldown API returns tainted values during combat/encounters/M+
                 if isRestricted then
-                    return true
+                    return false
                 end
                 local ok, result = pcall(function()
                     local info = C_Spell.GetSpellCooldown(29893)
