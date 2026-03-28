@@ -271,7 +271,6 @@ english["Options.PetSpecIcon.Desc"] =
 english["Options.ShowItemTooltips"] = "Show item tooltips"
 english["Options.ShowItemTooltips.Desc"] = "When hovering over a consumable icon, show its item tooltip."
 english["Options.Behavior"] = "Behavior"
-english["Options.HideWhileMounted"] = "Hide while mounted"
 english["Options.PetPassiveCombat"] = "Pet passive only in combat"
 english["Options.PetPassiveCombat.Desc"] =
     "Only show the passive pet reminder while in combat. When disabled, the reminder is always shown."

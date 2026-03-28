@@ -1737,7 +1737,7 @@ function BuffState.Refresh()
 
     -- Process pet buffs (pet summon reminders — no expiration tracking)
     local petVisible = IsCategoryVisibleForContent("pet")
-    if BR.profile.hidePetWhileMounted ~= false and IsMounted() then
+    if IsMounted() or BR.Display.IsPetDismountSuppressed() then
         petVisible = false
     end
     local petPassiveHidden = BR.profile.petPassiveOnlyInCombat and not UnitAffectingCombat("player")

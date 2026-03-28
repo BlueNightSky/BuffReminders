@@ -1346,18 +1346,6 @@ local function CreateOptionsPanel()
             behaviorHeader:SetText("|cffffcc00" .. L["Options.Behavior"] .. "|r")
             catLayout:AddText(behaviorHeader, 12, COMPONENT_GAP)
 
-            local hideMountHolder = Components.Checkbox(catContent, {
-                label = L["Options.HideWhileMounted"],
-                get = function()
-                    return BR.profile.hidePetWhileMounted ~= false
-                end,
-                onChange = function(checked)
-                    BR.profile.hidePetWhileMounted = checked
-                    UpdateDisplay()
-                end,
-            })
-            catLayout:Add(hideMountHolder, nil, COMPONENT_GAP)
-
             local passiveCombatHolder = Components.Checkbox(catContent, {
                 label = L["Options.PetPassiveCombat"],
                 get = function()

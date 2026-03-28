@@ -268,7 +268,6 @@ local defaults = {
     hideInCombat = false,
     hideExpiringInCombat = true,
     buffTrackingMode = "all",
-    hidePetWhileMounted = true,
     hideAllInVehicle = false,
     hideWhileMounted = false,
     hideInLegacyInstances = true,
@@ -516,6 +515,8 @@ end
 local inCombat = false
 local inEncounter = false
 local isResting = false
+local petDismountSuppressed = false -- Suppress pet eval briefly after dismount (pet respawn delay)
+local wasMounted = IsMounted()
 
 -- Category frame system
 local categoryFrames = {}
@@ -2866,6 +2867,9 @@ BR.Display.UpdateVisuals = UpdateVisuals
 BR.Display.UpdateActionButtons = function(category)
     return BR.SecureButtons.UpdateActionButtons(category)
 end
+BR.Display.IsPetDismountSuppressed = function()
+    return petDismountSuppressed
+end
 BR.Display.IsTestMode = function()
     return testMode
 end
@@ -3729,6 +3733,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- from the code defaults table, so clean it up after every DeepCopy.
         db.minimap = nil
 
+        -- hidePetWhileMounted removed — pets are always hidden while mounted now
+        db.hidePetWhileMounted = nil
+
         -- Migration: textSize was 12 in defaults but never used (font size was derived from
         -- iconSize * 0.32). Now nil means "auto-derive from iconSize". Clean up the old value
         -- so users get the auto behavior instead of a hardcoded 12.
@@ -3953,6 +3960,15 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.PetHelpers.InvalidatePetActions()
         SetDirty()
     elseif event == "PLAYER_MOUNT_DISPLAY_CHANGED" then
+        local mounted = IsMounted()
+        if wasMounted and not mounted then
+            petDismountSuppressed = true
+            C_Timer.After(1.5, function()
+                petDismountSuppressed = false
+                SetDirty()
+            end)
+        end
+        wasMounted = mounted
         SetDirty()
     elseif event == "PLAYER_DIFFICULTY_CHANGED" then
         BR.BuffState.InvalidateContentTypeCache()
