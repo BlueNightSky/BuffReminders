@@ -41,13 +41,17 @@ jobs:
           # Strip @do-not-package@ blocks (test code not meant for distribution)
           sed '/@do-not-package@/,/@end-do-not-package@/d' /tmp/LibDualSpec-1.0-repo/LibDualSpec-1.0.lua > /tmp/LibDualSpec-1.0/LibDualSpec-1.0.lua
 
+          git clone --depth 1 https://github.com/BigWigsMods/LibSpecialization.git /tmp/LibSpecialization-repo
+          mkdir -p /tmp/LibSpecialization
+          cp /tmp/LibSpecialization-repo/LibSpecialization/LibSpecialization.lua /tmp/LibSpecialization/
+
       - name: Check for updates
         id: diff
         run: |
           updated=""
 
           # Compare only the .lua files we actually bundle
-          for lib in LibStub CallbackHandler-1.0 LibSharedMedia-3.0 LibCustomGlow-1.0 AceDB-3.0 LibDBIcon-1.0 LibDataBroker-1.1 LibDualSpec-1.0; do
+          for lib in LibStub CallbackHandler-1.0 LibSharedMedia-3.0 LibCustomGlow-1.0 AceDB-3.0 LibDBIcon-1.0 LibDataBroker-1.1 LibDualSpec-1.0 LibSpecialization; do
             changed=false
             for bundled in Libs/$lib/*.lua; do
               fname=$(basename "$bundled")

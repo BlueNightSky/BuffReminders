@@ -51,6 +51,19 @@ local FMT_SECONDS = BR.L["Overlay.SecondsFormat"]
 -- Buff tables from Buffs.lua (via BR namespace)
 local BUFF_TABLES = BR.BUFF_TABLES
 local BuffBeneficiaries = BR.BuffBeneficiaries
+local SpecBeneficiaries = BR.SpecBeneficiaries
+
+-- Union of all spec IDs across SpecBeneficiaries tables.
+-- Specs not in this set (starter specs, future specs) fall back to class-based filtering.
+local knownSpecIds = {}
+for _, specTable in pairs(SpecBeneficiaries) do
+    for specId in pairs(specTable) do
+        knownSpecIds[specId] = true
+    end
+end
+
+-- LibSpecialization: provides ally spec IDs via addon comms (graceful if missing)
+local LibSpec = LibStub and LibStub("LibSpecialization", true)
 
 -- Local aliases
 local RaidBuffs = BUFF_TABLES.raid
@@ -188,6 +201,10 @@ local currentWeaponEnchants = {
 -- Each entry: { unit = "raid1", class = "WARRIOR", isPlayer = true, name = "PlayerName" }
 ---@type {unit: string, class: string, isPlayer: boolean, name: string?}[]
 local currentValidUnits = {}
+
+-- Spec cache: playerName -> specId (populated by LibSpecialization callbacks for allies,
+-- and by BuildValidUnitCache for the local player via GetPlayerSpecId())
+local allySpecCache = {}
 
 -- Whether NPCs should be included in buff counting for the current refresh cycle.
 -- True in follower dungeons and delves where NPC companions can receive buffs.
@@ -403,11 +420,34 @@ local function IsValidGroupMember(unit)
         and UnitIsVisible(unit)
 end
 
+---Check if a unit benefits from a buff using spec (preferred) or class (fallback)
+---@param specBeneficiaries table? Spec-level beneficiary table for this buff key
+---@param beneficiaries table? Class-level beneficiary table for this buff key
+---@param specId number? Unit's spec ID (nil if unknown)
+---@param class string? Unit's class
+---@return boolean
+local function UnitBenefitsFromBuff(specBeneficiaries, beneficiaries, specId, class)
+    if specBeneficiaries and specId and knownSpecIds[specId] then
+        return specBeneficiaries[specId] or false
+    end
+    if beneficiaries then
+        return beneficiaries[class] or false
+    end
+    return true -- no filter = everyone benefits
+end
+
 ---Build the list of valid units for the current refresh cycle
 ---Called once at the start of BuffState.Refresh()
 local function BuildValidUnitCache()
     RecycleUnitEntries()
     wipe(classMaxLevels)
+
+    -- Keep player spec in allySpecCache so CountMissingBuff can use a single
+    -- lookup path (allySpecCache[name]) for both the player and allies.
+    local playerName = GetUnitName("player", true)
+    if playerName then
+        allySpecCache[playerName] = GetPlayerSpecId()
+    end
 
     -- Determine if NPCs should count for buff tracking this refresh.
     -- Follower dungeons and delves (scenarios) have NPC companions that can receive buffs.
@@ -833,11 +873,12 @@ local function CountMissingBuff(spellIDs, buffKey, playerOnly)
     local total = 0
     local minRemaining = nil
     local beneficiaries = BuffBeneficiaries[buffKey]
+    local specBeneficiaries = SpecBeneficiaries[buffKey]
 
     if playerOnly or #currentValidUnits <= 1 then
-        -- Solo/player-only: check if player benefits
-        if beneficiaries and not beneficiaries[playerClass] then
-            return 0, 0, nil -- player doesn't benefit, skip
+        -- Solo/player-only: check if player benefits (spec-aware)
+        if not UnitBenefitsFromBuff(specBeneficiaries, beneficiaries, GetPlayerSpecId(), playerClass) then
+            return 0, 0, nil
         end
         total = 1
         local hasBuff, remaining = UnitHasBuff("player", spellIDs)
@@ -856,8 +897,7 @@ local function CountMissingBuff(spellIDs, buffKey, playerOnly)
         -- IsPlayerBuffActive) use player-cast spell IDs that ARE whitelisted, so they
         -- still include NPCs via the unchanged includeNPCsInCounting check.
         if data.isPlayer or (includeNPCsInCounting and not inCombat) then
-            -- Check if unit's class benefits from this buff
-            if not beneficiaries or beneficiaries[data.class] then
+            if UnitBenefitsFromBuff(specBeneficiaries, beneficiaries, allySpecCache[data.name], data.class) then
                 total = total + 1
                 local hasBuff, remaining = UnitHasBuff(data.unit, spellIDs)
                 if not hasBuff then
@@ -2159,6 +2199,66 @@ end
 ---Invalidate item ownership cache (call on BAG_UPDATE_DELAYED, PLAYER_EQUIPMENT_CHANGED)
 function BuffState.InvalidateItemCache()
     cachedItemOwnership = {}
+end
+
+-- ============================================================================
+-- LIBSPECIALIZATION INTEGRATION
+-- ============================================================================
+-- Caches ally spec IDs received via LibSpecialization addon comms.
+-- When data is unavailable (lib missing, ally not broadcasting), CountMissingBuff
+-- falls back to class-based BuffBeneficiaries automatically.
+
+if LibSpec then
+    local GetUnitName = GetUnitName
+    local IsInRaid = IsInRaid
+    local GetNumGroupMembers = GetNumGroupMembers
+
+    -- Prune stale entries when group roster changes
+    local specFrame = CreateFrame("Frame")
+    specFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+    specFrame:SetScript("OnEvent", function()
+        -- Build set of current group member names
+        local currentNames = {}
+        currentNames[GetUnitName("player", true)] = true
+        if IsInRaid() then
+            for i = 1, GetNumGroupMembers() do
+                local name = GetUnitName("raid" .. i, true)
+                if name then
+                    currentNames[name] = true
+                end
+            end
+        else
+            for i = 1, GetNumGroupMembers() - 1 do
+                local name = GetUnitName("party" .. i, true)
+                if name then
+                    currentNames[name] = true
+                end
+            end
+        end
+        -- Remove specs for players no longer in group
+        for name in pairs(allySpecCache) do
+            if not currentNames[name] then
+                allySpecCache[name] = nil
+            end
+        end
+    end)
+
+    -- Register for group spec broadcasts
+    local callbackTable = {}
+    LibSpec.RegisterGroup(callbackTable, function(specId, _role, _position, sender, _talentString)
+        if not sender then
+            return
+        end
+        local oldSpec = allySpecCache[sender]
+        if oldSpec == specId then
+            return -- no change
+        end
+        allySpecCache[sender] = specId
+        -- Trigger display refresh when a known ally changes spec (affects beneficiary counts)
+        if oldSpec and BuffState.Refresh then
+            BuffState.Refresh()
+        end
+    end)
 end
 
 -- Export utility functions that display layer still needs
