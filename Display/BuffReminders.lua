@@ -412,11 +412,11 @@ local defaults = {
     ---@type AllCategorySettings
     categorySettings = { -- Per-category settings
         main = {
-            position = { point = "CENTER", x = 0, y = 0 },
+            position = { point = "CENTER", x = 0, y = 200 },
             -- main frame always uses defaults for appearance/behavior
         },
         raid = {
-            position = { point = "CENTER", x = 0, y = 60 },
+            position = { point = "CENTER", x = 0, y = 260 },
             useCustomAppearance = false,
             showBuffReminder = true,
             split = false,
@@ -425,7 +425,7 @@ local defaults = {
             priority = 1,
         },
         presence = {
-            position = { point = "CENTER", x = 0, y = 20 },
+            position = { point = "CENTER", x = 0, y = 220 },
             useCustomAppearance = false,
             split = false,
             clickable = true,
@@ -433,7 +433,7 @@ local defaults = {
             priority = 2,
         },
         targeted = {
-            position = { point = "CENTER", x = 0, y = -20 },
+            position = { point = "CENTER", x = 0, y = 180 },
             useCustomAppearance = false,
             split = false,
             clickable = false,
@@ -441,7 +441,7 @@ local defaults = {
             priority = 3,
         },
         self = {
-            position = { point = "CENTER", x = 0, y = -60 },
+            position = { point = "CENTER", x = 0, y = 140 },
             useCustomAppearance = false,
             split = false,
             clickable = true,
@@ -449,7 +449,7 @@ local defaults = {
             priority = 4,
         },
         pet = {
-            position = { point = "CENTER", x = 0, y = -100 },
+            position = { point = "CENTER", x = 0, y = 100 },
             useCustomAppearance = false,
             split = false,
             clickable = true,
@@ -457,7 +457,7 @@ local defaults = {
             priority = 5,
         },
         consumable = {
-            position = { point = "CENTER", x = 0, y = -140 },
+            position = { point = "CENTER", x = 0, y = 60 },
             useCustomAppearance = false,
             split = false,
             clickable = true,
@@ -466,7 +466,7 @@ local defaults = {
             priority = 6,
         },
         custom = {
-            position = { point = "CENTER", x = 0, y = -180 },
+            position = { point = "CENTER", x = 0, y = 20 },
             useCustomAppearance = false,
             split = false,
             clickable = false,
