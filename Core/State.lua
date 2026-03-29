@@ -533,7 +533,12 @@ local function UnitHasBuffFromPlayer(unit, spellID)
     local i = 1
     local auraData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|PLAYER")
     while auraData do
-        if auraData.spellId == spellID then
+        -- spellId is a tainted secret value for non-whitelisted auras in restricted contexts
+        -- (combat, encounters, M+). pcall avoids the error; tainted auras simply don't match.
+        local ok, match = pcall(function()
+            return auraData.spellId == spellID
+        end)
+        if ok and match then
             local remaining
             if auraData.expirationTime and auraData.expirationTime > 0 then
                 remaining = auraData.expirationTime - GetTime()
