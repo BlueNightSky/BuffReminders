@@ -83,6 +83,10 @@ local inReadyCheck = false
 -- Briefly shows buffs with showOnInstanceEntry when zoning into a dungeon/raid
 local inInstanceEntry = false
 
+-- Delve entry state (set via SetDelveEntryState)
+-- Briefly shows consumables with showOnInstanceEntry when zoning into a delve
+local inDelveEntry = false
+
 -- Vehicle state (set via SetInVehicle)
 local inVehicle = false
 
@@ -1801,54 +1805,64 @@ function BuffState.Refresh()
         local entry = GetOrCreateEntry(buff.key, "consumable", i)
         local settingKey = buff.groupId or buff.key
 
-        local requiredClass = buff.class or buff.casterClass
-        local hasCaster = not requiredClass or HasCasterForBuff(requiredClass, buff.levelRequired)
-        local isFreeConsumable = freeVisible and IsFreeConsumable(buff)
-        -- Healthstone ready check mode (independent of follow/override content gates)
-        local freeReadyCheckOk = true
-        if buff.freeConsumable and not inReadyCheck then
-            if freeRcMode == "readyCheck" then
-                freeReadyCheckOk = false
-            elseif freeRcMode == "casterOnly" then
-                freeReadyCheckOk = not buff.casterClass or buff.casterClass == playerClass
+        if buff.showOnInstanceEntry then
+            -- Instance entry only consumable (e.g., delve food) — show for 30s on entry
+            if inDelveEntry and consumableVisible and IsBuffEnabled(settingKey) and PassesPreChecks(buff, nil, db) then
+                local shouldShow = ShouldShowConsumableBuff(buff)
+                if shouldShow then
+                    SetEntryText(entry, buff.overlayText, consGlow)
+                end
             end
-        end
-        -- Gate on cheap boolean checks first; defer IsAuraTrackable and PassesPreChecks
-        if
-            IsBuffEnabled(settingKey)
-            and (consumableVisible or isFreeConsumable or (buff.freeConsumable and consumableContentVisible))
-            and not (competitivePvP and buff.disabledInCompetitivePvP)
-            and freeReadyCheckOk
-            and hasCaster
-        then
-            local trackable = IsAuraTrackable(buff)
-            local useGlowDet = isAuraRestricted and not trackable and buff.glowDetectable
+        else
+            local requiredClass = buff.class or buff.casterClass
+            local hasCaster = not requiredClass or HasCasterForBuff(requiredClass, buff.levelRequired)
+            local isFreeConsumable = freeVisible and IsFreeConsumable(buff)
+            -- Healthstone ready check mode (independent of follow/override content gates)
+            local freeReadyCheckOk = true
+            if buff.freeConsumable and not inReadyCheck then
+                if freeRcMode == "readyCheck" then
+                    freeReadyCheckOk = false
+                elseif freeRcMode == "casterOnly" then
+                    freeReadyCheckOk = not buff.casterClass or buff.casterClass == playerClass
+                end
+            end
+            -- Gate on cheap boolean checks first; defer IsAuraTrackable and PassesPreChecks
             if
-                (not isAuraRestricted or trackable or useGlowDet)
-                and PassesPreChecks(buff, nil, db)
-                and not (buff.key ~= "delveFood" and delveFoodOnly)
+                IsBuffEnabled(settingKey)
+                and (consumableVisible or isFreeConsumable or (buff.freeConsumable and consumableContentVisible))
+                and not (competitivePvP and buff.disabledInCompetitivePvP)
+                and freeReadyCheckOk
+                and hasCaster
             then
-                if useGlowDet then
-                    if IsAnySpellGlowing(buff) then
-                        SetEntryText(entry, buff.overlayText, consGlow)
-                    end
-                else
-                    local shouldShow, remainingTime, activeSpellID = ShouldShowConsumableBuff(buff)
-                    if shouldShow then
-                        SetEntryText(entry, buff.overlayText, consGlow)
-                    elseif not buff.noExpirationGlow and not hideExpiring then
-                        if TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow) then
-                            if activeSpellID and type(buff.spellID) == "table" then
-                                local ok, tex = pcall(C_Spell.GetSpellTexture, activeSpellID)
-                                entry.dynamicIcon = ok and tex or nil
+                local trackable = IsAuraTrackable(buff)
+                local useGlowDet = isAuraRestricted and not trackable and buff.glowDetectable
+                if
+                    (not isAuraRestricted or trackable or useGlowDet)
+                    and PassesPreChecks(buff, nil, db)
+                    and not (buff.key ~= "delveFood" and delveFoodOnly)
+                then
+                    if useGlowDet then
+                        if IsAnySpellGlowing(buff) then
+                            SetEntryText(entry, buff.overlayText, consGlow)
+                        end
+                    else
+                        local shouldShow, remainingTime, activeSpellID = ShouldShowConsumableBuff(buff)
+                        if shouldShow then
+                            SetEntryText(entry, buff.overlayText, consGlow)
+                        elseif not buff.noExpirationGlow and not hideExpiring then
+                            if TrySetEntryExpiring(entry, remainingTime, consThreshold, consGlow) then
+                                if activeSpellID and type(buff.spellID) == "table" then
+                                    local ok, tex = pcall(C_Spell.GetSpellTexture, activeSpellID)
+                                    entry.dynamicIcon = ok and tex or nil
+                                end
                             end
                         end
-                    end
-                    -- Eating state for food entries (display uses this for icon override + countdown)
-                    if entry.visible and buff.key == "food" then
-                        entry.isEating = IsPlayerEating()
-                        if entry.isEating then
-                            entry.eatingExpirationTime = GetEatingExpirationTime()
+                        -- Eating state for food entries (display uses this for icon override + countdown)
+                        if entry.visible and buff.key == "food" then
+                            entry.isEating = IsPlayerEating()
+                            if entry.isEating then
+                                entry.eatingExpirationTime = GetEatingExpirationTime()
+                            end
                         end
                     end
                 end
@@ -1988,10 +2002,10 @@ function BuffState.SetInstanceEntryState(state)
     inInstanceEntry = state
 end
 
----Check if the current zone qualifies for instance entry triggers
----(dungeons only, excluding M+ and follower dungeons)
+---Check if the current zone qualifies for dungeon entry triggers
+---(grouped dungeons only, excluding M+ and follower dungeons)
 ---@return boolean
-function BuffState.ShouldTriggerInstanceEntry()
+function BuffState.ShouldTriggerDungeonEntry()
     if GetNumGroupMembers() <= 1 then
         return false
     end
@@ -2000,6 +2014,18 @@ function BuffState.ShouldTriggerInstanceEntry()
     end
     local diffKey = GetCurrentDifficultyKey()
     return diffKey ~= "mythicPlus" and diffKey ~= "follower"
+end
+
+---Set the delve entry state (briefly shows consumables with showOnInstanceEntry)
+---@param state boolean
+function BuffState.SetDelveEntryState(state)
+    inDelveEntry = state
+end
+
+---Check if the current zone qualifies for delve entry triggers
+---@return boolean
+function BuffState.ShouldTriggerDelveEntry()
+    return BR.IsInDelve()
 end
 
 ---Set the vehicle state

@@ -486,8 +486,10 @@ local buffFrames = {}
 local updateTicker
 local readyCheckTimer = nil
 local instanceEntryTimer = nil
+local delveEntryTimer = nil
 local SOULWELL_SPELL_IDS = { [29893] = true, [6201] = true } -- Create Soulwell, Create Healthstone
 local ClearInstanceEntryState -- forward declaration
+local ClearDelveEntryState -- forward declaration
 local HideDismissFrames -- forward declaration
 local testMode = false
 local eventFrame -- forward declaration; created later in file, referenced by StartUpdates
@@ -3077,6 +3079,14 @@ ClearInstanceEntryState = function()
     eventFrame:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 end
 
+ClearDelveEntryState = function()
+    if delveEntryTimer then
+        delveEntryTimer:Cancel()
+        delveEntryTimer = nil
+    end
+    BR.BuffState.SetDelveEntryState(false)
+end
+
 eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if event == "ADDON_LOADED" and arg1 == addonName then
         _, playerClass = UnitClass("player")
@@ -3987,9 +3997,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         end
         -- Delayed update to catch glow events that fire after reload
         C_Timer.After(0.5, SetDirty)
-        -- Show showOnInstanceEntry buffs briefly when entering a dungeon/raid (not M+)
+        -- Show showOnInstanceEntry self buffs briefly when entering a dungeon (not M+)
         C_Timer.After(1, function()
-            if BR.BuffState.ShouldTriggerInstanceEntry() then
+            if BR.BuffState.ShouldTriggerDungeonEntry() then
                 if instanceEntryTimer then
                     instanceEntryTimer:Cancel()
                 end
@@ -4002,6 +4012,20 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 end)
             else
                 ClearInstanceEntryState()
+            end
+            -- Show showOnInstanceEntry consumables briefly when entering a delve
+            if BR.BuffState.ShouldTriggerDelveEntry() then
+                if delveEntryTimer then
+                    delveEntryTimer:Cancel()
+                end
+                BR.BuffState.SetDelveEntryState(true)
+                UpdateDisplay()
+                delveEntryTimer = C_Timer.NewTimer(30, function()
+                    ClearDelveEntryState()
+                    UpdateDisplay()
+                end)
+            else
+                ClearDelveEntryState()
             end
         end)
         -- Refresh custom buff icons after spell data is fully loaded (talent-modified icons)

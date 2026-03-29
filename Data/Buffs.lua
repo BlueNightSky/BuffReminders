@@ -104,6 +104,7 @@ local min = math.min
 ---@field consumableCategory? string Category key in BR.CONSUMABLE_ITEMS for bag scanning (only set when items exist)
 ---@field freeConsumable? boolean Bypass content gates (always show when enabled)
 ---@field permanentRuneItemIDs? number[] Item IDs that, if in bags, make this a free consumable (bypass content gates)
+---@field showOnInstanceEntry? boolean Only show briefly when entering an instance
 ---@field disabledInCompetitivePvP? boolean Unusable in arenas and rated BGs
 
 ---@class BuffGroup
@@ -850,7 +851,7 @@ BR.BUFF_TABLES = {
             name = "Delve Food",
             overlayText = L["Overlay.NoFood"],
             groupId = "delveFood",
-            noExpirationGlow = true, -- 10-min duration makes standard thresholds meaningless
+            showOnInstanceEntry = true, -- Only show for 30s on delve entry (food is NPC-controlled)
             infoTooltip = {
                 title = L["Tooltip.DelvesOnly"],
                 desc = L["Tooltip.DelvesOnly.Desc"],

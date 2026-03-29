@@ -109,7 +109,7 @@ english["Tooltip.InstanceEntryReminder.Desc"] =
     "Briefly shown when entering a dungeon as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds."
 english["Tooltip.DelvesOnly"] = "Delves Only"
 english["Tooltip.DelvesOnly.Desc"] =
-    "Only shown inside delves when Brann or Valeera are in your party.\n\nExpiration glow is disabled for this buff because its short 10-minute duration would cause it to always glow."
+    "Briefly shown when entering a delve as a reminder to eat Valeera's food. Disappears after 30 seconds or when the buff is detected."
 
 -- ============================================================================
 -- GLOW TYPE NAMES
