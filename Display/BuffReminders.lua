@@ -296,6 +296,7 @@ local defaults = {
         growDirection = "CENTER", -- "LEFT", "CENTER", "RIGHT", "UP", "DOWN"
         -- Behavior (glow settings)
         showExpirationGlow = true,
+        showMissingGlow = true,
         expirationThreshold = 15, -- minutes
         glowType = 1, -- BR.Glow.Type: Pixel=1, AutoCast=2, Border=3, Proc=4
         glowSize = 2,
@@ -839,14 +840,17 @@ end
 local SetExpirationGlow = BR.Glow.SetExpiration
 
 -- Per-render-cycle cache for glow settings (avoids repeated DB reads)
-local glowSettingsCache = {} ---@type table<string, table>
+local expiringGlowCache = {} ---@type table<string, table>
+local missingGlowCache = {} ---@type table<string, table>
 
----Get cached glow settings for a category (populated once per render cycle)
+---Get cached glow settings for a category and glow kind (populated once per render cycle)
 ---Glow style reads from per-category overrides when useCustomGlow is enabled, otherwise from defaults.
 ---@param category string
+---@param kind "expiring"|"missing" Which glow style to resolve
 ---@return table
-local function GetCachedGlowSettings(category)
-    local cached = glowSettingsCache[category]
+local function GetCachedGlowSettings(category, kind)
+    local cache = kind == "missing" and missingGlowCache or expiringGlowCache
+    local cached = cache[category]
     if cached then
         return cached
     end
@@ -856,21 +860,39 @@ local function GetCachedGlowSettings(category)
     local useCustom = catSettings and catSettings.useCustomGlow
     local source = (useCustom and catSettings) or (db and db.defaults) or {}
 
-    local typeIndex = source.glowType or BR.Glow.Type.Pixel
-    local color = source.glowColor
-    if typeIndex == BR.Glow.Type.Proc and not source.glowProcUseCustomColor then
-        color = nil
+    local typeIndex, color, size, xOff, yOff, params
+    if kind == "missing" then
+        typeIndex = source.missingGlowType or BR.Glow.Type.Pixel
+        color = source.missingGlowColor
+        if typeIndex == BR.Glow.Type.Proc and not source.missingGlowProcUseCustomColor then
+            color = nil
+        end
+        size = source.missingGlowSize or 2
+        params = BR.Glow.BuildAdvancedParams(source, typeIndex, "missingGlow")
+        xOff = source.missingGlowXOffset or 0
+        yOff = source.missingGlowYOffset or 0
+    else
+        typeIndex = source.glowType or BR.Glow.Type.Pixel
+        color = source.glowColor
+        if typeIndex == BR.Glow.Type.Proc and not source.glowProcUseCustomColor then
+            color = nil
+        end
+        size = source.glowSize or 2
+        params = BR.Glow.BuildAdvancedParams(source, typeIndex)
+        xOff = source.glowXOffset or 0
+        yOff = source.glowYOffset or 0
     end
+
     cached = {
         typeIndex = typeIndex,
         color = color,
-        size = source.glowSize or 2,
+        size = size,
         borderSize = BR.Config.GetCategorySetting(category, "borderSize") or DEFAULT_BORDER_SIZE,
-        params = BR.Glow.BuildAdvancedParams(source, typeIndex),
-        glowXOffset = source.glowXOffset or 0,
-        glowYOffset = source.glowYOffset or 0,
+        params = params,
+        glowXOffset = xOff,
+        glowYOffset = yOff,
     }
-    glowSettingsCache[category] = cached
+    cache[category] = cached
     return cached
 end
 
@@ -1497,7 +1519,8 @@ local function GenerateTestEntries()
 
     for _, category in ipairs(CATEGORIES) do
         -- Per-category glow settings (same pattern as State.lua:GetCategoryGlowSettings)
-        local glowEnabled = BR.Config.GetCategorySetting(category, "showExpirationGlow") ~= false
+        local exGlowEnabled = BR.Config.GetCategorySetting(category, "showExpirationGlow") ~= false
+        local missGlowEnabled = BR.Config.GetCategorySetting(category, "showMissingGlow") ~= false
         local threshold = BR.Config.GetCategorySetting(category, "expirationThreshold") or 15
         local expiringShown = false
 
@@ -1526,20 +1549,20 @@ local function GenerateTestEntries()
                     if threshold > 0 and not expiringShown then
                         entry.displayType = "expiring"
                         entry.countText = FormatRemainingTime(testModeData.fakeRemaining)
-                        entry.shouldGlow = glowEnabled
+                        entry.shouldGlow = exGlowEnabled
                         expiringShown = true
                     else
                         entry.displayType = "count"
                         local fakeBuffed = testModeData.fakeTotal - testModeData.fakeMissing[raidIndex]
                         entry.countText = fakeBuffed .. "/" .. testModeData.fakeTotal
-                        entry.shouldGlow = glowEnabled
+                        entry.shouldGlow = missGlowEnabled
                     end
                     raidIndex = raidIndex + 1
                 elseif category == "pet" then
                     entry.displayType = "text"
                     entry.overlayText = buff.overlayText
                     entry.iconByRole = buff.iconByRole
-                    entry.shouldGlow = glowEnabled
+                    entry.shouldGlow = missGlowEnabled
                     if buff.groupId == "pets" and BR.PetHelpers then
                         local actions = BR.PetHelpers.GetPetActions(playerClass)
                         if actions and #actions > 0 then
@@ -1551,13 +1574,13 @@ local function GenerateTestEntries()
                     entry.displayType = "text"
                     entry.overlayText = buff.overlayText
                     entry.iconByRole = buff.iconByRole
-                    entry.shouldGlow = glowEnabled
+                    entry.shouldGlow = missGlowEnabled
 
                     -- Show first buff as expiring to preview expiration countdown
                     if threshold > 0 and not buff.noExpirationGlow and not expiringShown then
                         entry.displayType = "expiring"
                         entry.countText = FormatRemainingTime(testModeData.fakeRemaining)
-                        entry.shouldGlow = glowEnabled
+                        entry.shouldGlow = exGlowEnabled
                         expiringShown = true
                     end
                 end
@@ -1938,7 +1961,8 @@ local function RenderVisibleEntry(frame, entry)
     end
 
     -- Get cached glow settings for this entry's category (avoids repeated DB reads)
-    local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
+    local glowKind = entry.displayType == "expiring" and "expiring" or "missing"
+    local cachedGlow = entry.category and GetCachedGlowSettings(entry.category, glowKind) or nil
 
     -- Apply dynamic icon overrides (e.g. rogue poison expiring soonest, role-based shields)
     if entry.dynamicIcon then
@@ -2096,7 +2120,12 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         -- Not sub_icons: hide any leftover sub-icon buttons
         BR.SecureButtons.UpdateConsumableButtons(frame, nil)
         if displayMode == "expanded" and items and #items > 1 then
-            local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
+            local cachedGlow = entry.category
+                    and GetCachedGlowSettings(
+                        entry.category,
+                        entry.displayType == "expiring" and "expiring" or "missing"
+                    )
+                or nil
             local expandedSize = frame:GetWidth()
             local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(expandedSize)
             for i = 2, #items do
@@ -2266,7 +2295,7 @@ local function ApplyPetDisplayMode(frame, entry, frameList)
     BR.SecureButtons.ReapplyPetSpecIconIfHovered(frame)
 
     -- Show extra frames for additional actions
-    local cachedGlow = entry.category and GetCachedGlowSettings(entry.category) or nil
+    local cachedGlow = entry.category and GetCachedGlowSettings(entry.category, "missing") or nil
     local extraIndex = 0
     for i, action in ipairs(entry.petActions) do
         local showAsExtra = (petMode == "expanded" and i >= 2)
@@ -2385,7 +2414,8 @@ UpdateDisplay = function()
     end
 
     -- Clear per-cycle caches (before early exits — fallback paths also use these)
-    wipe(glowSettingsCache)
+    wipe(expiringGlowCache)
+    wipe(missingGlowCache)
     for key in pairs(BUFF_KEY_TO_CATEGORY) do
         local frame = buffFrames[key]
         if frame then
@@ -2891,7 +2921,8 @@ end
 CallbackRegistry:RegisterCallback("VisualsRefresh", function()
     ResolveFontPath()
     ResetLayoutSignatures()
-    wipe(glowSettingsCache)
+    wipe(expiringGlowCache)
+    wipe(missingGlowCache)
     UpdateVisuals()
     for _, mover in pairs(BR.Movers.GetMoverFrames()) do
         mover:UpdateSize()
@@ -3172,7 +3203,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 33
+        local DB_VERSION = 34
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -3840,6 +3871,20 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 db.hidePetWhileMounted = nil
                 if db.defaults and db.defaults.textSize == 12 then
                     db.defaults.textSize = nil
+                end
+            end,
+            [34] = function()
+                -- Split glow: existing showExpirationGlow controlled both missing + expiring glows.
+                -- Copy its value to the new showMissingGlow so users keep their current behavior.
+                if db.defaults and db.defaults.showExpirationGlow ~= nil then
+                    db.defaults.showMissingGlow = db.defaults.showExpirationGlow
+                end
+                if db.categorySettings then
+                    for _, catSettings in pairs(db.categorySettings) do
+                        if catSettings.showExpirationGlow ~= nil then
+                            catSettings.showMissingGlow = catSettings.showExpirationGlow
+                        end
+                    end
                 end
             end,
         }

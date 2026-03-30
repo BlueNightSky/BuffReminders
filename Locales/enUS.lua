@@ -179,7 +179,12 @@ english["Options.Font"] = "Font"
 english["Options.GlowReminderIcons"] = "Glow reminder icons"
 english["Options.GlowReminderIcons.Title"] = "Glow Reminder Icons"
 english["Options.GlowReminderIcons.Desc"] =
-    "Add a glow effect to all visible reminder icons, including missing and expiring buffs."
+    "Add a glow effect to reminder icons. Customize to configure expiring and missing glows independently."
+english["Options.GlowKind.Expiring"] = "Expiring"
+english["Options.GlowKind.Missing"] = "Missing"
+english["Options.GlowSettings.Expiring"] = "Glow Settings — Expiring"
+english["Options.GlowSettings.Missing"] = "Glow Settings — Missing"
+english["Options.Glow.Enabled"] = "Enabled"
 english["Options.Threshold"] = "Threshold"
 english["Options.GlowMissingPets"] = "Glow missing pets"
 english["Options.CustomGlowStyle"] = "Custom glow style"
@@ -189,7 +194,6 @@ english["Options.UseCustomColor"] = "Use Custom Color"
 english["Options.UseCustomColor.Desc"] =
     "When enabled, the proc glow is desaturated and recolored.\nThis looks less vibrant than the default proc glow."
 english["Options.ExpirationReminder"] = "Expiration Reminder"
-english["Options.GlowSettings"] = "Glow Settings"
 
 -- Glow params
 english["Options.Glow.Type"] = "Type:"
