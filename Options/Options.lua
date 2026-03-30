@@ -464,10 +464,11 @@ local function CreateOptionsPanel()
             toggle:SetPoint("LEFT", holder.label, "RIGHT", 6, 0)
         end
 
-        -- Detach button: small icon to toggle detached positioning
+        -- Detach button: small pin icon to toggle detached positioning
+        -- Anchored outside the holder (in the column's spare space) to avoid overlapping labels/toggles
         local detachBtn = CreateFrame("Button", nil, holder)
         detachBtn:SetSize(14, 14)
-        detachBtn:SetPoint("RIGHT", holder, "RIGHT", -2, 0)
+        detachBtn:SetPoint("LEFT", holder, "RIGHT", 4, 0)
 
         local detachIcon = detachBtn:CreateTexture(nil, "ARTWORK")
         detachIcon:SetAllPoints()
@@ -749,7 +750,7 @@ local function CreateOptionsPanel()
             -- Detach button for custom buffs
             local detachBtn = CreateFrame("Button", nil, holder)
             detachBtn:SetSize(14, 14)
-            detachBtn:SetPoint("RIGHT", holder, "RIGHT", -2, 0)
+            detachBtn:SetPoint("LEFT", holder, "RIGHT", 4, 0)
             local detachTex = detachBtn:CreateTexture(nil, "ARTWORK")
             detachTex:SetAllPoints()
             detachTex:SetAtlas("Waypoint-MapPin-ChatIcon")
