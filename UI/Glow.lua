@@ -340,7 +340,7 @@ function BR.Glow.SetExpiration(frame, show, category, cachedSettings)
         else
             local db = BR.profile
             local d = db and db.defaults or {}
-            typeIndex = d.glowType or GlowType.Pixel
+            typeIndex = d.glowType or GlowType.AutoCast
             color = d.glowColor
             if typeIndex == GlowType.Proc and not d.glowProcUseCustomColor then
                 color = nil

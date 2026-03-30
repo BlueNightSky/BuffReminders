@@ -3100,6 +3100,7 @@ ShowGlowAdvanced = function(targetCategory, glowKind)
     staticLayout:Add(enableHolder, 24, 2)
 
     -- Type dropdown (always visible, top-left beside preview)
+    local typeFallback = glowKind == "missing" and GlowType.Pixel or GlowType.AutoCast
     local typeOptions = {}
     for i, gt in ipairs(GlowTypes) do
         typeOptions[i] = { label = gt.name, value = i }
@@ -3110,7 +3111,7 @@ ShowGlowAdvanced = function(targetCategory, glowKind)
         labelWidth = 40,
         options = typeOptions,
         get = function()
-            return getSource()[K("Type")] or GlowType.Pixel
+            return getSource()[K("Type")] or typeFallback
         end,
         width = 140,
         onChange = function(val)
@@ -3147,7 +3148,7 @@ ShowGlowAdvanced = function(targetCategory, glowKind)
     local function RefreshPreview()
         Glow.StopAll(previewFrame, previewKey)
         local d = getSource()
-        local typeIdx = d[K("Type")] or GlowType.Pixel
+        local typeIdx = d[K("Type")] or typeFallback
         local color = d[K("Color")]
         if typeIdx == GlowType.Proc and not d[K("ProcUseCustomColor")] then
             color = nil
@@ -3203,7 +3204,7 @@ ShowGlowAdvanced = function(targetCategory, glowKind)
         dynamicLayout = Components.VerticalLayout(panel, { x = MARGIN, y = DYNAMIC_START_Y })
 
         local d = getSource()
-        local typeIdx = d[K("Type")] or GlowType.Pixel
+        local typeIdx = d[K("Type")] or typeFallback
 
         -- Size + Color row
         local sizeHolder

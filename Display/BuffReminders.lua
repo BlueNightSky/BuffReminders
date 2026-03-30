@@ -298,7 +298,7 @@ local defaults = {
         showExpirationGlow = true,
         showMissingGlow = true,
         expirationThreshold = 15, -- minutes
-        glowType = 1, -- BR.Glow.Type: Pixel=1, AutoCast=2, Border=3, Proc=4
+        glowType = 2, -- BR.Glow.Type: Pixel=1, AutoCast=2, Border=3, Proc=4 (expiring default)
         glowSize = 2,
         showConsumablesWithoutItems = false,
         delveFoodOnly = true,
@@ -895,7 +895,7 @@ local function GetCachedGlowSettings(category, kind)
         xOff = source.missingGlowXOffset or 0
         yOff = source.missingGlowYOffset or 0
     else
-        typeIndex = source.glowType or BR.Glow.Type.Pixel
+        typeIndex = source.glowType or BR.Glow.Type.AutoCast
         color = source.glowColor
         if typeIndex == BR.Glow.Type.Proc and not source.glowProcUseCustomColor then
             color = nil
@@ -3394,7 +3394,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 34
+        local DB_VERSION = 35
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -4075,6 +4075,15 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                         if catSettings.showExpirationGlow ~= nil then
                             catSettings.showMissingGlow = catSettings.showExpirationGlow
                         end
+                    end
+                end
+            end,
+            [35] = function()
+                -- Change expiring glow default from Pixel (1) to AutoCast (2).
+                -- Migrate users who had the old default so they get the new one.
+                if db.defaults then
+                    if db.defaults.glowType == nil or db.defaults.glowType == 1 then
+                        db.defaults.glowType = 2
                     end
                 end
             end,
