@@ -286,6 +286,7 @@ local DynamicRoots = {
     categoryVisibility = "DisplayRefresh",
     splitCategories = "FramesReparent",
     readyCheckOnlyOverrides = "DisplayRefresh",
+    detachedIcons = "FramesReparent",
 }
 
 ---Check if a config path is valid

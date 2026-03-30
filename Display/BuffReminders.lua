@@ -524,6 +524,7 @@ local wasMounted = IsMounted()
 
 -- Category frame system
 local categoryFrames = {}
+local detachedFrames = {} -- Per-icon detached container frames (shown when an icon is detached)
 local CATEGORIES = { "raid", "presence", "targeted", "self", "pet", "consumable", "custom" }
 
 -- Track previously visible frame keys for selective hiding (Phase 3 optimization)
@@ -568,6 +569,27 @@ local function IsCategorySplit(category)
     end
     -- Fall back to legacy location (splitCategories.{cat})
     return db.splitCategories and db.splitCategories[category] == true
+end
+
+---Check if an individual icon is detached from its container
+---@param key string Buff key
+---@return boolean
+local function IsIconDetached(key)
+    local db = BR.profile
+    return db.detachedIcons ~= nil and db.detachedIcons[key] ~= nil
+end
+
+local DETACHED_DEFAULT_POS = { x = 0, y = 0 }
+
+---Get the saved position for a detached icon
+---@param key string Buff key
+---@return table position {x, y}
+local function GetDetachedPosition(key)
+    local db = BR.profile
+    if db.detachedIcons and db.detachedIcons[key] then
+        return db.detachedIcons[key].position or DETACHED_DEFAULT_POS
+    end
+    return DETACHED_DEFAULT_POS
 end
 
 ---Get settings for a category with inheritance from defaults
@@ -832,6 +854,7 @@ local ResetLayoutSignatures
 -- Reusable tables for UpdateDisplay (wiped each cycle to avoid per-call allocation)
 local reusableVisibleKeys = {} ---@type table<string, boolean>
 local reusableMainBuffs = {}
+local reusableDetachedSink = {} -- Throw-away target for detached consumable post-processing
 local sortComparator = function(a, b)
     return a.sortOrder < b.sortOrder
 end
@@ -993,6 +1016,17 @@ local DIRECTION_LAYOUT = {
     DOWN = { anchor = "TOP", xMult = 0, yMult = -1 },
 }
 
+-- Create a detached container frame for an individual buff icon
+local function CreateDetachedFrame(key)
+    local pos = GetDetachedPosition(key)
+    local frame = CreateFrame("Frame", "BuffReminders_Detached_" .. key, UIParent)
+    frame:SetSize(64, 64) -- sized dynamically by PositionDetachedIcon
+    frame:SetPoint("CENTER", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+    frame:EnableMouse(false)
+    frame:Hide()
+    return frame
+end
+
 -- Create a category frame for grouped display mode
 local function CreateCategoryFrame(category)
     local db = BR.profile
@@ -1088,7 +1122,17 @@ local BUFF_KEY_TO_CATEGORY = BR.BUFF_KEY_TO_CATEGORY
 
 -- Create icon frame for a buff
 local function CreateBuffFrame(buff, category)
-    local parent = (category and IsCategorySplit(category) and categoryFrames[category]) or mainFrame
+    local parent
+    if IsIconDetached(buff.key) then
+        if not detachedFrames[buff.key] then
+            detachedFrames[buff.key] = CreateDetachedFrame(buff.key)
+        end
+        parent = detachedFrames[buff.key]
+    elseif category and IsCategorySplit(category) and categoryFrames[category] then
+        parent = categoryFrames[category]
+    else
+        parent = mainFrame
+    end
     local frame = CreateFrame("Frame", "BuffReminders_" .. buff.key, parent)
     frame.key = buff.key
     frame.spellIDs = buff.spellID
@@ -1497,6 +1541,60 @@ local function PositionSplitCategories(visibleByCategory)
     end
 end
 
+-- Position a detached icon in its own container frame
+local function PositionDetachedIcon(key, frame)
+    local container = detachedFrames[key]
+    if not container then
+        return
+    end
+
+    local effectiveCat = GetEffectiveCategory(frame)
+    local catSettings = GetCategorySettings(effectiveCat)
+    local iconSize = catSettings.iconSize or 64
+    local iconWidth = GetEffectiveWidth(catSettings.iconWidth, iconSize)
+
+    -- Count extra frames (expanded consumables)
+    local totalFrames = 1
+    if frame.extraFrames then
+        for _, extra in ipairs(frame.extraFrames) do
+            if extra:IsShown() then
+                totalFrames = totalFrames + 1
+            end
+        end
+    end
+
+    -- Size the container to fit all visible frames (stacked horizontally)
+    local spacing = totalFrames > 1 and floor(iconWidth * (catSettings.spacing or 0.2)) or 0
+    local totalWidth = totalFrames * iconWidth + (totalFrames - 1) * spacing
+    container:SetSize(totalWidth, iconSize)
+
+    -- Position at saved coordinates
+    local pos = GetDetachedPosition(key)
+    container:ClearAllPoints()
+    container:SetPoint("CENTER", UIParent, "CENTER", pos.x or 0, pos.y or 0)
+
+    -- Anchor the icon inside the container
+    frame:SetSize(iconWidth, iconSize)
+    frame:ClearAllPoints()
+    if totalFrames > 1 then
+        frame:SetPoint("LEFT", container, "LEFT", 0, 0)
+        -- Position extra frames after the main icon
+        local offset = iconWidth + spacing
+        for _, extra in ipairs(frame.extraFrames) do
+            if extra:IsShown() then
+                extra:SetSize(iconWidth, iconSize)
+                extra:ClearAllPoints()
+                extra:SetPoint("LEFT", container, "LEFT", offset, 0)
+                offset = offset + iconWidth + spacing
+            end
+        end
+    else
+        frame:SetPoint("CENTER", container, "CENTER", 0, 0)
+    end
+
+    container:Show()
+end
+
 --- Generate fake state entries for test mode, populating BR.BuffState.entries
 --- and BR.BuffState.visibleByCategory so UpdateDisplay can render via the normal pipeline.
 local function GenerateTestEntries()
@@ -1669,6 +1767,9 @@ local function HideAllDisplayFrames()
         if categoryFrames[category] then
             categoryFrames[category]:Hide()
         end
+    end
+    for _, container in pairs(detachedFrames) do
+        container:Hide()
     end
     wipe(previouslyVisibleKeys)
     -- Reset layout signatures so next PositionMainContainer/PositionSplitCategory always
@@ -2500,12 +2601,21 @@ UpdateDisplay = function()
                     if frame then
                         local shown = RenderVisibleEntry(frame, entry)
                         if shown then
-                            frames[#frames + 1] = frame
+                            if IsIconDetached(entry.key) then
+                                PositionDetachedIcon(entry.key, frame)
+                            else
+                                frames[#frames + 1] = frame
+                            end
                             reusableVisibleKeys[entry.key] = true
                         end
                         -- Category-specific post-processing
                         if category == "consumable" then
-                            ApplyConsumableDisplayMode(frame, entry, frames, frame:GetParent())
+                            if IsIconDetached(entry.key) then
+                                wipe(reusableDetachedSink)
+                                ApplyConsumableDisplayMode(frame, entry, reusableDetachedSink, frame:GetParent())
+                            else
+                                ApplyConsumableDisplayMode(frame, entry, frames, frame:GetParent())
+                            end
                         elseif category == "pet" then
                             ApplyPetDisplayMode(frame, entry, frames)
                         end
@@ -2519,12 +2629,21 @@ UpdateDisplay = function()
                     if frame then
                         local shown = RenderVisibleEntry(frame, entry)
                         if shown then
-                            reusableMainBuffs[#reusableMainBuffs + 1] = frame
+                            if IsIconDetached(entry.key) then
+                                PositionDetachedIcon(entry.key, frame)
+                            else
+                                reusableMainBuffs[#reusableMainBuffs + 1] = frame
+                            end
                             reusableVisibleKeys[entry.key] = true
                         end
                         -- Category-specific post-processing
                         if category == "consumable" then
-                            ApplyConsumableDisplayMode(frame, entry, reusableMainBuffs, mainFrame)
+                            if IsIconDetached(entry.key) then
+                                wipe(reusableDetachedSink)
+                                ApplyConsumableDisplayMode(frame, entry, reusableDetachedSink, frame:GetParent())
+                            else
+                                ApplyConsumableDisplayMode(frame, entry, reusableMainBuffs, frame:GetParent())
+                            end
                         elseif category == "pet" then
                             ApplyPetDisplayMode(frame, entry, reusableMainBuffs)
                         end
@@ -2547,6 +2666,10 @@ UpdateDisplay = function()
                         extra:Hide()
                         UpdatePetLabels(extra, nil)
                     end
+                end
+                -- Hide detached container when its icon is no longer visible
+                if detachedFrames[key] then
+                    detachedFrames[key]:Hide()
                 end
             end
         end
@@ -2678,9 +2801,17 @@ local function InitializeFrames()
         categoryFrames[category] = CreateCategoryFrame(category)
     end
 
+    -- Pre-create detached container frames for icons detached in saved variables
+    if db.detachedIcons then
+        for key in pairs(db.detachedIcons) do
+            detachedFrames[key] = CreateDetachedFrame(key)
+        end
+    end
+
     -- Export frame references for split modules (Movers, SecureButtons)
     BR.Display.mainFrame = mainFrame
     BR.Display.categoryFrames = categoryFrames
+    BR.Display.detachedFrames = detachedFrames
     BR.Display.frames = buffFrames
 
     -- Create mover frames (shown when unlocked for drag positioning)
@@ -2720,18 +2851,26 @@ local function CreateCustomBuffFrameRuntime(customBuff)
     ResetLayoutSignatures()
 end
 
--- Reparent all buff frames to appropriate parent based on split status
+-- Reparent all buff frames to appropriate parent based on split/detached status
 ReparentBuffFrames = function()
     for _, frame in pairs(buffFrames) do
+        local key = frame.key
         local category = frame.buffCategory
-        if category and IsCategorySplit(category) and categoryFrames[category] then
+        if IsIconDetached(key) then
+            -- Detached: parent to its own container frame
+            if not detachedFrames[key] then
+                detachedFrames[key] = CreateDetachedFrame(key)
+            end
+            frame:SetParent(detachedFrames[key])
+            frame:ClearAllPoints()
+        elseif category and IsCategorySplit(category) and categoryFrames[category] then
             -- This category is split - parent to its own frame
             frame:SetParent(categoryFrames[category])
-            frame:ClearAllPoints() -- Clear stale anchors after reparenting
+            frame:ClearAllPoints()
         else
             -- This category is in main frame
             frame:SetParent(mainFrame)
-            frame:ClearAllPoints() -- Clear stale anchors after reparenting
+            frame:ClearAllPoints()
         end
         if frame.extraFrames then
             for _, extra in ipairs(frame.extraFrames) do
@@ -2739,6 +2878,44 @@ ReparentBuffFrames = function()
             end
         end
     end
+end
+
+---Detach an individual icon from its container into its own frame
+---@param key string Buff key
+local function DetachIcon(key)
+    local db = BR.profile
+    if not db.detachedIcons then
+        db.detachedIcons = {}
+    end
+    -- Initialize with position snapped from the icon's current screen location
+    local frame = buffFrames[key]
+    local x, y = 0, 0
+    if frame and frame:IsShown() then
+        local cx, cy = frame:GetCenter()
+        local px, py = UIParent:GetCenter()
+        x = floor(cx - px + 0.5)
+        y = floor(cy - py + 0.5)
+    end
+    db.detachedIcons[key] = { position = { x = x, y = y } }
+    -- FramesReparent callback handles ResetLayoutSignatures + InvalidateSortedCategories
+    -- + ReparentBuffFrames + UpdateVisuals
+    BR.CallbackRegistry:TriggerEvent("FramesReparent")
+end
+
+---Reattach a detached icon back to its category/main container
+---@param key string Buff key
+local function ReattachIcon(key)
+    local db = BR.profile
+    if db.detachedIcons then
+        db.detachedIcons[key] = nil
+        if not next(db.detachedIcons) then
+            db.detachedIcons = nil
+        end
+    end
+    if detachedFrames[key] then
+        detachedFrames[key]:Hide()
+    end
+    BR.CallbackRegistry:TriggerEvent("FramesReparent")
 end
 
 ---Remove a custom buff frame (called at runtime when deleting buffs)
@@ -2778,6 +2955,14 @@ local function RemoveCustomBuffFrame(key)
         frame:Hide()
         frame:SetParent(nil)
         buffFrames[key] = nil
+    end
+    -- Clean up detached state
+    local db = BR.profile
+    if db.detachedIcons then
+        db.detachedIcons[key] = nil
+    end
+    if detachedFrames[key] then
+        detachedFrames[key]:Hide()
     end
     -- Remove from BUFF_TABLES.custom array
     for i = #CustomBuffs, 1, -1 do
@@ -2927,6 +3112,9 @@ CallbackRegistry:RegisterCallback("VisualsRefresh", function()
     for _, mover in pairs(BR.Movers.GetMoverFrames()) do
         mover:UpdateSize()
     end
+    for _, mover in pairs(BR.Movers.GetDetachedMoverFrames()) do
+        mover:UpdateSize()
+    end
 end)
 
 -- Layout changes (spacing, grow direction)
@@ -2978,6 +3166,9 @@ BR.Helpers = {
     IsBuffEnabled = IsBuffEnabled,
     GetCategorySettings = GetCategorySettings,
     IsCategorySplit = IsCategorySplit,
+    IsIconDetached = IsIconDetached,
+    DetachIcon = DetachIcon,
+    ReattachIcon = ReattachIcon,
     GetBuffTexture = GetBuffTexture,
     DeepCopy = function(...)
         return BR.ImportExport.DeepCopy(...)

@@ -142,6 +142,7 @@ english["Mover.BuffAnchor"] = "Buff Anchor"
 english["Mover.DragTooltip"] = "Drag to reposition\nClick to toggle coordinate editor"
 english["Mover.MainEmpty"] = "Main (empty)"
 english["Mover.MainAll"] = "Main (all)"
+english["Mover.Detached"] = "Detached"
 
 -- ============================================================================
 -- DISPLAY
@@ -219,6 +220,8 @@ english["Options.ReadyCheckOnly"] = "Show only on ready check"
 english["Options.ReadyCheckOnly.Desc"] = "Only show this category's buffs for 15 seconds after a ready check starts"
 english["Options.Visibility"] = "Visibility"
 english["Options.PerCategoryCustomization"] = "Per-Category Customization"
+english["Options.DetachIcon"] = "Detach"
+english["Options.DetachIcon.Desc"] = "Move this icon to its own independently-positioned frame"
 
 -- ============================================================================
 -- OPTIONS: HEALTHSTONE

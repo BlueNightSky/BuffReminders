@@ -48,6 +48,9 @@ local LSM = BR.LSM
 -- Helper function aliases
 local GetCategorySettings = BR.Helpers.GetCategorySettings
 local IsCategorySplit = BR.Helpers.IsCategorySplit
+local IsIconDetached = BR.Helpers.IsIconDetached
+local DetachIcon = BR.Helpers.DetachIcon
+local ReattachIcon = BR.Helpers.ReattachIcon
 local GetBuffTexture = BR.Helpers.GetBuffTexture
 local ValidateSpellID = BR.Helpers.ValidateSpellID
 local ValidateItemID = BR.Helpers.ValidateItemID
@@ -461,6 +464,45 @@ local function CreateOptionsPanel()
             toggle:SetPoint("LEFT", holder.label, "RIGHT", 6, 0)
         end
 
+        -- Detach button: small icon to toggle detached positioning
+        local detachBtn = CreateFrame("Button", nil, holder)
+        detachBtn:SetSize(14, 14)
+        detachBtn:SetPoint("RIGHT", holder, "RIGHT", -2, 0)
+
+        local detachIcon = detachBtn:CreateTexture(nil, "ARTWORK")
+        detachIcon:SetAllPoints()
+        detachIcon:SetAtlas("Waypoint-MapPin-ChatIcon")
+
+        local function UpdateDetachVisual()
+            if IsIconDetached(key) then
+                detachIcon:SetVertexColor(1, 0.85, 0.3, 1) -- Gold when detached
+                detachIcon:SetDesaturated(false)
+            else
+                detachIcon:SetVertexColor(0.5, 0.5, 0.5, 0.6) -- Dim when attached
+                detachIcon:SetDesaturated(true)
+            end
+        end
+        UpdateDetachVisual()
+
+        detachBtn:SetScript("OnClick", function()
+            if IsIconDetached(key) then
+                ReattachIcon(key)
+            else
+                DetachIcon(key)
+            end
+            UpdateDetachVisual()
+            UpdateDisplay()
+        end)
+        detachBtn:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(L["Options.DetachIcon"], 1, 1, 1)
+            GameTooltip:AddLine(L["Options.DetachIcon.Desc"], 0.7, 0.7, 0.7, true)
+            GameTooltip:Show()
+        end)
+        detachBtn:SetScript("OnLeave", function()
+            GameTooltip:Hide()
+        end)
+
         return y - ITEM_HEIGHT
     end
 
@@ -703,6 +745,42 @@ local function CreateOptionsPanel()
             })
             holder:SetPoint("TOPLEFT", 0, rowY)
             panel.buffCheckboxes[key] = holder
+
+            -- Detach button for custom buffs
+            local detachBtn = CreateFrame("Button", nil, holder)
+            detachBtn:SetSize(14, 14)
+            detachBtn:SetPoint("RIGHT", holder, "RIGHT", -2, 0)
+            local detachTex = detachBtn:CreateTexture(nil, "ARTWORK")
+            detachTex:SetAllPoints()
+            detachTex:SetAtlas("Waypoint-MapPin-ChatIcon")
+            local function UpdateDetachVis()
+                if IsIconDetached(key) then
+                    detachTex:SetVertexColor(1, 0.85, 0.3, 1)
+                    detachTex:SetDesaturated(false)
+                else
+                    detachTex:SetVertexColor(0.5, 0.5, 0.5, 0.6)
+                    detachTex:SetDesaturated(true)
+                end
+            end
+            UpdateDetachVis()
+            detachBtn:SetScript("OnClick", function()
+                if IsIconDetached(key) then
+                    ReattachIcon(key)
+                else
+                    DetachIcon(key)
+                end
+                UpdateDetachVis()
+                UpdateDisplay()
+            end)
+            detachBtn:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText(L["Options.DetachIcon"], 1, 1, 1)
+                GameTooltip:AddLine(L["Options.DetachIcon.Desc"], 0.7, 0.7, 0.7, true)
+                GameTooltip:Show()
+            end)
+            detachBtn:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
 
             tinsert(panel.customBuffRows, holder)
             rowY = rowY - ITEM_HEIGHT
