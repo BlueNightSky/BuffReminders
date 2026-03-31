@@ -1586,10 +1586,7 @@ function BuffState.Refresh()
     local missingCountOnly = db.showMissingCountOnly
     -- Aura API is restricted in combat/encounters (inCombat set by Display layer),
     -- during M+ keystones, and in PvP instances (except during prep phase before gates open).
-    -- Ensure content type cache is populated before checking (avoids one-frame flicker after invalidation).
-    local contentType = GetCurrentContentType()
-    local isPvPRestricted = contentType == "pvp" and not inPvPPrepPhase
-    local isAuraRestricted = inCombat or GetCurrentDifficultyKey() == "mythicPlus" or isPvPRestricted
+    local isAuraRestricted = BuffState.IsRestricted()
     local hideExpiring = isAuraRestricted and db.hideExpiringInCombat ~= false
 
     -- Process raid buffs (coverage - need everyone to have them)
@@ -2130,6 +2127,14 @@ end
 ---@param state boolean
 function BuffState.SetPvPPrepPhase(state)
     inPvPPrepPhase = state
+end
+
+---Whether the player is in a restricted context (combat, M+ keystone, or PvP match).
+---@return boolean
+function BuffState.IsRestricted()
+    return inCombat
+        or GetCurrentDifficultyKey() == "mythicPlus"
+        or (GetCurrentContentType() == "pvp" and not inPvPPrepPhase)
 end
 
 -- ============================================================================

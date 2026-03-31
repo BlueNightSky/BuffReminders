@@ -510,6 +510,9 @@ BR.BUFF_TABLES = {
             noExpirationGlow = true,
             groupId = "dkRunes",
             customCheck = function()
+                if BR.BuffState.IsRestricted() then
+                    return nil
+                end
                 local specId = BR.StateHelpers.GetPlayerSpecId()
                 local prefs = BR.profile.dkRunePreferences
                 local specPrefs = prefs and prefs[specId]
@@ -553,7 +556,7 @@ BR.BUFF_TABLES = {
             noExpirationGlow = true,
             groupId = "dkRunes",
             customCheck = function()
-                if not BR.BuffState.HasOffHandWeapon() then
+                if BR.BuffState.IsRestricted() or not BR.BuffState.HasOffHandWeapon() then
                     return nil
                 end
                 local specId = BR.StateHelpers.GetPlayerSpecId()
@@ -1006,6 +1009,9 @@ BR.BUFF_TABLES = {
                 433583, -- Rite of Adjuration
                 433568, -- Rite of Sanctification
             },
+            visibilityCondition = function()
+                return not BR.BuffState.IsRestricted()
+            end,
             disabledInCompetitivePvP = true,
         },
         -- Weapon Buff (Off-Hand) - only shown when off-hand slot has a weapon
@@ -1027,7 +1033,7 @@ BR.BUFF_TABLES = {
                 433568, -- Rite of Sanctification
             },
             visibilityCondition = function()
-                return BR.BuffState.HasOffHandWeapon()
+                return not BR.BuffState.IsRestricted() and BR.BuffState.HasOffHandWeapon()
             end,
             disabledInCompetitivePvP = true,
         },
