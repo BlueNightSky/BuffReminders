@@ -18,6 +18,7 @@ local addonName, BR = ...
 ---@field borderSize number
 ---@field growDirection string
 ---@field showExpirationGlow boolean
+---@field showMissingGlow boolean
 ---@field expirationThreshold number
 ---@field glowType number
 ---@field glowColor? number[]
@@ -31,8 +32,24 @@ local addonName, BR = ...
 ---@field glowBorderFrequency? number
 ---@field glowProcDuration? number
 ---@field glowProcStartAnim? boolean
+---@field glowProcUseCustomColor? boolean
 ---@field glowXOffset? number
 ---@field glowYOffset? number
+---@field missingGlowType? number
+---@field missingGlowColor? number[]
+---@field missingGlowSize? number
+---@field missingGlowPixelLines? number
+---@field missingGlowPixelFrequency? number
+---@field missingGlowPixelLength? number
+---@field missingGlowAutocastParticles? number
+---@field missingGlowAutocastFrequency? number
+---@field missingGlowAutocastScale? number
+---@field missingGlowBorderFrequency? number
+---@field missingGlowProcDuration? number
+---@field missingGlowProcStartAnim? boolean
+---@field missingGlowProcUseCustomColor? boolean
+---@field missingGlowXOffset? number
+---@field missingGlowYOffset? number
 ---@field fontFace? string
 ---@field showConsumablesWithoutItems? boolean
 ---@field delveFoodOnly? boolean
@@ -62,6 +79,7 @@ local addonName, BR = ...
 ---@field iconZoom? number
 ---@field borderSize? number
 ---@field showExpirationGlow? boolean
+---@field showMissingGlow? boolean
 ---@field expirationThreshold? number
 ---@field showBuffReminder? boolean
 ---@field buffTextSize? number
@@ -69,6 +87,37 @@ local addonName, BR = ...
 ---@field buffTextOffsetY? number
 ---@field showText? boolean
 ---@field useCustomAppearance? boolean
+---@field useCustomGlow? boolean
+---@field glowType? number
+---@field glowColor? number[]
+---@field glowSize? number
+---@field glowPixelLines? number
+---@field glowPixelFrequency? number
+---@field glowPixelLength? number
+---@field glowAutocastParticles? number
+---@field glowAutocastFrequency? number
+---@field glowAutocastScale? number
+---@field glowBorderFrequency? number
+---@field glowProcDuration? number
+---@field glowProcStartAnim? boolean
+---@field glowProcUseCustomColor? boolean
+---@field glowXOffset? number
+---@field glowYOffset? number
+---@field missingGlowType? number
+---@field missingGlowColor? number[]
+---@field missingGlowSize? number
+---@field missingGlowPixelLines? number
+---@field missingGlowPixelFrequency? number
+---@field missingGlowPixelLength? number
+---@field missingGlowAutocastParticles? number
+---@field missingGlowAutocastFrequency? number
+---@field missingGlowAutocastScale? number
+---@field missingGlowBorderFrequency? number
+---@field missingGlowProcDuration? number
+---@field missingGlowProcStartAnim? boolean
+---@field missingGlowProcUseCustomColor? boolean
+---@field missingGlowXOffset? number
+---@field missingGlowYOffset? number
 ---@field split? boolean
 ---@field clickable? boolean
 ---@field clickableHighlight? boolean
@@ -93,6 +142,11 @@ local addonName, BR = ...
 ---@field category CategoryName
 
 ---@alias SplitCategories table<CategoryName, boolean>
+
+---@class DetachedIconEntry
+---@field position {x: number, y: number}
+
+---@alias DetachedIcons table<string, DetachedIconEntry>
 
 ---@class BuffFrame: Button
 ---@field GetFrameLevel fun(self: BuffFrame): number
