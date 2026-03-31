@@ -578,6 +578,27 @@ L["Options.Min"] = "분"
 -- ============================================================================
 -- COMPONENTS (UI/Components.lua)
 -- ============================================================================
+-- Content filter tooltip
+L["Content.ClickToFilter"] = "%s 난이도별로 필터하려면 클릭"
+
+-- Mover labels
+L["Mover.AnchorGrowth"] = "앵커 \194\183 방향 %s"
+L["Mover.AnchorGrowthFrame"] = "앵커 \194\183 방향 %s \194\183 > %s"
+
+-- Pet labels
+L["Pet.SpiritBeast"] = "야수 정령"
+
+-- Appearance grid labels
+L["Appearance.Width"] = "너비"
+L["Appearance.Height"] = "높이"
+L["Appearance.Zoom"] = "확대"
+L["Appearance.Border"] = "테두리"
+L["Appearance.Spacing"] = "간격"
+L["Appearance.Alpha"] = "투명도"
+L["Appearance.Text"] = "텍스트"
+L["Appearance.TextX"] = "텍스트 X"
+L["Appearance.TextY"] = "텍스트 Y"
+
 -- Slider tooltip
 L["Component.AdjustValue"] = "값 조정"
 L["Component.AdjustValue.Desc"] = "클릭해서 입력하거나 마우스 휠을 사용하세요."

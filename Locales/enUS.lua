@@ -575,6 +575,27 @@ english["Options.Min"] = "min"
 -- ============================================================================
 -- COMPONENTS (UI/Components.lua)
 -- ============================================================================
+-- Content filter tooltip
+english["Content.ClickToFilter"] = "Click to filter by %s difficulty"
+
+-- Mover labels
+english["Mover.AnchorGrowth"] = "Anchor \194\183 Growth %s"
+english["Mover.AnchorGrowthFrame"] = "Anchor \194\183 Growth %s \194\183 > %s"
+
+-- Pet labels
+english["Pet.SpiritBeast"] = "Spirit Beast"
+
+-- Appearance grid labels
+english["Appearance.Width"] = "Width"
+english["Appearance.Height"] = "Height"
+english["Appearance.Zoom"] = "Zoom"
+english["Appearance.Border"] = "Border"
+english["Appearance.Spacing"] = "Spacing"
+english["Appearance.Alpha"] = "Alpha"
+english["Appearance.Text"] = "Text"
+english["Appearance.TextX"] = "Text X"
+english["Appearance.TextY"] = "Text Y"
+
 -- Slider tooltip
 english["Component.AdjustValue"] = "Adjust value"
 english["Component.AdjustValue.Desc"] = "Click to type or use mouse wheel"

@@ -2376,7 +2376,7 @@ local function UpdatePetLabels(frame, petAction)
         frame._br_pet_extra_text:SetFont(fontPath, familySize, "OUTLINE")
         frame._br_pet_extra_text:ClearAllPoints()
         frame._br_pet_extra_text:SetPoint("TOP", anchor, "BOTTOM", 0, -1)
-        frame._br_pet_extra_text:SetText("Spirit Beast")
+        frame._br_pet_extra_text:SetText(L["Pet.SpiritBeast"])
         frame._br_pet_extra_text:SetTextColor(1, 1, 1)
         frame._br_pet_extra_text:Show()
     else
