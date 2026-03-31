@@ -75,6 +75,8 @@ english["Overlay.NoPet"] = "NO\nPET"
 english["Overlay.PassivePet"] = "PASSIVE\nPET"
 english["Overlay.WrongPet"] = "WRONG\nPET"
 english["Overlay.NoRune"] = "NO\nRUNE"
+english["Overlay.DKWrongRune"] = "WRONG\nRUNE"
+english["Overlay.DKWrongRuneOH"] = "WRONG\nOH\nRUNE"
 english["Overlay.NoFlask"] = "NO\nFLASK"
 english["Overlay.NoFood"] = "NO\nFOOD"
 english["Overlay.NoWeaponBuff"] = "NO\nWEAPON\nBUFF"
@@ -87,6 +89,7 @@ english["Overlay.SecondsFormat"] = "%ds"
 -- BUFF GROUP DISPLAY NAMES
 -- ============================================================================
 english["Group.Beacons"] = "Beacons"
+english["Group.DKRunes"] = "Runeforges"
 english["Group.ShamanImbues"] = "Shaman Imbues"
 english["Group.PaladinRites"] = "Paladin Rites"
 english["Group.Pets"] = "Pets"
@@ -329,6 +332,17 @@ english["Options.ShowWithoutItems.Desc"] =
     "When enabled, consumable reminders are shown even if you don't have the item in your bags. When disabled, only consumables you actually carry are shown."
 english["Options.DelveFoodOnly"] = "Only delve food in delves"
 english["Options.DelveFoodOnly.Desc"] = "When inside a delve, hide all consumable reminders except delve food."
+
+-- ============================================================================
+-- OPTIONS: DK RUNEFORGE PREFERENCES
+-- ============================================================================
+english["Options.RuneforgePreferences"] = "Runeforge Preferences"
+english["Options.RuneforgeNote"] =
+    "Select your expected runeforge per spec. A reminder shows when the wrong or no runeforge is applied."
+english["Options.RuneMainHand"] = "Main Hand"
+english["Options.RuneOffHand"] = "Off Hand"
+english["Options.RuneTwoHanded"] = "Two-Handed"
+english["Options.RuneDualWield"] = "Dual Wield"
 
 -- ============================================================================
 -- OPTIONS: LAYOUT

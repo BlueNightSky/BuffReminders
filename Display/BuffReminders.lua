@@ -330,6 +330,18 @@ local defaults = {
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
 
+    -- DK runeforge preferences: [specId] = { mainhand, dw_mainhand, dw_offhand }
+    -- No runes selected = no reminder for that spec (implicit disable)
+    dkRunePreferences = {
+        [250] = { mainhand = { [6241] = true } }, -- Blood: Sanguination
+        [251] = {
+            mainhand = { [3368] = true }, -- 2H: Fallen Crusader
+            dw_mainhand = { [3370] = true }, -- DW MH: Razorice
+            dw_offhand = { [3368] = true }, -- DW OH: Fallen Crusader
+        },
+        [252] = { mainhand = { [6245] = true } }, -- Unholy: Apocalypse
+    },
+
     minimap = {
         hide = true,
     },
@@ -4438,6 +4450,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Invalidate caches when player changes spec
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidateOffHandCache()
+
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.InvalidateConsumableCache()
         BR.SecureButtons.RefreshOverlaySpells()
@@ -4462,6 +4475,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     elseif event == "PLAYER_EQUIPMENT_CHANGED" then
         BR.BuffState.InvalidateItemCache()
         BR.BuffState.InvalidateOffHandCache()
+
         SetDirty()
     elseif event == "BAG_UPDATE_DELAYED" then
         BR.BuffState.InvalidateItemCache()

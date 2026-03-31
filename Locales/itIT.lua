@@ -63,6 +63,8 @@ L["Overlay.NoPet"] = "NO\nPET"
 L["Overlay.PassivePet"] = "PET\nPASSIVO"
 L["Overlay.WrongPet"] = "PET\nERRATO"
 L["Overlay.NoRune"] = "NO\nRUNA"
+L["Overlay.DKWrongRune"] = "RUNA\nERRATA"
+L["Overlay.DKWrongRuneOH"] = "RUNA\nMS\nERRATA"
 L["Overlay.NoFlask"] = "NO\nFIALA"
 L["Overlay.NoFood"] = "NO\nCIBO"
 L["Overlay.NoWeaponBuff"] = "NO\nBUFF\nARMA"
@@ -75,6 +77,7 @@ L["Overlay.SecondsFormat"] = "%ds"
 -- BUFF GROUP DISPLAY NAMES
 -- ============================================================================
 L["Group.Beacons"] = "Fari"
+L["Group.DKRunes"] = "Runeforgiature"
 L["Group.ShamanImbues"] = "Imbevimenti Sciamanici"
 L["Group.PaladinRites"] = "Riti del Paladino"
 L["Group.Pets"] = "Pet"
@@ -323,6 +326,17 @@ L["Options.ShowWithoutItems.Desc"] =
 L["Options.DelveFoodOnly"] = "Solo cibo delve nelle delve"
 L["Options.DelveFoodOnly.Desc"] =
     "Quando sei in una delve, nascondi tutti i promemoria consumabili tranne il cibo delle delve."
+
+-- ============================================================================
+-- OPTIONS: DK RUNEFORGE PREFERENCES
+-- ============================================================================
+L["Options.RuneforgePreferences"] = "Preferenze Runeforgiatura"
+L["Options.RuneforgeNote"] =
+    "Seleziona la runeforgiatura prevista per ogni specializzazione. Viene mostrato un promemoria quando viene applicata quella sbagliata o nessuna."
+L["Options.RuneMainHand"] = "Mano Principale"
+L["Options.RuneOffHand"] = "Mano Secondaria"
+L["Options.RuneTwoHanded"] = "Due Mani"
+L["Options.RuneDualWield"] = "Doppia Impugnatura"
 
 -- ============================================================================
 -- OPTIONS: LAYOUT

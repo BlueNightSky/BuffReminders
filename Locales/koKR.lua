@@ -66,6 +66,8 @@ L["Overlay.NoPet"] = "소환수\n없음"
 L["Overlay.PassivePet"] = "수동적\n소환수"
 L["Overlay.WrongPet"] = "잘못된\n소환수"
 L["Overlay.NoRune"] = "룬\n없음"
+L["Overlay.DKWrongRune"] = "룬 조각\n오류"
+L["Overlay.DKWrongRuneOH"] = "보조손\n룬\n오류"
 L["Overlay.NoFlask"] = "영약\n없음"
 L["Overlay.NoFood"] = "음식\n없음"
 L["Overlay.NoWeaponBuff"] = "무기 버프\n없음"
@@ -78,6 +80,7 @@ L["Overlay.SecondsFormat"] = "%d초"
 -- BUFF GROUP DISPLAY NAMES
 -- ============================================================================
 L["Group.Beacons"] = "봉화"
+L["Group.DKRunes"] = "룬 조각"
 L["Group.ShamanImbues"] = "주술사 무기 강화"
 L["Group.PaladinRites"] = "성기사 의식"
 L["Group.Pets"] = "소환수"
@@ -327,6 +330,17 @@ L["Options.ShowWithoutItems.Desc"] =
     "활성화 시, 소지품에 아이템이 없어도 소모품 알림이 표시됩니다. 비활성화 시, 실제로 보유한 소모품만 표시됩니다."
 L["Options.DelveFoodOnly"] = "구렁에선 구렁 음식만 표시"
 L["Options.DelveFoodOnly.Desc"] = "구렁에선 구렁 음식을 제외한 모든 소모품 알림을 숨깁니다."
+
+-- ============================================================================
+-- OPTIONS: DK RUNEFORGE PREFERENCES
+-- ============================================================================
+L["Options.RuneforgePreferences"] = "룬 조각 설정"
+L["Options.RuneforgeNote"] =
+    "각 전문화별 기대하는 룬 조각을 선택하세요. 잘못된 룬 조각이 적용되어 있거나 없으면 알림이 표시됩니다."
+L["Options.RuneMainHand"] = "주 손"
+L["Options.RuneOffHand"] = "보조 손"
+L["Options.RuneTwoHanded"] = "양손"
+L["Options.RuneDualWield"] = "쌍수"
 
 -- ============================================================================
 -- OPTIONS: LAYOUT
