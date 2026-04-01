@@ -634,6 +634,16 @@ local function CreateOptionsPanel()
     local buffsLeftY = -6
     local buffsRightY = -6
 
+    -- Detach column headers (text label above pin buttons)
+    local function CreateDetachColumnHeader(parent, x, y)
+        local label = parent:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        label:SetPoint("TOPLEFT", x, y)
+        label:SetText(L["Options.DetachIcon"])
+    end
+
+    CreateDetachColumnHeader(buffsContent, buffsLeftX + 193, -8)
+    CreateDetachColumnHeader(buffsContent, buffsRightX + 193, -8)
+
     -- LEFT COLUMN: Group-wide buffs
     -- Raid Buffs
     _, buffsLeftY = CreateSectionHeader(buffsContent, L["Category.RaidBuffs"], buffsLeftX, buffsLeftY)
