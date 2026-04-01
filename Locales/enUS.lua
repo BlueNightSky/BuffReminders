@@ -45,6 +45,11 @@ english["Category.SelfNote"] = "(buffs strictly on yourself)"
 english["Category.PetNote"] = "(pet summon reminders)"
 english["Category.CustomNote"] = "(track any buff/glow by spell ID)"
 
+-- Per-buff options
+english["Options.HideBronzeInCombat"] = "Hide Blessing of the Bronze in combat"
+english["Options.HideBronzeInCombat.Desc"] =
+    "Hide the Blessing of the Bronze reminder during combat. This buff has a long duration and is not useful mid-fight."
+
 -- ============================================================================
 -- BUFF OVERLAY TEXT
 -- ============================================================================

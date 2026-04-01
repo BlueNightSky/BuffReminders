@@ -34,6 +34,10 @@ L["Category.SelfNote"] = "(buff solo su di te)"
 L["Category.PetNote"] = "(promemoria evocazione pet)"
 L["Category.CustomNote"] = "(traccia qualsiasi buff/bagliore per ID incantesimo)"
 
+L["Options.HideBronzeInCombat"] = "Nascondi Benedizione del Bronzo in combattimento"
+L["Options.HideBronzeInCombat.Desc"] =
+    "Nasconde il promemoria Benedizione del Bronzo durante il combattimento. Questo buff ha una lunga durata e non \195\168 utile durante il combattimento."
+
 -- ============================================================================
 -- BUFF OVERLAY TEXT
 -- ============================================================================

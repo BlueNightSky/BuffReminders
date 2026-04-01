@@ -1588,6 +1588,7 @@ function BuffState.Refresh()
     -- during M+ keystones, and in PvP instances (except during prep phase before gates open).
     local isAuraRestricted = BuffState.IsRestricted()
     local hideExpiring = isAuraRestricted and db.hideExpiringInCombat ~= false
+    local hideBronze = inCombat and db.hideBronzeInCombat ~= false
 
     -- Process raid buffs (coverage - need everyone to have them)
     local raidVisible = IsCategoryVisibleForContent("raid")
@@ -1597,7 +1598,7 @@ function BuffState.Refresh()
         local scope =
             GetTrackingScope(trackingMode, buff.class, "raid", HasCasterForBuff(buff.class, buff.levelRequired))
 
-        if IsBuffEnabled(buff.key) and raidVisible and scope.show then
+        if IsBuffEnabled(buff.key) and raidVisible and scope.show and not (buff.key == "bronze" and hideBronze) then
             local missing, total, minRemaining = CountMissingBuff(buff.spellID, buff.key, scope.playerOnly)
 
             if missing > 0 then

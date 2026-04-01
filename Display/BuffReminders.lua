@@ -321,6 +321,7 @@ local defaults = {
     hideWhileResting = false,
     hideInCombat = false,
     hideExpiringInCombat = true,
+    hideBronzeInCombat = true,
     buffTrackingMode = "all",
     hideAllInVehicle = false,
     hideWhileMounted = false,

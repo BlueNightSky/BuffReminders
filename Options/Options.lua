@@ -1464,7 +1464,31 @@ local function CreateOptionsPanel()
             catLayout:SetX(0)
         end
 
-        -- Behavior sub-header (pet only)
+        -- Behavior sub-header (raid)
+        if category == "raid" then
+            catLayout:Space(SECTION_GAP)
+            local raidBehaviorHeader = catContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            raidBehaviorHeader:SetText("|cffffcc00" .. L["Options.Behavior"] .. "|r")
+            catLayout:AddText(raidBehaviorHeader, 12, COMPONENT_GAP)
+
+            local hideBronzeHolder = Components.Checkbox(catContent, {
+                label = L["Options.HideBronzeInCombat"],
+                get = function()
+                    return BR.profile.hideBronzeInCombat ~= false
+                end,
+                tooltip = {
+                    title = L["Options.HideBronzeInCombat"],
+                    desc = L["Options.HideBronzeInCombat.Desc"],
+                },
+                onChange = function(checked)
+                    BR.profile.hideBronzeInCombat = checked
+                    UpdateDisplay()
+                end,
+            })
+            catLayout:Add(hideBronzeHolder, nil, COMPONENT_GAP)
+        end
+
+        -- Behavior sub-header (pet)
         if category == "pet" then
             catLayout:Space(SECTION_GAP)
             local behaviorHeader = catContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")

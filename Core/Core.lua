@@ -117,6 +117,7 @@ local RootSettings = {
     frameLocked = nil, -- No refresh needed
     hideInCombat = nil,
     hideExpiringInCombat = nil,
+    hideBronzeInCombat = nil,
     showOnlyInGroup = nil,
     position = nil, -- Table with x, y
     buffTrackingMode = nil, -- No auto-refresh, manually calls UpdateDisplay
@@ -304,6 +305,7 @@ local function ValidatePath(segments)
     local isRootSetting = root == "frameLocked"
         or root == "hideInCombat"
         or root == "hideExpiringInCombat"
+        or root == "hideBronzeInCombat"
         or root == "showOnlyInGroup"
         or root == "position"
         or root == "buffTrackingMode"
