@@ -3251,12 +3251,7 @@ function Components.AppearanceGrid(parent, config)
         min = 6,
         max = 32,
         get = function()
-            local textSize = config.get("textSize", nil)
-            if textSize then
-                return textSize
-            end
-            local iconSize = config.get("iconSize", 64)
-            return floor(iconSize * 0.32)
+            return config.get("textSize", BR.defaults.defaults.textSize)
         end,
         enabled = enabled and baseEnabled or nil,
         onChange = function(val)

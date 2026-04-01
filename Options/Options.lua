@@ -1307,12 +1307,7 @@ local function CreateOptionsPanel()
                     if cs and cs.buffTextSize then
                         return cs.buffTextSize
                     end
-                    -- Default: 80% of text size (matching current behavior)
-                    local textSize = cs and cs.textSize
-                    if not textSize then
-                        local iconSize = (cs and cs.iconSize) or 64
-                        textSize = floor(iconSize * 0.32)
-                    end
+                    local textSize = (cs and cs.textSize) or defaults.defaults.textSize
                     return max(6, floor(textSize * 0.8))
                 end,
                 enabled = function()
@@ -2160,6 +2155,7 @@ local function CreateOptionsPanel()
                     local appearanceKeys = {
                         "iconSize",
                         "iconWidth",
+                        "textSize",
                         "spacing",
                         "iconZoom",
                         "borderSize",
@@ -2171,10 +2167,6 @@ local function CreateOptionsPanel()
                         if cs[key] == nil and effective[key] ~= nil then
                             cs[key] = effective[key]
                         end
-                    end
-                    -- textSize: only snapshot if explicitly set (nil = auto-derive from iconSize)
-                    if cs.textSize == nil and effective.textSize ~= nil then
-                        cs.textSize = effective.textSize
                     end
                     -- textColor: deep copy (table value)
                     if cs.textColor == nil and effective.textColor then
