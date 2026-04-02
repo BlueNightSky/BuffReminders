@@ -160,6 +160,8 @@ english["Display.SlashCommands"] = "Slash commands: /br, /br lock, /br unlock, /
 english["Display.MinimapLeftClick"] = "|cFFCFCFCFLeft click|r: Options"
 english["Display.MinimapRightClick"] = "|cFFCFCFCFRight click|r: Test mode"
 english["Display.DismissConsumables"] = "Hide consumable reminders until next loading screen"
+english["Display.LoginDkRunes"] =
+    "DK runeforge reminders have been added. If you use a non-standard setup, you can customize which runeforges to track per spec via the gear icon next to Runes in the Buffs tab."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS

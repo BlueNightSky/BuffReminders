@@ -4286,6 +4286,13 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             LDBIcon:AddButtonToCompartment("BuffReminders")
             BR.MinimapButton = { Icon = LDBIcon, DataObj = dataObj }
         end
+
+        -- Login messages
+        C_Timer.After(5, function()
+            if db.showLoginMessages ~= false and playerClass == "DEATHKNIGHT" then
+                print("|cff00ccffBuffReminders:|r " .. L["Display.LoginDkRunes"])
+            end
+        end)
     elseif event == "PLAYER_ENTERING_WORLD" then
         -- Reset consumable dismiss on instance change
         BR.BuffState.SetConsumablesDismissed(false)

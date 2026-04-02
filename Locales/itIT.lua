@@ -148,6 +148,8 @@ L["Display.SlashCommands"] = "Comandi: /br, /br lock, /br unlock, /br test, /br 
 L["Display.MinimapLeftClick"] = "|cFFCFCFCFClick sinistro|r: Opzioni"
 L["Display.MinimapRightClick"] = "|cFFCFCFCFClick destro|r: Modalit\195\160 test"
 L["Display.DismissConsumables"] = "Nascondi promemoria consumabili fino alla prossima schermata di caricamento"
+L["Display.LoginDkRunes"] =
+    "Sono stati aggiunti i promemoria per le rune del Cavaliere della Morte. Se usi una configurazione non standard, puoi personalizzare quali rune monitorare per spec tramite l'icona ingranaggio accanto a Rune nella scheda Buff."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
@@ -330,9 +332,9 @@ L["Options.DelveFoodOnly.Desc"] =
 -- ============================================================================
 -- OPTIONS: DK RUNEFORGE PREFERENCES
 -- ============================================================================
-L["Options.RuneforgePreferences"] = "Preferenze Runeforgiatura"
+L["Options.RuneforgePreferences"] = "Preferenze Rune"
 L["Options.RuneforgeNote"] =
-    "Seleziona la runeforgiatura prevista per ogni specializzazione. Viene mostrato un promemoria quando viene applicata quella sbagliata o nessuna."
+    "Seleziona le rune previste per ogni specializzazione. Viene mostrato un promemoria quando viene applicata quella sbagliata o nessuna."
 L["Options.RuneMainHand"] = "Mano Principale"
 L["Options.RuneOffHand"] = "Mano Secondaria"
 L["Options.RuneTwoHanded"] = "Due Mani"
