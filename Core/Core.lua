@@ -636,9 +636,9 @@ function BR.Config.GetCategorySetting(category, key)
         return catSettings[key]
     end
 
-    -- Glow style keys: inherit from defaults unless useCustomGlow is true
+    -- Glow style keys: inherit from defaults unless BOTH useCustomAppearance and useCustomGlow are true
     if GlowKeys[key] then
-        if not catSettings.useCustomGlow then
+        if not catSettings.useCustomAppearance or not catSettings.useCustomGlow then
             return db.defaults and db.defaults[key]
         end
         return catSettings[key]
@@ -663,7 +663,7 @@ function BR.Config.HasCustomAppearance(category)
     return db.categorySettings[category].useCustomAppearance == true
 end
 
----Check if a category has custom glow style enabled
+---Check if a category has custom glow style enabled (requires custom appearance)
 ---@param category string
 ---@return boolean
 function BR.Config.HasCustomGlow(category)
@@ -671,7 +671,8 @@ function BR.Config.HasCustomGlow(category)
     if not db or not db.categorySettings or not db.categorySettings[category] then
         return false
     end
-    return db.categorySettings[category].useCustomGlow == true
+    local cat = db.categorySettings[category]
+    return cat.useCustomAppearance == true and cat.useCustomGlow == true
 end
 
 -- ============================================================================
