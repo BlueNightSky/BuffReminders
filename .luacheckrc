@@ -89,6 +89,7 @@ read_globals = {
     "UnitIsDeadOrGhost",
     "UnitIsPlayer",
     "UnitGUID",
+    "UnitHealth",
     "UnitInVehicle",
     "UnitIsUnit",
     "UnitIsVisible",

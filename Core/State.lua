@@ -417,6 +417,7 @@ end
 local function IsValidGroupMember(unit)
     return UnitExists(unit)
         and not UnitIsDeadOrGhost(unit)
+        and UnitHealth(unit) > 0
         and UnitIsConnected(unit)
         and UnitCanAssist("player", unit)
         and UnitIsVisible(unit)
