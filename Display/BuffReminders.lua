@@ -928,6 +928,26 @@ local SetExpirationGlow = BR.Glow.SetExpiration
 local expiringGlowCache = {} ---@type table<string, table>
 local missingGlowCache = {} ---@type table<string, table>
 
+-- Prefixed key lists per glow type that BuildAdvancedParams reads (hoisted to avoid per-call allocation)
+local GLOW_ADVANCED_KEYS = {
+    [BR.Glow.Type.Pixel] = {
+        glow = { "glowPixelLines", "glowPixelFrequency", "glowPixelLength" },
+        missingGlow = { "missingGlowPixelLines", "missingGlowPixelFrequency", "missingGlowPixelLength" },
+    },
+    [BR.Glow.Type.AutoCast] = {
+        glow = { "glowAutocastParticles", "glowAutocastFrequency", "glowAutocastScale" },
+        missingGlow = { "missingGlowAutocastParticles", "missingGlowAutocastFrequency", "missingGlowAutocastScale" },
+    },
+    [BR.Glow.Type.Border] = {
+        glow = { "glowBorderFrequency" },
+        missingGlow = { "missingGlowBorderFrequency" },
+    },
+    [BR.Glow.Type.Proc] = {
+        glow = { "glowProcDuration", "glowProcStartAnim" },
+        missingGlow = { "missingGlowProcDuration", "missingGlowProcStartAnim" },
+    },
+}
+
 ---Get cached glow settings for a category and glow kind (populated once per render cycle)
 ---Glow style reads from per-category overrides when useCustomGlow is enabled, otherwise from defaults.
 ---@param category string
@@ -940,39 +960,36 @@ local function GetCachedGlowSettings(category, kind)
         return cached
     end
 
-    local db = BR.profile
-    local catSettings = db and db.categorySettings and db.categorySettings[category]
-    local useCustom = catSettings and catSettings.useCustomGlow
-    local source = (useCustom and catSettings) or (db and db.defaults) or {}
+    local GetSetting = BR.Config.GetCategorySetting
+    local prefix = kind == "missing" and "missingGlow" or "glow"
+    local typeFallback = kind == "missing" and BR.Glow.Type.Pixel or BR.Glow.Type.AutoCast
 
-    local typeIndex, color, size, xOff, yOff, params
-    if kind == "missing" then
-        typeIndex = source.missingGlowType or BR.Glow.Type.Pixel
-        color = source.missingGlowColor
-        if typeIndex == BR.Glow.Type.Proc and not source.missingGlowProcUseCustomColor then
-            color = nil
+    local typeIndex = GetSetting(category, prefix .. "Type") or typeFallback
+    local color = GetSetting(category, prefix .. "Color")
+    if typeIndex == BR.Glow.Type.Proc and not GetSetting(category, prefix .. "ProcUseCustomColor") then
+        color = nil
+    end
+    local size = GetSetting(category, prefix .. "Size") or 2
+    local xOff = GetSetting(category, prefix .. "XOffset") or 0
+    local yOff = GetSetting(category, prefix .. "YOffset") or 0
+
+    -- Build advanced params from effective settings (only fetch keys the resolved type needs)
+    local params
+    local keySet = GLOW_ADVANCED_KEYS[typeIndex]
+    local keys = keySet and keySet[prefix]
+    if keys then
+        local src = {}
+        for _, key in ipairs(keys) do
+            src[key] = GetSetting(category, key)
         end
-        size = source.missingGlowSize or 2
-        params = BR.Glow.BuildAdvancedParams(source, typeIndex, "missingGlow")
-        xOff = source.missingGlowXOffset or 0
-        yOff = source.missingGlowYOffset or 0
-    else
-        typeIndex = source.glowType or BR.Glow.Type.AutoCast
-        color = source.glowColor
-        if typeIndex == BR.Glow.Type.Proc and not source.glowProcUseCustomColor then
-            color = nil
-        end
-        size = source.glowSize or 2
-        params = BR.Glow.BuildAdvancedParams(source, typeIndex)
-        xOff = source.glowXOffset or 0
-        yOff = source.glowYOffset or 0
+        params = BR.Glow.BuildAdvancedParams(src, typeIndex, kind == "missing" and "missingGlow" or nil)
     end
 
     cached = {
         typeIndex = typeIndex,
         color = color,
         size = size,
-        borderSize = BR.Config.GetCategorySetting(category, "borderSize") or DEFAULT_BORDER_SIZE,
+        borderSize = GetSetting(category, "borderSize") or DEFAULT_BORDER_SIZE,
         params = params,
         glowXOffset = xOff,
         glowYOffset = yOff,
