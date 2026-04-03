@@ -1,6 +1,6 @@
 .PHONY: all lint format check typecheck locales deps
 
-all: deps typecheck lint format locales
+all: typecheck lint format locales
 
 deps:
 	@scripts/fetch-libs.sh
