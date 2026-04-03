@@ -2,20 +2,24 @@
 
 ## Development Environment Setup
 
-You need three tools to run `make`:
+You need three tools plus `svn` (Subversion) to run `make`:
 
 | Tool | Purpose |
 |------|---------|
 | [luacheck](https://github.com/mpeterv/luacheck) | Linter |
 | [StyLua](https://github.com/JohnnyMorganz/StyLua) | Formatter |
 | [lua-language-server](https://github.com/LuaLS/lua-language-server) | Type checker |
+| svn | Fetching CurseForge libraries |
+
+Libraries are not checked into git. Fetch them after cloning:
 
 ```bash
-make          # Run all three: typecheck, lint, format
+make deps     # Fetch external libraries into Libs/
+make          # Run deps + typecheck, lint, format
 make check    # Same but format is check-only (no writes)
 ```
 
-Run `make` before committing.
+Run `make` before committing. The release packager fetches libraries via `.pkgmeta` externals, so `Libs/` is gitignored.
 
 ## Commit Messages
 

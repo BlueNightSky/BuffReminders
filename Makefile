@@ -1,6 +1,9 @@
-.PHONY: all lint format check typecheck locales
+.PHONY: all lint format check typecheck locales deps
 
-all: typecheck lint format locales
+all: deps typecheck lint format locales
+
+deps:
+	@scripts/fetch-libs.sh
 
 lint:
 	luacheck .
@@ -14,5 +17,5 @@ typecheck:
 locales:
 	@scripts/check-locales.sh
 
-check: typecheck lint locales
+check: deps typecheck lint locales
 	stylua --check --glob '!ignored/**' --glob '*.lua' .
