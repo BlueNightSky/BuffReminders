@@ -457,6 +457,17 @@ BR.BUFF_TABLES = {
             clickMacro = TargetedClickMacro("beaconOfLight"),
         },
         {
+            spellID = 360827,
+            key = "blisteringScales",
+            name = "Blistering Scales",
+            class = "EVOKER",
+            beneficiaryRole = "TANK",
+            overlayText = L["Overlay.NoScales"],
+            requireSpecId = 1473, -- Augmentation
+            requiresSpellID = 360827,
+            clickMacro = TargetedClickMacro("blisteringScales"),
+        },
+        {
             spellID = 974,
             key = "earthShieldOthers",
             name = "Earth Shield",
@@ -478,17 +489,6 @@ BR.BUFF_TABLES = {
             clickMacro = TargetedClickMacro("sourceOfMagic"),
         },
         {
-            spellID = 360827,
-            key = "blisteringScales",
-            name = "Blistering Scales",
-            class = "EVOKER",
-            beneficiaryRole = "TANK",
-            overlayText = L["Overlay.NoScales"],
-            requireSpecId = 1473, -- Augmentation
-            requiresSpellID = 360827,
-            clickMacro = TargetedClickMacro("blisteringScales"),
-        },
-        {
             spellID = 474750,
             casterBuffId = 474754, -- Check this combat-whitelisted buff on the caster instead of scanning group
             key = "symbioticRelationship",
@@ -500,91 +500,15 @@ BR.BUFF_TABLES = {
     },
     ---@type SelfBuff[]
     self = {
-        -- DK Runeforge (Main Hand) — reminder when MH enchant doesn't match configured preference
+        -- Mage Arcane Familiar
         {
-            displayIcon = 237523, -- Runeforging icon
-            key = "dkRuneMH",
-            name = "Runeforge (Main Hand)",
-            class = "DEATHKNIGHT",
-            overlayText = L["Overlay.DKWrongRune"],
-            noExpirationGlow = true,
-            groupId = "dkRunes",
-            customCheck = function()
-                if BR.BuffState.IsRestricted() then
-                    return nil
-                end
-                local specId = BR.StateHelpers.GetPlayerSpecId()
-                local prefs = BR.profile.dkRunePreferences
-                local specPrefs = prefs and prefs[specId]
-                if not specPrefs then
-                    return nil
-                end
-                local isDW = BR.BuffState.HasOffHandWeapon()
-                local accepted = specPrefs[isDW and "dw_mainhand" or "mainhand"]
-                if not accepted or not next(accepted) then
-                    return nil
-                end
-                local current = BR.BuffState.GetPermanentWeaponEnchantID(16)
-                return not accepted[current]
-            end,
-            getDynamicIcon = function()
-                local specId = BR.StateHelpers.GetPlayerSpecId()
-                local prefs = BR.profile.dkRunePreferences
-                local specPrefs = prefs and prefs[specId]
-                if not specPrefs then
-                    return nil
-                end
-                local isDW = BR.BuffState.HasOffHandWeapon()
-                local accepted = specPrefs[isDW and "dw_mainhand" or "mainhand"]
-                if accepted then
-                    -- Iterate in DK_RUNEFORGES order for deterministic icon
-                    for _, rune in ipairs(DK_RUNEFORGES) do
-                        if accepted[rune.enchantID] then
-                            return GetSpellTexture(rune.spellID)
-                        end
-                    end
-                end
-            end,
-        },
-        -- DK Runeforge (Off Hand) — only relevant for dual-wield
-        {
-            displayIcon = 237523, -- Runeforging icon (same as MH, deduped in options)
-            key = "dkRuneOH",
-            name = "Runeforge (Off Hand)",
-            class = "DEATHKNIGHT",
-            overlayText = L["Overlay.DKWrongRuneOH"],
-            noExpirationGlow = true,
-            groupId = "dkRunes",
-            customCheck = function()
-                if BR.BuffState.IsRestricted() or not BR.BuffState.HasOffHandWeapon() then
-                    return nil
-                end
-                local specId = BR.StateHelpers.GetPlayerSpecId()
-                local prefs = BR.profile.dkRunePreferences
-                local specPrefs = prefs and prefs[specId]
-                if not specPrefs then
-                    return nil
-                end
-                local accepted = specPrefs.dw_offhand
-                if not accepted or not next(accepted) then
-                    return nil
-                end
-                local current = BR.BuffState.GetPermanentWeaponEnchantID(17)
-                return not accepted[current]
-            end,
-            getDynamicIcon = function()
-                local specId = BR.StateHelpers.GetPlayerSpecId()
-                local prefs = BR.profile.dkRunePreferences
-                local specPrefs = prefs and prefs[specId]
-                local accepted = specPrefs and specPrefs.dw_offhand
-                if accepted then
-                    for _, rune in ipairs(DK_RUNEFORGES) do
-                        if accepted[rune.enchantID] then
-                            return GetSpellTexture(rune.spellID)
-                        end
-                    end
-                end
-            end,
+            spellID = 205022,
+            buffIdOverride = 210126,
+            castSpellID = 1459,
+            key = "arcaneFamiliar",
+            name = "Arcane Familiar",
+            class = "MAGE",
+            overlayText = L["Overlay.NoFamiliar"],
         },
         -- Evoker Augmentation attunement (Black 403264 / Bronze 403265, player picks one)
         {
@@ -595,16 +519,6 @@ BR.BUFF_TABLES = {
             overlayText = L["Overlay.NoAttune"],
             requireSpecId = 1473, -- Augmentation
             requiresSpellID = 403208, -- Attunements talent
-        },
-        -- Mage Arcane Familiar
-        {
-            spellID = 205022,
-            buffIdOverride = 210126,
-            castSpellID = 1459,
-            key = "arcaneFamiliar",
-            name = "Arcane Familiar",
-            class = "MAGE",
-            overlayText = L["Overlay.NoFamiliar"],
         },
         -- Soulwell reminder (warlock only, instance entry only)
         {
@@ -702,6 +616,92 @@ BR.BUFF_TABLES = {
                     return "/cast " .. (BR.GetSpellName(castID) or "")
                 end
                 return ""
+            end,
+        },
+        -- DK Runeforge (Main Hand) — reminder when MH enchant doesn't match configured preference
+        {
+            displayIcon = 237523, -- Runeforging icon
+            key = "dkRuneMH",
+            name = "Runeforge (Main Hand)",
+            class = "DEATHKNIGHT",
+            overlayText = L["Overlay.DKWrongRune"],
+            noExpirationGlow = true,
+            groupId = "dkRunes",
+            customCheck = function()
+                if BR.BuffState.IsRestricted() then
+                    return nil
+                end
+                local specId = BR.StateHelpers.GetPlayerSpecId()
+                local prefs = BR.profile.dkRunePreferences
+                local specPrefs = prefs and prefs[specId]
+                if not specPrefs then
+                    return nil
+                end
+                local isDW = BR.BuffState.HasOffHandWeapon()
+                local accepted = specPrefs[isDW and "dw_mainhand" or "mainhand"]
+                if not accepted or not next(accepted) then
+                    return nil
+                end
+                local current = BR.BuffState.GetPermanentWeaponEnchantID(16)
+                return not accepted[current]
+            end,
+            getDynamicIcon = function()
+                local specId = BR.StateHelpers.GetPlayerSpecId()
+                local prefs = BR.profile.dkRunePreferences
+                local specPrefs = prefs and prefs[specId]
+                if not specPrefs then
+                    return nil
+                end
+                local isDW = BR.BuffState.HasOffHandWeapon()
+                local accepted = specPrefs[isDW and "dw_mainhand" or "mainhand"]
+                if accepted then
+                    -- Iterate in DK_RUNEFORGES order for deterministic icon
+                    for _, rune in ipairs(DK_RUNEFORGES) do
+                        if accepted[rune.enchantID] then
+                            return GetSpellTexture(rune.spellID)
+                        end
+                    end
+                end
+            end,
+        },
+        -- DK Runeforge (Off Hand) — only relevant for dual-wield
+        {
+            displayIcon = 237523, -- Runeforging icon (same as MH, deduped in options)
+            key = "dkRuneOH",
+            name = "Runeforge (Off Hand)",
+            class = "DEATHKNIGHT",
+            overlayText = L["Overlay.DKWrongRuneOH"],
+            noExpirationGlow = true,
+            groupId = "dkRunes",
+            customCheck = function()
+                if BR.BuffState.IsRestricted() or not BR.BuffState.HasOffHandWeapon() then
+                    return nil
+                end
+                local specId = BR.StateHelpers.GetPlayerSpecId()
+                local prefs = BR.profile.dkRunePreferences
+                local specPrefs = prefs and prefs[specId]
+                if not specPrefs then
+                    return nil
+                end
+                local accepted = specPrefs.dw_offhand
+                if not accepted or not next(accepted) then
+                    return nil
+                end
+                local current = BR.BuffState.GetPermanentWeaponEnchantID(17)
+                return not accepted[current]
+            end,
+            getDynamicIcon = function()
+                local specId = BR.StateHelpers.GetPlayerSpecId()
+                local prefs = BR.profile.dkRunePreferences
+                local specPrefs = prefs and prefs[specId]
+                local accepted = specPrefs and specPrefs.dw_offhand
+                if accepted then
+                    for _, rune in ipairs(DK_RUNEFORGES) do
+                        if accepted[rune.enchantID] then
+                            return GetSpellTexture(rune.spellID)
+                        end
+                    end
+                end
             end,
         },
         -- Voidform (194249) replaces Shadowform temporarily
@@ -808,20 +808,15 @@ BR.BUFF_TABLES = {
     },
     ---@type SelfBuff[]
     pet = {
-        -- Pet reminders (alphabetical: Frost Mage, Hunter, Passive, Unholy DK, Warlock)
         {
-            displayIcon = 135862, -- Summon Water Elemental
-            key = "frostMagePet",
-            name = "Water Elemental",
-            class = "MAGE",
-            overlayText = L["Overlay.NoPet"],
-            requireSpecId = 64, -- Frost
-            requiresSpellID = 31687,
-            groupId = "pets",
-            customCheck = function()
-                return not UnitExists("pet")
-            end,
+            key = "petPassive",
+            name = "Pet Passive",
+            -- No class: applies to any class with a pet
+            overlayText = L["Overlay.PassivePet"],
+            displayIcon = 132311,
+            customCheck = IsPetOnPassive,
         },
+        -- Pet reminders (alphabetical: Hunter, Unholy DK, Warlock Demon, Water Elemental, Wrong Demon)
         {
             key = "hunterPet",
             name = "Hunter Pet",
@@ -838,20 +833,37 @@ BR.BUFF_TABLES = {
             end,
         },
         {
-            key = "petPassive",
-            name = "Pet Passive",
-            -- No class: applies to any class with a pet
-            overlayText = L["Overlay.PassivePet"],
-            displayIcon = 132311,
-            customCheck = IsPetOnPassive,
-        },
-        {
             displayIcon = 1100170, -- Raise Dead
             key = "unholyPet",
             name = "Unholy Ghoul",
             class = "DEATHKNIGHT",
             overlayText = L["Overlay.NoPet"],
             requireSpecId = 252, -- Unholy
+            groupId = "pets",
+            customCheck = function()
+                return not UnitExists("pet")
+            end,
+        },
+        {
+            key = "warlockPet",
+            name = "Warlock Demon",
+            class = "WARLOCK",
+            overlayText = L["Overlay.NoPet"],
+            displayIcon = 136082, -- Summon Demon flyout icon
+            excludeSpellID = 108503, -- Grimoire of Sacrifice: pet intentionally sacrificed
+            groupId = "pets",
+            customCheck = function()
+                return not UnitExists("pet")
+            end,
+        },
+        {
+            displayIcon = 135862, -- Summon Water Elemental
+            key = "frostMagePet",
+            name = "Water Elemental",
+            class = "MAGE",
+            overlayText = L["Overlay.NoPet"],
+            requireSpecId = 64, -- Frost
+            requiresSpellID = 31687,
             groupId = "pets",
             customCheck = function()
                 return not UnitExists("pet")
@@ -875,18 +887,6 @@ BR.BUFF_TABLES = {
             end,
             getPetActions = function()
                 return BR.PetHelpers.GetFelguardAction()
-            end,
-        },
-        {
-            key = "warlockPet",
-            name = "Warlock Demon",
-            class = "WARLOCK",
-            overlayText = L["Overlay.NoPet"],
-            displayIcon = 136082, -- Summon Demon flyout icon
-            excludeSpellID = 108503, -- Grimoire of Sacrifice: pet intentionally sacrificed
-            groupId = "pets",
-            customCheck = function()
-                return not UnitExists("pet")
             end,
         },
     },
@@ -947,18 +947,6 @@ BR.BUFF_TABLES = {
             consumableCategory = "flask",
             disabledInCompetitivePvP = true,
         },
-        -- Food (all expansions - detected by icon ID)
-        {
-            buffIconID = 136000, -- All food buffs use this icon
-            key = "food",
-            name = "Food",
-            overlayText = L["Overlay.NoFood"],
-            groupId = "food",
-            consumableCategory = "food",
-            displayIcon = 136000,
-            visibilityCondition = IsNotEarthen,
-            disabledInCompetitivePvP = true,
-        },
         -- Delve Food (only when inside a delve with Brann or Valeera)
         {
             spellID = 442522,
@@ -972,6 +960,18 @@ BR.BUFF_TABLES = {
                 desc = L["Tooltip.DelvesOnly.Desc"],
             },
             visibilityCondition = BR.IsInDelve,
+            disabledInCompetitivePvP = true,
+        },
+        -- Food (all expansions - detected by icon ID)
+        {
+            buffIconID = 136000, -- All food buffs use this icon
+            key = "food",
+            name = "Food",
+            overlayText = L["Overlay.NoFood"],
+            groupId = "food",
+            consumableCategory = "food",
+            displayIcon = 136000,
+            visibilityCondition = IsNotEarthen,
             disabledInCompetitivePvP = true,
         },
         -- Healthstone (checks inventory, free consumable for warlocks)
