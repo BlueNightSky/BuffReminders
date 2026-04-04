@@ -3392,6 +3392,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if event == "ADDON_LOADED" and arg1 == addonName then
         _, playerClass = UnitClass("player")
         BR.BuffState.SetPlayerClass(playerClass)
+        local isFirstInstall = not BuffRemindersDB
         if not BuffRemindersDB then
             BuffRemindersDB = {}
         end
@@ -4306,8 +4307,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
         -- Login messages
         C_Timer.After(5, function()
-            if db.showLoginMessages ~= false and playerClass == "DEATHKNIGHT" then
-                print("|cff00ccffBuffReminders:|r " .. L["Display.LoginDkRunes"])
+            if isFirstInstall then
+                print("|cff00ccffBuffReminders:|r " .. L["Display.LoginFirstInstall"])
             end
         end)
     elseif event == "PLAYER_ENTERING_WORLD" then

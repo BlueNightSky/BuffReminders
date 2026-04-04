@@ -151,8 +151,8 @@ L["Display.SlashCommands"] = "슬래시 명령어: /br, /br lock, /br unlock, /b
 L["Display.MinimapLeftClick"] = "|cFFCFCFCF좌클릭|r: 옵션"
 L["Display.MinimapRightClick"] = "|cFFCFCFCF우클릭|r: 테스트 모드"
 L["Display.DismissConsumables"] = "다음 로딩 화면 전까지 소모품 알림 숨기기"
-L["Display.LoginDkRunes"] =
-    "DK 룬조각 알림이 추가되었습니다. 비표준 설정을 사용하는 경우, 버프 탭의 룬 옆 톱니바퀴 아이콘을 통해 전문화별로 추적할 룬조각을 설정할 수 있습니다."
+L["Display.LoginFirstInstall"] =
+    "설치해 주셔서 감사합니다! |cFFFFD100/br unlock|r을 입력하여 버프 표시를 이동하거나, |cFFFFD100/br|r 옵션 패널 하단의 버튼을 사용하세요."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS

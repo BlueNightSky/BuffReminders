@@ -148,8 +148,8 @@ L["Display.SlashCommands"] = "Comandi: /br, /br lock, /br unlock, /br test, /br 
 L["Display.MinimapLeftClick"] = "|cFFCFCFCFClick sinistro|r: Opzioni"
 L["Display.MinimapRightClick"] = "|cFFCFCFCFClick destro|r: Modalit\195\160 test"
 L["Display.DismissConsumables"] = "Nascondi promemoria consumabili fino alla prossima schermata di caricamento"
-L["Display.LoginDkRunes"] =
-    "Sono stati aggiunti i promemoria per le rune del Cavaliere della Morte. Se usi una configurazione non standard, puoi personalizzare quali rune monitorare per spec tramite l'icona ingranaggio accanto a Rune nella scheda Buff."
+L["Display.LoginFirstInstall"] =
+    "Grazie per l'installazione! Digita |cFFFFD100/br unlock|r per spostare il display dei buff, oppure usa il pulsante in fondo al pannello opzioni di |cFFFFD100/br|r."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
