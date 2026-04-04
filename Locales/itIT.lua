@@ -50,6 +50,7 @@ L["Overlay.NoAttune"] = "NO\nSINT"
 L["Overlay.NoFamiliar"] = "NO\nFAM"
 L["Overlay.DropWell"] = "CREA\nPOZZO"
 L["Overlay.NoGrim"] = "NO\nGRIM"
+L["Overlay.BurningRush"] = "RUSH"
 L["Overlay.NoRite"] = "NO\nRITO"
 L["Overlay.ApplyPoison"] = "METTI\nVELENO"
 L["Overlay.NoForm"] = "NO\nFORMA"
@@ -150,6 +151,8 @@ L["Display.MinimapRightClick"] = "|cFFCFCFCFClick destro|r: Modalit\195\160 test
 L["Display.DismissConsumables"] = "Nascondi promemoria consumabili fino alla prossima schermata di caricamento"
 L["Display.LoginFirstInstall"] =
     "Grazie per l'installazione! Digita |cFFFFD100/br unlock|r per spostare il display dei buff, oppure usa il pulsante in fondo al pannello opzioni di |cFFFFD100/br|r."
+L["Display.LoginGearIcons"] =
+    "Some buff settings (healthstone, soulstone, pets) have moved to gear icons next to their checkboxes in the Buffs tab."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
@@ -222,7 +225,6 @@ L["Options.DetachIcon.Desc"] = "Sposta questa icona in un frame posizionabile in
 -- ============================================================================
 -- OPTIONS: HEALTHSTONE
 -- ============================================================================
-L["Options.Healthstone"] = "Pietra della Salute"
 L["Options.Healthstone.ReadyCheckOnly"] = "Solo controllo prontezza"
 L["Options.Healthstone.ReadyCheckWarlock"] = "Controllo prontezza + stregone sempre"
 L["Options.Healthstone.AlwaysShow"] = "Mostra sempre"
@@ -233,6 +235,28 @@ L["Options.Healthstone.WarlockAlwaysDesc"] =
     "Gli stregoni vedono sempre il promemoria; le altre classi solo al controllo prontezza"
 L["Options.Healthstone.ReadyCheckDesc"] = "Mostra per 15 secondi dopo l'inizio di un controllo prontezza"
 L["Options.Healthstone.AlwaysDesc"] = "Mostra ogni volta che il tipo di contenuto corrisponde"
+L["Options.Healthstone.LowStock"] = "Warn when low"
+L["Options.Healthstone.LowStock.Desc"] =
+    "Show a soft warning when you have healthstones but not enough. Missing healthstones (0) are always tracked regardless of this setting."
+L["Options.Healthstone.Threshold"] = "Warn when having"
+L["Options.Healthstone.Threshold.Desc"] =
+    "Show a low-stock warning when you have this many healthstones or fewer.\n\n|cffffcc001:|r Warn when you have exactly 1.\n|cffffcc002:|r Warn when you have 1 or 2."
+
+-- ============================================================================
+-- OPTIONS: SOULSTONE
+-- ============================================================================
+L["Options.Soulstone.Visibility"] = "Soulstone visibility"
+L["Options.Soulstone.Visibility.Desc"] =
+    "Controls when the soulstone reminder appears.\n\n|cffffcc00Ready check only:|r Only during ready checks (default).\n|cffffcc00Ready check + warlock always:|r Warlocks always see it; others only on ready check.\n|cffffcc00Always show:|r Visible whenever the presence category is visible."
+L["Options.Soulstone.ReadyCheckOnly"] = "Ready check only"
+L["Options.Soulstone.ReadyCheckWarlock"] = "Ready check + warlock always"
+L["Options.Soulstone.AlwaysShow"] = "Always show"
+L["Options.Soulstone.ReadyCheckDesc"] = "Show for 15 seconds after a ready check starts"
+L["Options.Soulstone.WarlockAlwaysDesc"] = "Warlocks always see it; other classes only on ready check"
+L["Options.Soulstone.AlwaysDesc"] = "Show whenever the presence category is visible"
+L["Options.Soulstone.HideCooldown"] = "Hide when on cooldown (warlock)"
+L["Options.Soulstone.HideCooldown.Desc"] =
+    "When enabled, warlocks won't see the soulstone reminder while the spell is on cooldown. Only applies to warlocks."
 
 -- ============================================================================
 -- OPTIONS: FREE CONSUMABLES
@@ -339,6 +363,18 @@ L["Options.RuneMainHand"] = "Mano Principale"
 L["Options.RuneOffHand"] = "Mano Secondaria"
 L["Options.RuneTwoHanded"] = "Due Mani"
 L["Options.RuneDualWield"] = "Doppia Impugnatura"
+
+-- ============================================================================
+-- OPTIONS: BUFF SETTINGS GEAR ICONS
+-- ============================================================================
+L["Options.HealthstoneSettings"] = "Healthstone Settings"
+L["Options.HealthstoneSettings.Note"] = "Configure visibility and low stock threshold."
+L["Options.SoulstoneSettings"] = "Soulstone Settings"
+L["Options.SoulstoneSettings.Note"] = "Configure when the soulstone reminder appears."
+L["Options.PetPassiveSettings"] = "Pet Passive Settings"
+L["Options.PetPassiveSettings.Note"] = "Configure the passive pet reminder."
+L["Options.PetSummonSettings"] = "Pet Summon Settings"
+L["Options.PetSummonSettings.Note"] = "Configure pet summoning behavior."
 
 -- ============================================================================
 -- OPTIONS: LAYOUT

@@ -7,6 +7,7 @@ local min = math.min
 
 -- WoW API locals
 local GetSpellTexture = C_Spell.GetSpellTexture
+local _, playerClass = UnitClass("player")
 
 -- ============================================================================
 -- BUFF DATA TABLES
@@ -109,6 +110,7 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field getPetActions? fun(): PetAction[]?  -- Override pet actions (e.g., wrong pet → Felguard only)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 ---@field showOnInstanceEntry? boolean Only show when entering an instance (not M+), skip normal buff checks
+---@field showWhenPresent? boolean Show when buff IS active (inverts normal "show when missing" logic)
 ---@field noExpirationGlow? boolean Suppress expiration glow (for permanent enchants or intentionally short buffs)
 ---@field skipSpellKnownCheck? boolean Skip the "player knows spell" check (for custom/dynamic entries)
 
@@ -397,6 +399,24 @@ BR.BUFF_TABLES = {
             readyCheckOnly = true,
             castOnOthers = true,
             noExpirationGlow = true,
+            customCheck = function(isRestricted)
+                -- CD tracking for warlocks only, gated by setting
+                if playerClass ~= "WARLOCK" then
+                    return nil
+                end
+                local db = BR.profile
+                if not (db.defaults and db.defaults.soulstoneHideCooldown) then
+                    return nil -- Setting off: no opinion, rely on aura presence
+                end
+                if isRestricted then
+                    return false
+                end
+                local ok, result = pcall(function()
+                    local info = C_Spell.GetSpellCooldown(20707)
+                    return not info or info.duration == 0
+                end)
+                return not ok or result
+            end,
             clickMacro = function(spellID)
                 local name = BR.GetSpellName(spellID) or ""
                 -- Priority: sticky last target > first living healer > mouseover > target > self
@@ -553,6 +573,16 @@ BR.BUFF_TABLES = {
             name = "Grimoire of Sacrifice",
             class = "WARLOCK",
             overlayText = L["Overlay.NoGrim"],
+        },
+        -- Warlock Burning Rush (show when active — it drains health)
+        {
+            spellID = 111400,
+            key = "burningRush",
+            name = "Burning Rush",
+            class = "WARLOCK",
+            overlayText = L["Overlay.BurningRush"],
+            showWhenPresent = true,
+            glowDetectable = true, -- Action bar glow fallback when aura API is restricted
         },
         -- Paladin weapon rites (alphabetical: Adjuration, Sanctification)
         -- NOTE: Due to a Blizzard bug, when changing talents the buff drops but enchant remains.

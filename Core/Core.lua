@@ -253,6 +253,10 @@ local DefaultSettingKeys = {
     freeConsumableMode = "DisplayRefresh",
     freeConsumableVisibility = "DisplayRefresh",
     healthstoneVisibility = "DisplayRefresh",
+    healthstoneLowStock = "DisplayRefresh",
+    healthstoneThreshold = "DisplayRefresh",
+    soulstoneVisibility = "DisplayRefresh",
+    soulstoneHideCooldown = "DisplayRefresh",
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
     consumableTextScale = "VisualsRefresh",

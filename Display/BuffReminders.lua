@@ -378,6 +378,8 @@ local defaults = {
             pvp = true,
         },
         healthstoneVisibility = "readyCheck",
+        healthstoneThreshold = 1,
+        soulstoneVisibility = "readyCheck",
         consumableDisplayMode = "sub_icons",
         consumableTextScale = 25,
         showConsumableTooltips = false,
@@ -2141,7 +2143,7 @@ local function RenderVisibleEntry(frame, entry)
     end
 
     -- Get cached glow settings for this entry's category (avoids repeated DB reads)
-    local glowKind = entry.displayType == "expiring" and "expiring" or "missing"
+    local glowKind = entry.glowKindOverride or (entry.displayType == "expiring" and "expiring" or "missing")
     local cachedGlow = entry.category and GetCachedGlowSettings(entry.category, glowKind) or nil
 
     -- Apply dynamic icon overrides (e.g. rogue poison expiring soonest, role-based shields)
@@ -2303,7 +2305,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
             local cachedGlow = entry.category
                     and GetCachedGlowSettings(
                         entry.category,
-                        entry.displayType == "expiring" and "expiring" or "missing"
+                        entry.glowKindOverride or (entry.displayType == "expiring" and "expiring" or "missing")
                     )
                 or nil
             local expandedSize = frame:GetWidth()
@@ -3474,7 +3476,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 36
+        local DB_VERSION = 37
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -4188,6 +4190,23 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     end
                 end
             end,
+            [37] = function()
+                -- Move Burning Rush from seeded custom buff to proper self-buff
+                if db.customBuffs and db.customBuffs.burningRush then
+                    db.customBuffs.burningRush = nil
+                end
+                -- enabledBuffs.burningRush is preserved as-is (same key)
+
+                -- Migrate soulstone readyCheckOnlyOverrides to soulstoneVisibility
+                local overrides = db.readyCheckOnlyOverrides
+                if overrides and overrides.soulstone == false then
+                    if not db.defaults then
+                        db.defaults = {}
+                    end
+                    db.defaults.soulstoneVisibility = "always"
+                    overrides.soulstone = nil
+                end
+            end,
         }
 
         -- Run pending migrations
@@ -4309,6 +4328,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         C_Timer.After(5, function()
             if isFirstInstall then
                 print("|cff00ccffBuffReminders:|r " .. L["Display.LoginFirstInstall"])
+            end
+            if db.showLoginMessages ~= false then
+                print("|cff00ccffBuffReminders:|r " .. L["Display.LoginGearIcons"])
             end
         end)
     elseif event == "PLAYER_ENTERING_WORLD" then

@@ -53,6 +53,7 @@ L["Overlay.NoAttune"] = "조율\n없음"
 L["Overlay.NoFamiliar"] = "전령\n없음"
 L["Overlay.DropWell"] = "영혼샘\n깔기"
 L["Overlay.NoGrim"] = "흑마법서\n없음"
+L["Overlay.BurningRush"] = "RUSH"
 L["Overlay.NoRite"] = "의식\n없음"
 L["Overlay.ApplyPoison"] = "독\n바르기"
 L["Overlay.NoForm"] = "형상\n꺼짐"
@@ -153,6 +154,8 @@ L["Display.MinimapRightClick"] = "|cFFCFCFCF우클릭|r: 테스트 모드"
 L["Display.DismissConsumables"] = "다음 로딩 화면 전까지 소모품 알림 숨기기"
 L["Display.LoginFirstInstall"] =
     "설치해 주셔서 감사합니다! |cFFFFD100/br unlock|r을 입력하여 버프 표시를 이동하거나, |cFFFFD100/br|r 옵션 패널 하단의 버튼을 사용하세요."
+L["Display.LoginGearIcons"] =
+    "Some buff settings (healthstone, soulstone, pets) have moved to gear icons next to their checkboxes in the Buffs tab."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
@@ -225,7 +228,6 @@ L["Options.DetachIcon.Desc"] =
 -- ============================================================================
 -- OPTIONS: HEALTHSTONE
 -- ============================================================================
-L["Options.Healthstone"] = "생명석"
 L["Options.Healthstone.ReadyCheckOnly"] = "전투 준비 시에만"
 L["Options.Healthstone.ReadyCheckWarlock"] = "전투 준비 + 흑마법사는 항상 표시"
 L["Options.Healthstone.AlwaysShow"] = "항상 표시"
@@ -236,6 +238,28 @@ L["Options.Healthstone.WarlockAlwaysDesc"] =
     "흑마법사는 항상 알림 표시, 다른 직업은 전투 준비때만"
 L["Options.Healthstone.ReadyCheckDesc"] = "전투 준비 후 15초 동안 표시"
 L["Options.Healthstone.AlwaysDesc"] = "해당 콘텐츠 유형과 일치할 때 항상 표시"
+L["Options.Healthstone.LowStock"] = "Warn when low"
+L["Options.Healthstone.LowStock.Desc"] =
+    "Show a soft warning when you have healthstones but not enough. Missing healthstones (0) are always tracked regardless of this setting."
+L["Options.Healthstone.Threshold"] = "Warn when having"
+L["Options.Healthstone.Threshold.Desc"] =
+    "Show a low-stock warning when you have this many healthstones or fewer.\n\n|cffffcc001:|r Warn when you have exactly 1.\n|cffffcc002:|r Warn when you have 1 or 2."
+
+-- ============================================================================
+-- OPTIONS: SOULSTONE
+-- ============================================================================
+L["Options.Soulstone.Visibility"] = "Soulstone visibility"
+L["Options.Soulstone.Visibility.Desc"] =
+    "Controls when the soulstone reminder appears.\n\n|cffffcc00Ready check only:|r Only during ready checks (default).\n|cffffcc00Ready check + warlock always:|r Warlocks always see it; others only on ready check.\n|cffffcc00Always show:|r Visible whenever the presence category is visible."
+L["Options.Soulstone.ReadyCheckOnly"] = "Ready check only"
+L["Options.Soulstone.ReadyCheckWarlock"] = "Ready check + warlock always"
+L["Options.Soulstone.AlwaysShow"] = "Always show"
+L["Options.Soulstone.ReadyCheckDesc"] = "Show for 15 seconds after a ready check starts"
+L["Options.Soulstone.WarlockAlwaysDesc"] = "Warlocks always see it; other classes only on ready check"
+L["Options.Soulstone.AlwaysDesc"] = "Show whenever the presence category is visible"
+L["Options.Soulstone.HideCooldown"] = "Hide when on cooldown (warlock)"
+L["Options.Soulstone.HideCooldown.Desc"] =
+    "When enabled, warlocks won't see the soulstone reminder while the spell is on cooldown. Only applies to warlocks."
 
 -- ============================================================================
 -- OPTIONS: FREE CONSUMABLES
@@ -343,6 +367,18 @@ L["Options.RuneMainHand"] = "주 손"
 L["Options.RuneOffHand"] = "보조 손"
 L["Options.RuneTwoHanded"] = "양손"
 L["Options.RuneDualWield"] = "쌍수"
+
+-- ============================================================================
+-- OPTIONS: BUFF SETTINGS GEAR ICONS
+-- ============================================================================
+L["Options.HealthstoneSettings"] = "Healthstone Settings"
+L["Options.HealthstoneSettings.Note"] = "Configure visibility and low stock threshold."
+L["Options.SoulstoneSettings"] = "Soulstone Settings"
+L["Options.SoulstoneSettings.Note"] = "Configure when the soulstone reminder appears."
+L["Options.PetPassiveSettings"] = "Pet Passive Settings"
+L["Options.PetPassiveSettings.Note"] = "Configure the passive pet reminder."
+L["Options.PetSummonSettings"] = "Pet Summon Settings"
+L["Options.PetSummonSettings.Note"] = "Configure pet summoning behavior."
 
 -- ============================================================================
 -- OPTIONS: LAYOUT
