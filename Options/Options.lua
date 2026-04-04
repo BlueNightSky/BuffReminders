@@ -692,35 +692,32 @@ local function CreateOptionsPanel()
 
     -- DK Runeforge gear icon (next to the dkRunes group checkbox)
     do
-        local _, playerClass = UnitClass("player")
-        if playerClass == "DEATHKNIGHT" then
-            local runeCheckbox = panel.buffCheckboxes["dkRunes"]
-            if runeCheckbox then
-                local gearBtn = CreateFrame("Button", nil, buffsContent)
-                gearBtn:SetSize(14, 14)
-                gearBtn:SetPoint("LEFT", runeCheckbox.label, "RIGHT", 4, 0)
-                gearBtn:SetFrameLevel(runeCheckbox:GetFrameLevel() + 5)
+        local runeCheckbox = panel.buffCheckboxes["dkRunes"]
+        if runeCheckbox then
+            local gearBtn = CreateFrame("Button", nil, buffsContent)
+            gearBtn:SetSize(14, 14)
+            gearBtn:SetPoint("LEFT", runeCheckbox.label, "RIGHT", 4, 0)
+            gearBtn:SetFrameLevel(runeCheckbox:GetFrameLevel() + 5)
 
-                local gearIcon = gearBtn:CreateTexture(nil, "ARTWORK")
-                gearIcon:SetAllPoints()
-                gearIcon:SetTexture("Interface\\Buttons\\UI-OptionsButton")
+            local gearIcon = gearBtn:CreateTexture(nil, "ARTWORK")
+            gearIcon:SetAllPoints()
+            gearIcon:SetTexture("Interface\\Buttons\\UI-OptionsButton")
+            gearIcon:SetVertexColor(0.7, 0.7, 0.7, 0.8)
+
+            gearBtn:SetScript("OnEnter", function(self)
+                gearIcon:SetVertexColor(1, 1, 1, 1)
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText(L["Options.RuneforgePreferences"], 1, 1, 1)
+                GameTooltip:AddLine(L["Options.RuneforgeNote"], 0.7, 0.7, 0.7, true)
+                GameTooltip:Show()
+            end)
+            gearBtn:SetScript("OnLeave", function()
                 gearIcon:SetVertexColor(0.7, 0.7, 0.7, 0.8)
-
-                gearBtn:SetScript("OnEnter", function(self)
-                    gearIcon:SetVertexColor(1, 1, 1, 1)
-                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                    GameTooltip:SetText(L["Options.RuneforgePreferences"], 1, 1, 1)
-                    GameTooltip:AddLine(L["Options.RuneforgeNote"], 0.7, 0.7, 0.7, true)
-                    GameTooltip:Show()
-                end)
-                gearBtn:SetScript("OnLeave", function()
-                    gearIcon:SetVertexColor(0.7, 0.7, 0.7, 0.8)
-                    GameTooltip:Hide()
-                end)
-                gearBtn:SetScript("OnClick", function()
-                    ShowRuneforgeModal()
-                end)
-            end
+                GameTooltip:Hide()
+            end)
+            gearBtn:SetScript("OnClick", function()
+                ShowRuneforgeModal()
+            end)
         end
     end
 
