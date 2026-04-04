@@ -3629,8 +3629,6 @@ ShowCustomBuffModal = function(existingKey, refreshPanelCallback)
     end
 
     local modal = CreatePanel("BuffRemindersCustomBuffModal", MODAL_WIDTH, BASE_HEIGHT, {
-        bgColor = { 0.1, 0.1, 0.1, 0.98 },
-        borderColor = { 0.4, 0.4, 0.4, 1 },
         level = 200,
         modal = true,
     })
@@ -4463,8 +4461,6 @@ ShowRuneforgeModal = function()
     local RUNE_LABEL_FONT = "GameFontHighlight"
 
     local modal = CreatePanel("BuffRemindersRuneforgeModal", MODAL_WIDTH, MODAL_HEIGHT, {
-        bgColor = { 0.1, 0.1, 0.1, 0.98 },
-        borderColor = { 0.4, 0.4, 0.4, 1 },
         level = 200,
         modal = true,
     })
@@ -4630,8 +4626,6 @@ ShowHealthstoneModal = function()
     local MARGIN = 16
 
     local modal = CreatePanel("BuffRemindersHealthstoneModal", MODAL_WIDTH, 1, {
-        bgColor = { 0.1, 0.1, 0.1, 0.98 },
-        borderColor = { 0.4, 0.4, 0.4, 1 },
         level = 200,
         modal = true,
     })
@@ -4732,8 +4726,6 @@ ShowSoulstoneModal = function()
     local MARGIN = 16
 
     local modal = CreatePanel("BuffRemindersSoulstoneModal", MODAL_WIDTH, 1, {
-        bgColor = { 0.1, 0.1, 0.1, 0.98 },
-        borderColor = { 0.4, 0.4, 0.4, 1 },
         level = 200,
         modal = true,
     })
@@ -4811,8 +4803,6 @@ ShowPetPassiveModal = function()
     local MARGIN = 16
 
     local modal = CreatePanel("BuffRemindersPetPassiveModal", MODAL_WIDTH, 1, {
-        bgColor = { 0.1, 0.1, 0.1, 0.98 },
-        borderColor = { 0.4, 0.4, 0.4, 1 },
         level = 200,
         modal = true,
     })
@@ -4865,8 +4855,6 @@ ShowPetSummonModal = function()
     local MARGIN = 16
 
     local modal = CreatePanel("BuffRemindersPetSummonModal", MODAL_WIDTH, 1, {
-        bgColor = { 0.1, 0.1, 0.1, 0.98 },
-        borderColor = { 0.4, 0.4, 0.4, 1 },
         level = 200,
         modal = true,
     })

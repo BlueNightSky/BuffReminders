@@ -691,8 +691,9 @@ end
 ---@return table
 function BR.CreatePanel(name, width, height, options)
     options = options or {}
-    local bgColor = options.bgColor or { 0.1, 0.1, 0.1, 0.95 }
-    local borderColor = options.borderColor or { 0.3, 0.3, 0.3, 1 }
+    local isModal = options.modal
+    local bgColor = options.bgColor or (isModal and { 0.15, 0.15, 0.15, 0.98 } or { 0.1, 0.1, 0.1, 0.95 })
+    local borderColor = options.borderColor or (isModal and { 0.5, 0.5, 0.5, 1 } or { 0.3, 0.3, 0.3, 1 })
 
     local panel = CreateFrame("Frame", name, UIParent, "BackdropTemplate")
     panel:SetSize(width, height)
@@ -713,7 +714,28 @@ function BR.CreatePanel(name, width, height, options)
     if options.level then
         panel:SetFrameLevel(options.level)
     end
-    if options.modal then
+    if isModal then
+        -- Dim overlay behind modal — click to dismiss
+        local overlay = CreateFrame("Frame", nil, UIParent)
+        overlay:SetAllPoints(UIParent)
+        overlay:SetFrameStrata(panel:GetFrameStrata())
+        overlay:SetFrameLevel(math.max(panel:GetFrameLevel() - 1, 0))
+        overlay.tex = overlay:CreateTexture(nil, "BACKGROUND")
+        overlay.tex:SetAllPoints()
+        overlay.tex:SetColorTexture(0, 0, 0, 0.4)
+        overlay:EnableMouse(true)
+        overlay:SetScript("OnMouseDown", function()
+            panel:Hide()
+        end)
+        overlay:Hide()
+
+        panel:HookScript("OnShow", function()
+            overlay:Show()
+        end)
+        panel:HookScript("OnHide", function()
+            overlay:Hide()
+        end)
+
         -- Modal panels handle ESC via keyboard input so they close themselves
         -- without also closing parent panels (unlike UISpecialFrames which closes all)
         panel:EnableKeyboard(true)
