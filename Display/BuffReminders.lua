@@ -2968,16 +2968,8 @@ local function DetachIcon(key)
     if not db.detachedIcons then
         db.detachedIcons = {}
     end
-    -- Initialize with position snapped from the icon's current screen location
-    local frame = buffFrames[key]
-    local x, y = 0, 0
-    if frame and frame:IsShown() then
-        local cx, cy = frame:GetCenter()
-        local px, py = UIParent:GetCenter()
-        x = floor(cx - px + 0.5)
-        y = floor(cy - py + 0.5)
-    end
-    db.detachedIcons[key] = { position = { x = x, y = y } }
+    -- Initialize at screen center so detached icons are easy to find
+    db.detachedIcons[key] = { position = { x = 0, y = 0 } }
     -- FramesReparent callback handles ResetLayoutSignatures + InvalidateSortedCategories
     -- + ReparentBuffFrames + UpdateVisuals
     BR.CallbackRegistry:TriggerEvent("FramesReparent")
