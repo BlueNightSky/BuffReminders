@@ -155,7 +155,7 @@ L["Display.DismissConsumables"] = "다음 로딩 화면 전까지 소모품 알�
 L["Display.LoginFirstInstall"] =
     "설치해 주셔서 감사합니다! |cFFFFD100/br unlock|r을 입력하여 버프 표시를 이동하거나, |cFFFFD100/br|r 옵션 패널 하단의 버튼을 사용하세요."
 L["Display.LoginGearIcons"] =
-    "Some buff settings (healthstone, soulstone, pets) have moved to gear icons next to their checkboxes in the Buffs tab."
+    "일부 버프 설정(생명석, 영혼석, 소환수)이 버프 탭의 체크박스 옆 톱니바퀴 아이콘으로 이동했습니다."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
@@ -238,28 +238,28 @@ L["Options.Healthstone.WarlockAlwaysDesc"] =
     "흑마법사는 항상 알림 표시, 다른 직업은 전투 준비때만"
 L["Options.Healthstone.ReadyCheckDesc"] = "전투 준비 후 15초 동안 표시"
 L["Options.Healthstone.AlwaysDesc"] = "해당 콘텐츠 유형과 일치할 때 항상 표시"
-L["Options.Healthstone.LowStock"] = "Warn when low"
+L["Options.Healthstone.LowStock"] = "부족 시 경고"
 L["Options.Healthstone.LowStock.Desc"] =
-    "Show a soft warning when you have healthstones but not enough. Missing healthstones (0) are always tracked regardless of this setting."
-L["Options.Healthstone.Threshold"] = "Warn when having"
+    "생명석이 있지만 부족할 때 경고를 표시합니다. 생명석이 없는 경우(0개)는 이 설정과 관계없이 항상 추적됩니다."
+L["Options.Healthstone.Threshold"] = "경고 기준 수량"
 L["Options.Healthstone.Threshold.Desc"] =
-    "Show a low-stock warning when you have this many healthstones or fewer.\n\n|cffffcc001:|r Warn when you have exactly 1.\n|cffffcc002:|r Warn when you have 1 or 2."
+    "생명석이 이 수량 이하일 때 부족 경고를 표시합니다.\n\n|cffffcc001:|r 정확히 1개일 때 경고.\n|cffffcc002:|r 1개 또는 2개일 때 경고."
 
 -- ============================================================================
 -- OPTIONS: SOULSTONE
 -- ============================================================================
-L["Options.Soulstone.Visibility"] = "Soulstone visibility"
+L["Options.Soulstone.Visibility"] = "영혼석 표시"
 L["Options.Soulstone.Visibility.Desc"] =
-    "Controls when the soulstone reminder appears.\n\n|cffffcc00Ready check only:|r Only during ready checks (default).\n|cffffcc00Ready check + warlock always:|r Warlocks always see it; others only on ready check.\n|cffffcc00Always show:|r Visible whenever the presence category is visible."
-L["Options.Soulstone.ReadyCheckOnly"] = "Ready check only"
-L["Options.Soulstone.ReadyCheckWarlock"] = "Ready check + warlock always"
-L["Options.Soulstone.AlwaysShow"] = "Always show"
-L["Options.Soulstone.ReadyCheckDesc"] = "Show for 15 seconds after a ready check starts"
-L["Options.Soulstone.WarlockAlwaysDesc"] = "Warlocks always see it; other classes only on ready check"
-L["Options.Soulstone.AlwaysDesc"] = "Show whenever the presence category is visible"
-L["Options.Soulstone.HideCooldown"] = "Hide when on cooldown (warlock)"
+    "영혼석 알림이 표시되는 시점을 설정합니다.\n\n|cffffcc00전투 준비 시에만:|r 전투 준비 시에만 표시 (기본값).\n|cffffcc00전투 준비 + 흑마법사는 항상 표시:|r 흑마법사는 항상 보이고, 다른 직업은 전투 준비 시에만.\n|cffffcc00항상 표시:|r 존재 카테고리가 보일 때마다 표시."
+L["Options.Soulstone.ReadyCheckOnly"] = "전투 준비 시에만"
+L["Options.Soulstone.ReadyCheckWarlock"] = "전투 준비 + 흑마법사는 항상 표시"
+L["Options.Soulstone.AlwaysShow"] = "항상 표시"
+L["Options.Soulstone.ReadyCheckDesc"] = "전투 준비 후 15초 동안 표시"
+L["Options.Soulstone.WarlockAlwaysDesc"] = "흑마법사는 항상 알림 표시, 다른 직업은 전투 준비때만"
+L["Options.Soulstone.AlwaysDesc"] = "존재 카테고리가 보일 때마다 표시"
+L["Options.Soulstone.HideCooldown"] = "재사용 대기 중 숨기기 (흑마법사)"
 L["Options.Soulstone.HideCooldown.Desc"] =
-    "When enabled, warlocks won't see the soulstone reminder while the spell is on cooldown. Only applies to warlocks."
+    "활성화 시, 주문이 재사용 대기 중일 때 흑마법사에게 영혼석 알림을 표시하지 않습니다. 흑마법사에게만 적용됩니다."
 
 -- ============================================================================
 -- OPTIONS: FREE CONSUMABLES
@@ -371,14 +371,14 @@ L["Options.RuneDualWield"] = "쌍수"
 -- ============================================================================
 -- OPTIONS: BUFF SETTINGS GEAR ICONS
 -- ============================================================================
-L["Options.HealthstoneSettings"] = "Healthstone Settings"
-L["Options.HealthstoneSettings.Note"] = "Configure visibility and low stock threshold."
-L["Options.SoulstoneSettings"] = "Soulstone Settings"
-L["Options.SoulstoneSettings.Note"] = "Configure when the soulstone reminder appears."
-L["Options.PetPassiveSettings"] = "Pet Passive Settings"
-L["Options.PetPassiveSettings.Note"] = "Configure the passive pet reminder."
-L["Options.PetSummonSettings"] = "Pet Summon Settings"
-L["Options.PetSummonSettings.Note"] = "Configure pet summoning behavior."
+L["Options.HealthstoneSettings"] = "생명석 설정"
+L["Options.HealthstoneSettings.Note"] = "표시 조건 및 부족 기준값을 설정합니다."
+L["Options.SoulstoneSettings"] = "영혼석 설정"
+L["Options.SoulstoneSettings.Note"] = "영혼석 알림이 표시되는 시점을 설정합니다."
+L["Options.PetPassiveSettings"] = "소환수 수동 설정"
+L["Options.PetPassiveSettings.Note"] = "수동 모드 소환수 알림을 설정합니다."
+L["Options.PetSummonSettings"] = "소환수 소환 설정"
+L["Options.PetSummonSettings.Note"] = "소환수 소환 동작을 설정합니다."
 
 -- ============================================================================
 -- OPTIONS: LAYOUT

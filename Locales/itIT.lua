@@ -152,7 +152,7 @@ L["Display.DismissConsumables"] = "Nascondi promemoria consumabili fino alla pro
 L["Display.LoginFirstInstall"] =
     "Grazie per l'installazione! Digita |cFFFFD100/br unlock|r per spostare il display dei buff, oppure usa il pulsante in fondo al pannello opzioni di |cFFFFD100/br|r."
 L["Display.LoginGearIcons"] =
-    "Some buff settings (healthstone, soulstone, pets) have moved to gear icons next to their checkboxes in the Buffs tab."
+    "Alcune impostazioni buff (pietra della salute, pietra dell'anima, pet) sono state spostate nelle icone ingranaggio accanto alle relative caselle nella scheda Buff."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
@@ -235,28 +235,28 @@ L["Options.Healthstone.WarlockAlwaysDesc"] =
     "Gli stregoni vedono sempre il promemoria; le altre classi solo al controllo prontezza"
 L["Options.Healthstone.ReadyCheckDesc"] = "Mostra per 15 secondi dopo l'inizio di un controllo prontezza"
 L["Options.Healthstone.AlwaysDesc"] = "Mostra ogni volta che il tipo di contenuto corrisponde"
-L["Options.Healthstone.LowStock"] = "Warn when low"
+L["Options.Healthstone.LowStock"] = "Avvisa quando poche"
 L["Options.Healthstone.LowStock.Desc"] =
-    "Show a soft warning when you have healthstones but not enough. Missing healthstones (0) are always tracked regardless of this setting."
-L["Options.Healthstone.Threshold"] = "Warn when having"
+    "Mostra un avviso quando hai pietre della salute ma non abbastanza. Le pietre mancanti (0) vengono sempre tracciate indipendentemente da questa impostazione."
+L["Options.Healthstone.Threshold"] = "Avvisa quando ne hai"
 L["Options.Healthstone.Threshold.Desc"] =
-    "Show a low-stock warning when you have this many healthstones or fewer.\n\n|cffffcc001:|r Warn when you have exactly 1.\n|cffffcc002:|r Warn when you have 1 or 2."
+    "Mostra un avviso scorte basse quando hai questo numero di pietre della salute o meno.\n\n|cffffcc001:|r Avvisa quando ne hai esattamente 1.\n|cffffcc002:|r Avvisa quando ne hai 1 o 2."
 
 -- ============================================================================
 -- OPTIONS: SOULSTONE
 -- ============================================================================
-L["Options.Soulstone.Visibility"] = "Soulstone visibility"
+L["Options.Soulstone.Visibility"] = "Visibilit\195\160 Pietra dell'Anima"
 L["Options.Soulstone.Visibility.Desc"] =
-    "Controls when the soulstone reminder appears.\n\n|cffffcc00Ready check only:|r Only during ready checks (default).\n|cffffcc00Ready check + warlock always:|r Warlocks always see it; others only on ready check.\n|cffffcc00Always show:|r Visible whenever the presence category is visible."
-L["Options.Soulstone.ReadyCheckOnly"] = "Ready check only"
-L["Options.Soulstone.ReadyCheckWarlock"] = "Ready check + warlock always"
-L["Options.Soulstone.AlwaysShow"] = "Always show"
-L["Options.Soulstone.ReadyCheckDesc"] = "Show for 15 seconds after a ready check starts"
-L["Options.Soulstone.WarlockAlwaysDesc"] = "Warlocks always see it; other classes only on ready check"
-L["Options.Soulstone.AlwaysDesc"] = "Show whenever the presence category is visible"
-L["Options.Soulstone.HideCooldown"] = "Hide when on cooldown (warlock)"
+    "Controlla quando appare il promemoria pietra dell'anima.\n\n|cffffcc00Solo controllo prontezza:|r Solo durante i controlli prontezza (predefinito).\n|cffffcc00Controllo prontezza + stregone sempre:|r Gli stregoni lo vedono sempre; gli altri solo al controllo prontezza.\n|cffffcc00Mostra sempre:|r Visibile quando la categoria presenza \195\168 visibile."
+L["Options.Soulstone.ReadyCheckOnly"] = "Solo controllo prontezza"
+L["Options.Soulstone.ReadyCheckWarlock"] = "Controllo prontezza + stregone sempre"
+L["Options.Soulstone.AlwaysShow"] = "Mostra sempre"
+L["Options.Soulstone.ReadyCheckDesc"] = "Mostra per 15 secondi dopo l'inizio di un controllo prontezza"
+L["Options.Soulstone.WarlockAlwaysDesc"] = "Gli stregoni lo vedono sempre; le altre classi solo al controllo prontezza"
+L["Options.Soulstone.AlwaysDesc"] = "Mostra quando la categoria presenza \195\168 visibile"
+L["Options.Soulstone.HideCooldown"] = "Nascondi durante il recupero (stregone)"
 L["Options.Soulstone.HideCooldown.Desc"] =
-    "When enabled, warlocks won't see the soulstone reminder while the spell is on cooldown. Only applies to warlocks."
+    "Se abilitato, gli stregoni non vedranno il promemoria pietra dell'anima mentre l'incantesimo \195\168 in recupero. Si applica solo agli stregoni."
 
 -- ============================================================================
 -- OPTIONS: FREE CONSUMABLES
@@ -367,14 +367,14 @@ L["Options.RuneDualWield"] = "Doppia Impugnatura"
 -- ============================================================================
 -- OPTIONS: BUFF SETTINGS GEAR ICONS
 -- ============================================================================
-L["Options.HealthstoneSettings"] = "Healthstone Settings"
-L["Options.HealthstoneSettings.Note"] = "Configure visibility and low stock threshold."
-L["Options.SoulstoneSettings"] = "Soulstone Settings"
-L["Options.SoulstoneSettings.Note"] = "Configure when the soulstone reminder appears."
-L["Options.PetPassiveSettings"] = "Pet Passive Settings"
-L["Options.PetPassiveSettings.Note"] = "Configure the passive pet reminder."
-L["Options.PetSummonSettings"] = "Pet Summon Settings"
-L["Options.PetSummonSettings.Note"] = "Configure pet summoning behavior."
+L["Options.HealthstoneSettings"] = "Impostazioni Pietra della Salute"
+L["Options.HealthstoneSettings.Note"] = "Configura visibilit\195\160 e soglia scorte basse."
+L["Options.SoulstoneSettings"] = "Impostazioni Pietra dell'Anima"
+L["Options.SoulstoneSettings.Note"] = "Configura quando appare il promemoria pietra dell'anima."
+L["Options.PetPassiveSettings"] = "Impostazioni Pet Passivo"
+L["Options.PetPassiveSettings.Note"] = "Configura il promemoria pet in modalit\195\160 passiva."
+L["Options.PetSummonSettings"] = "Impostazioni Evocazione Pet"
+L["Options.PetSummonSettings.Note"] = "Configura il comportamento di evocazione pet."
 
 -- ============================================================================
 -- OPTIONS: LAYOUT
