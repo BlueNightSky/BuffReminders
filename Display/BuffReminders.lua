@@ -160,7 +160,8 @@ local addonName, BR = ...
 ---@field stackCount FontString
 ---@field buffText? FontString
 ---@field statLabel? FontString                  -- Consumable stat label (top-left)
----@field badgeLabel? FontString                  -- Consumable badge (bottom-left): hearty "H" or quality R1/R2/R3
+---@field badgeLabel? FontString                  -- Consumable badge (bottom-left): hearty "H" text
+---@field qualityIcon? Texture                    -- Consumable crafted quality icon (bottom-left atlas)
 ---@field isPlayerBuff? boolean
 ---@field buffCategory? CategoryName
 ---@field glowTexture? Texture
@@ -1025,6 +1026,9 @@ local function ShowTextFrame(frame, overlayText, shouldGlow, category, cachedGlo
     end
     if frame.badgeLabel then
         frame.badgeLabel:Hide()
+    end
+    if frame.qualityIcon then
+        frame.qualityIcon:Hide()
     end
     if overlayText then
         frame.count:SetFont(fontPath, GetFrameFontSize(frame, OVERLAY_TEXT_SCALE), "OUTLINE")
@@ -1978,12 +1982,12 @@ end
 -- Eating icon texture ID (from State.lua, matches the eating channel aura icon)
 local EATING_ICON = BR.EATING_AURA_ICON
 
----Apply consumable overlays (stat label top-left, badge bottom-left) to a frame.
+---Apply consumable overlays (stat label top-left, badge/quality bottom-left) to a frame.
 ---@param frame table
----@param item table Bucket item with .statLabel and .badge fields
+---@param item table Bucket item with .statLabel, .badge, and .qualityAtlas fields
 ---@param fontSize number? Explicit font size (computed from icon width if nil)
 local function ApplyConsumableOverlays(frame, item, fontSize)
-    if not item.statLabel and not item.badge then
+    if not item.statLabel and not item.badge and not item.qualityAtlas then
         return
     end
     if not fontSize then
@@ -2001,12 +2005,32 @@ local function ApplyConsumableOverlays(frame, item, fontSize)
     elseif frame.statLabel then
         frame.statLabel:Hide()
     end
+    -- Quality atlas icon (crafted quality tier) — bottom-left corner
+    if item.qualityAtlas then
+        if not frame.qualityIcon then
+            local holder = CreateFrame("Frame", nil, frame)
+            holder:SetAllPoints()
+            holder:SetFrameLevel(frame:GetFrameLevel() + 10)
+            frame.qualityIcon = holder:CreateTexture(nil, "OVERLAY", nil, 7)
+        end
+        local iconSize = frame:GetWidth()
+        local qOffset = -floor(iconSize * 0.125)
+        local qSize = max(14, floor(iconSize * 0.45))
+        frame.qualityIcon:ClearAllPoints()
+        frame.qualityIcon:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", qOffset, qOffset)
+        frame.qualityIcon:SetSize(qSize, qSize)
+        frame.qualityIcon:SetAtlas(item.qualityAtlas)
+        frame.qualityIcon:Show()
+    elseif frame.qualityIcon then
+        frame.qualityIcon:Hide()
+    end
+    -- Text badge (e.g. "F" fleeting, "H" hearty) — middle-left
     if item.badge then
         local bc = BR.SecureButtons.BADGE_COLORS[item.badge]
         if bc then
             if not frame.badgeLabel then
                 frame.badgeLabel = frame:CreateFontString(nil, "OVERLAY")
-                frame.badgeLabel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 2, 2)
+                frame.badgeLabel:SetPoint("LEFT", frame, "LEFT", 2, 0)
             end
             frame.badgeLabel:SetFont(fontPath, fontSize, "OUTLINE")
             frame.badgeLabel:SetTextColor(bc.r, bc.g, bc.b, 1)
@@ -2026,6 +2050,9 @@ local function ClearConsumableOverlays(frame)
     end
     if frame.badgeLabel then
         frame.badgeLabel:Hide()
+    end
+    if frame.qualityIcon then
+        frame.qualityIcon:Hide()
     end
 end
 
@@ -3104,14 +3131,21 @@ local function UpdateVisuals()
         -- Frame alpha
         frame:SetAlpha(catSettings.iconAlpha or 1)
 
-        -- Consumable overlay font update
-        if frame.statLabel or frame.badgeLabel then
+        -- Consumable overlay font/size update
+        if frame.statLabel or frame.badgeLabel or frame.qualityIcon then
             local flSize = BR.SecureButtons.ComputeConsumableFontSize(size)
             if frame.statLabel then
                 frame.statLabel:SetFont(fontPath, flSize, "OUTLINE")
             end
             if frame.badgeLabel then
                 frame.badgeLabel:SetFont(fontPath, flSize, "OUTLINE")
+            end
+            if frame.qualityIcon then
+                local qOffset = -floor(size * 0.125)
+                local qSize = max(14, floor(size * 0.45))
+                frame.qualityIcon:ClearAllPoints()
+                frame.qualityIcon:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", qOffset, qOffset)
+                frame.qualityIcon:SetSize(qSize, qSize)
             end
         end
         if frame.buffText then
