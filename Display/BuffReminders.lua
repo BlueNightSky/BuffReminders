@@ -4321,7 +4321,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             if isFirstInstall then
                 print("|cff00ccffBuffReminders:|r " .. L["Display.LoginFirstInstall"])
             end
-            if db.showLoginMessages ~= false then
+            if not isFirstInstall and db.showLoginMessages ~= false then
                 print("|cff00ccffBuffReminders:|r " .. L["Display.LoginGearIcons"])
             end
         end)

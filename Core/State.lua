@@ -1934,8 +1934,7 @@ function BuffState.Refresh()
                         if shouldShow then
                             SetEntryText(entry, buff.overlayText, consMissGlow)
                         elseif
-                            buff.freeConsumable
-                            and buff.itemID
+                            buff.key == "healthstone"
                             and itemCount
                             and db.defaults
                             and db.defaults.healthstoneLowStock
