@@ -40,11 +40,12 @@ end
 local FEL_DOMINATION_ID = 333889
 
 local function GetFelDomPetMacro(petSpellID)
+    local felDomName = C_Spell.GetSpellName(FEL_DOMINATION_ID)
     local spellName = BR.GetSpellName(petSpellID)
-    if not spellName then
+    if not felDomName or not spellName then
         return nil
     end
-    return "/cast Fel Domination\n/cast " .. spellName
+    return "/cast " .. felDomName .. "\n/cast " .. spellName
 end
 
 -- Pre-filter a buff's spell by talent/spec requirements, then find a castable spell ID.
