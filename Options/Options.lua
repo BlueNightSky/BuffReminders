@@ -2414,8 +2414,7 @@ local function CreateOptionsPanel()
             return BR.profile.showOnlyInGroup ~= false
         end,
         onChange = function(checked)
-            BR.profile.showOnlyInGroup = checked
-            UpdateDisplay()
+            BR.Config.Set("showOnlyInGroup", checked)
         end,
     })
     setLayout:Add(groupHolder, nil, COMPONENT_GAP)
@@ -2435,8 +2434,7 @@ local function CreateOptionsPanel()
         end,
         tooltip = { title = L["Options.HideWhen.Resting.Title"], desc = L["Options.HideWhen.Resting.Desc"] },
         onChange = function(checked)
-            BR.profile.hideWhileResting = checked
-            UpdateDisplay()
+            BR.Config.Set("hideWhileResting", checked)
         end,
     })
     setLayout:Add(restingHolder, nil, COMPONENT_GAP)
@@ -2447,8 +2445,7 @@ local function CreateOptionsPanel()
             return BR.profile.hideInCombat == true
         end,
         onChange = function(checked)
-            BR.profile.hideInCombat = checked
-            UpdateDisplay()
+            BR.Config.Set("hideInCombat", checked)
             Components.RefreshAll()
         end,
     })
@@ -2467,8 +2464,7 @@ local function CreateOptionsPanel()
             return BR.profile.hideInCombat ~= true
         end,
         onChange = function(checked)
-            BR.profile.hideExpiringInCombat = checked
-            UpdateDisplay()
+            BR.Config.Set("hideExpiringInCombat", checked)
         end,
     })
     setLayout:Add(combatExpiringHolder, nil, COMPONENT_GAP)
@@ -2483,8 +2479,7 @@ local function CreateOptionsPanel()
             return BR.profile.hideAllInVehicle == true
         end,
         onChange = function(checked)
-            BR.profile.hideAllInVehicle = checked
-            UpdateDisplay()
+            BR.Config.Set("hideAllInVehicle", checked)
         end,
     })
     setLayout:Add(vehicleHolder, nil, COMPONENT_GAP)
@@ -2499,8 +2494,7 @@ local function CreateOptionsPanel()
             return BR.profile.hideWhileMounted == true
         end,
         onChange = function(checked)
-            BR.profile.hideWhileMounted = checked
-            UpdateDisplay()
+            BR.Config.Set("hideWhileMounted", checked)
         end,
     })
     setLayout:Add(mountedHolder, nil, COMPONENT_GAP)
@@ -2515,8 +2509,7 @@ local function CreateOptionsPanel()
             return BR.profile.hideInLegacyInstances == true
         end,
         onChange = function(checked)
-            BR.profile.hideInLegacyInstances = checked
-            UpdateDisplay()
+            BR.Config.Set("hideInLegacyInstances", checked)
         end,
     })
     setLayout:Add(legacyHolder, nil, COMPONENT_GAP)
@@ -2531,8 +2524,7 @@ local function CreateOptionsPanel()
             return BR.profile.hideWhileLeveling == true
         end,
         onChange = function(checked)
-            BR.profile.hideWhileLeveling = checked
-            UpdateDisplay()
+            BR.Config.Set("hideWhileLeveling", checked)
         end,
     })
     setLayout:Add(levelingHolder, nil, COMPONENT_GAP)
@@ -5114,8 +5106,7 @@ ShowPetPassiveModal = function()
             desc = L["Options.PetPassiveCombat.Desc"],
         },
         onChange = function(checked)
-            BR.profile.petPassiveOnlyInCombat = checked
-            BR.Display.Update()
+            BR.Config.Set("petPassiveOnlyInCombat", checked)
         end,
     })
     layout:Add(passiveCombatHolder, nil, COMPONENT_GAP)

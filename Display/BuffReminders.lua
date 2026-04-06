@@ -3321,6 +3321,11 @@ CallbackRegistry:RegisterCallback("DisplayRefresh", function()
     end
 end)
 
+-- Visibility toggles (hide-when, show-only-in-group, pet passive)
+CallbackRegistry:RegisterCallback("VisibilityRefresh", function()
+    UpdateDisplay()
+end)
+
 -- Structural changes (split categories)
 CallbackRegistry:RegisterCallback("FramesReparent", function()
     ResetLayoutSignatures()
