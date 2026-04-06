@@ -53,6 +53,7 @@ local addonName, BR = ...
 ---@field fontFace? string
 ---@field showConsumablesWithoutItems? boolean
 ---@field delveFoodOnly? boolean
+---@field delveFoodTimer? boolean
 ---@field freeConsumableMode? "follow"|"override"
 ---@field freeConsumableVisibility? table
 ---@field healthstoneVisibility? "readyCheck"|"always"|"casterOnly"
@@ -369,6 +370,7 @@ local defaults = {
         glowSize = 2,
         showConsumablesWithoutItems = false,
         delveFoodOnly = true,
+        delveFoodTimer = false,
         freeConsumableMode = "override",
         freeConsumableVisibility = {
             openWorld = false,
@@ -4448,6 +4450,20 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         C_Timer.After(0.5, function()
             BR.BuffState.InvalidateContentTypeCache()
             SetDirty()
+            -- Trigger delve entry for showOnInstanceEntry consumables (no loading screen on re-entry)
+            -- Skip if PLAYER_ENTERING_WORLD already started a timer for this entry
+            if BR.BuffState.ShouldTriggerDelveEntry() then
+                if not delveEntryTimer then
+                    BR.BuffState.SetDelveEntryState(true)
+                    UpdateDisplay()
+                    delveEntryTimer = C_Timer.NewTimer(30, function()
+                        ClearDelveEntryState()
+                        UpdateDisplay()
+                    end)
+                end
+            else
+                ClearDelveEntryState()
+            end
         end)
     elseif event == "GROUP_ROSTER_UPDATE" then
         SetDirty()
@@ -4460,11 +4476,13 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     elseif event == "PLAYER_REGEN_DISABLED" then
         inCombat = true
         BR.BuffState.SetInCombat(true)
+        ClearDelveEntryState()
         SetDirty()
     elseif event == "ENCOUNTER_START" then
         inEncounter = true
         inCombat = true
         BR.BuffState.SetInCombat(true)
+        ClearDelveEntryState()
         SetDirty()
     elseif event == "ENCOUNTER_END" then
         inEncounter = false

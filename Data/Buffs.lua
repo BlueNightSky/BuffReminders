@@ -985,10 +985,6 @@ BR.BUFF_TABLES = {
             overlayText = L["Overlay.NoFood"],
             groupId = "delveFood",
             showOnInstanceEntry = true, -- Only show for 30s on delve entry (food is NPC-controlled)
-            infoTooltip = {
-                title = L["Tooltip.DelvesOnly"],
-                desc = L["Tooltip.DelvesOnly.Desc"],
-            },
             visibilityCondition = BR.IsInDelve,
             disabledInCompetitivePvP = true,
         },

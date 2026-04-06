@@ -111,9 +111,6 @@ english["Tooltip.MayShowExtraIcon.Desc"] =
 english["Tooltip.InstanceEntryReminder"] = "Instance Entry Reminder"
 english["Tooltip.InstanceEntryReminder.Desc"] =
     "Briefly shown when entering a dungeon as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds."
-english["Tooltip.DelvesOnly"] = "Delves Only"
-english["Tooltip.DelvesOnly.Desc"] =
-    "Briefly shown when entering a delve as a reminder to eat Valeera's food. Disappears after 30 seconds or when the buff is detected."
 
 -- ============================================================================
 -- GLOW TYPE NAMES
@@ -381,6 +378,11 @@ english["Options.PetPassiveSettings"] = "Pet Passive Settings"
 english["Options.PetPassiveSettings.Note"] = "Configure the passive pet reminder."
 english["Options.PetSummonSettings"] = "Pet Summon Settings"
 english["Options.PetSummonSettings.Note"] = "Configure pet summoning behavior."
+english["Options.DelveFoodSettings"] = "Delve Food Settings"
+english["Options.DelveFoodSettings.Note"] = "Configure the delve food reminder behavior."
+english["Options.DelveFoodTimer"] = "Auto-hide after 30 seconds"
+english["Options.DelveFoodTimer.Desc"] =
+    "When enabled, the delve food reminder only appears for 30 seconds after entering a delve, then hides automatically. When disabled, the reminder stays visible as long as you are in a delve and missing the buff."
 
 -- ============================================================================
 -- OPTIONS: LAYOUT
@@ -631,8 +633,8 @@ english["Options.Min"] = "min"
 english["Content.ClickToFilter"] = "Click to filter by %s difficulty"
 
 -- Mover labels
-english["Mover.AnchorGrowth"] = "Anchor \194\183 Growth %s"
-english["Mover.AnchorGrowthFrame"] = "Anchor \194\183 Growth %s \194\183 > %s"
+english["Mover.AnchorGrowth"] = "Anchor · Growth %s"
+english["Mover.AnchorGrowthFrame"] = "Anchor · Growth %s · > %s"
 
 -- Pet labels
 english["Pet.SpiritBeast"] = "Spirit Beast"

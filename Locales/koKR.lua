@@ -102,9 +102,6 @@ L["Tooltip.MayShowExtraIcon.Desc"] =
 L["Tooltip.InstanceEntryReminder"] = "인스턴스 입장 알림"
 L["Tooltip.InstanceEntryReminder.Desc"] =
     "던전 입장 시 영혼샘을 깔라는 알림이 잠시 표시됩니다. 시전하거나 30초가 지나면 사라집니다."
-L["Tooltip.DelvesOnly"] = "구렁 전용"
-L["Tooltip.DelvesOnly.Desc"] =
-    "구렁 입장 시 발리라의 음식을 먹으라는 알림이 잠시 표시됩니다. 30초 후 또는 버프가 감지되면 사라집니다."
 
 -- ============================================================================
 -- GLOW TYPE NAMES
@@ -379,6 +376,11 @@ L["Options.PetPassiveSettings"] = "소환수 수동 설정"
 L["Options.PetPassiveSettings.Note"] = "수동 모드 소환수 알림을 설정합니다."
 L["Options.PetSummonSettings"] = "소환수 소환 설정"
 L["Options.PetSummonSettings.Note"] = "소환수 소환 동작을 설정합니다."
+L["Options.DelveFoodSettings"] = "구렁 음식 설정"
+L["Options.DelveFoodSettings.Note"] = "구렁 음식 알림 동작을 설정합니다."
+L["Options.DelveFoodTimer"] = "30초 후 자동 숨김"
+L["Options.DelveFoodTimer.Desc"] =
+    "활성화하면 구렁 음식 알림이 구렁 입장 후 30초 동안만 표시되고 자동으로 숨겨집니다. 비활성화하면 구렁 안에서 버프가 없는 동안 알림이 계속 표시됩니다."
 
 -- ============================================================================
 -- OPTIONS: LAYOUT
@@ -634,8 +636,8 @@ L["Options.Min"] = "분"
 L["Content.ClickToFilter"] = "%s 난이도별로 필터하려면 클릭"
 
 -- Mover labels
-L["Mover.AnchorGrowth"] = "앵커 \194\183 방향 %s"
-L["Mover.AnchorGrowthFrame"] = "앵커 \194\183 방향 %s \194\183 > %s"
+L["Mover.AnchorGrowth"] = "앵커 · 방향 %s"
+L["Mover.AnchorGrowthFrame"] = "앵커 · 방향 %s · > %s"
 
 -- Pet labels
 L["Pet.SpiritBeast"] = "야수 정령"

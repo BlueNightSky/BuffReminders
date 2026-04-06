@@ -250,6 +250,7 @@ local DefaultSettingKeys = {
     missingGlowYOffset = "VisualsRefresh",
     showConsumablesWithoutItems = "DisplayRefresh",
     delveFoodOnly = "DisplayRefresh",
+    delveFoodTimer = "DisplayRefresh",
     freeConsumableMode = "DisplayRefresh",
     freeConsumableVisibility = "DisplayRefresh",
     healthstoneVisibility = "DisplayRefresh",
