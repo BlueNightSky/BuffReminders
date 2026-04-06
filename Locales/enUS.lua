@@ -445,6 +445,9 @@ english["Options.HideWhen.Legacy"] = "In legacy instances"
 english["Options.HideWhen.Legacy.Title"] = "Hide in legacy instances"
 english["Options.HideWhen.Legacy.Desc"] =
     "Hide all buff reminders in trivially old instances (where legacy loot is enabled)"
+english["Options.HideWhen.Leveling"] = "While leveling"
+english["Options.HideWhen.Leveling.Title"] = "Hide while leveling"
+english["Options.HideWhen.Leveling.Desc"] = "Hide all buff reminders when below max level"
 
 -- ============================================================================
 -- OPTIONS: BUFF TRACKING MODE

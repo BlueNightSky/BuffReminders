@@ -2521,6 +2521,22 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(legacyHolder, nil, COMPONENT_GAP)
 
+    local levelingHolder = Components.Checkbox(settingsContent, {
+        label = L["Options.HideWhen.Leveling"],
+        tooltip = {
+            title = L["Options.HideWhen.Leveling.Title"],
+            desc = L["Options.HideWhen.Leveling.Desc"],
+        },
+        get = function()
+            return BR.profile.hideWhileLeveling == true
+        end,
+        onChange = function(checked)
+            BR.profile.hideWhileLeveling = checked
+            UpdateDisplay()
+        end,
+    })
+    setLayout:Add(levelingHolder, nil, COMPONENT_GAP)
+
     setLayout:SetX(setX)
 
     local trackingModeHolder = Components.Dropdown(settingsContent, {

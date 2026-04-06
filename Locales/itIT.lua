@@ -439,6 +439,9 @@ L["Options.HideWhen.Legacy"] = "In istanze eredità"
 L["Options.HideWhen.Legacy.Title"] = "Nascondi in istanze eredità"
 L["Options.HideWhen.Legacy.Desc"] =
     "Nascondi tutti i promemoria buff nelle istanze banalmente vecchie (dove il bottino eredità è attivato)"
+L["Options.HideWhen.Leveling"] = "Durante il livellamento"
+L["Options.HideWhen.Leveling.Title"] = "Nascondi durante il livellamento"
+L["Options.HideWhen.Leveling.Desc"] = "Nascondi tutti i promemoria buff quando sei sotto il livello massimo"
 
 -- ============================================================================
 -- OPTIONS: BUFF TRACKING MODE

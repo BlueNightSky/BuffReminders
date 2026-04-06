@@ -198,6 +198,10 @@ local TEXCOORD_INSET = BR.TEXCOORD_INSET
 
 -- WoW API locals
 local PlaySoundFile = PlaySoundFile
+local UnitLevel = UnitLevel
+local GetMaxLevelForPlayerExpansion = GetMaxLevelForPlayerExpansion
+local playerLevel -- Cached on PLAYER_ENTERING_WORLD, updated on PLAYER_LEVEL_UP
+local maxPlayerLevel -- Cached on PLAYER_ENTERING_WORLD, updated on UPDATE_EXPANSION_LEVEL
 
 -- LibSharedMedia for font resolution
 local LSM = LibStub("LibSharedMedia-3.0")
@@ -341,6 +345,7 @@ local defaults = {
     hideAllInVehicle = false,
     hideWhileMounted = false,
     hideInLegacyInstances = true,
+    hideWhileLeveling = false,
     showMissingCountOnly = false,
     petPassiveOnlyInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
@@ -2726,6 +2731,11 @@ UpdateDisplay = function()
             return
         end
 
+        if db.hideWhileLeveling and playerLevel and maxPlayerLevel and playerLevel < maxPlayerLevel then
+            HideAllDisplayFrames()
+            return
+        end
+
         -- PvP/Arena and M+: aura API is restricted but we use the normal display path
         -- (State.lua treats PvP the same as M+ for aura restriction purposes)
 
@@ -3462,6 +3472,8 @@ eventFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
 eventFrame:RegisterEvent("UNIT_EXITED_VEHICLE")
 eventFrame:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
 eventFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
+eventFrame:RegisterEvent("PLAYER_LEVEL_UP")
+eventFrame:RegisterEvent("UPDATE_EXPANSION_LEVEL")
 eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 eventFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 
@@ -4433,6 +4445,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Sync flags with current state (in case of reload)
         inCombat = InCombatLockdown()
         isResting = IsResting()
+        playerLevel = UnitLevel("player")
+        maxPlayerLevel = GetMaxLevelForPlayerExpansion()
         BR.BuffState.SetInCombat(inCombat)
         -- Detect PvP prep phase: in a PvP instance but match not yet started.
         -- Default is false (restricted), so reloads during active matches stay safe.
@@ -4590,6 +4604,12 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         SetDirty()
     elseif event == "PLAYER_UPDATE_RESTING" then
         isResting = IsResting()
+        SetDirty()
+    elseif event == "PLAYER_LEVEL_UP" then
+        playerLevel = arg1 -- PLAYER_LEVEL_UP passes new level as arg1
+        SetDirty()
+    elseif event == "UPDATE_EXPANSION_LEVEL" then
+        maxPlayerLevel = GetMaxLevelForPlayerExpansion()
         SetDirty()
     elseif event == "READY_CHECK" then
         -- Cancel any existing timer

@@ -122,7 +122,9 @@ local RootSettings = {
     buffTrackingMode = nil, -- No auto-refresh, manually calls UpdateDisplay
     hideAllInVehicle = nil,
     hideWhileMounted = nil,
+    hideWhileResting = nil,
     hideInLegacyInstances = nil,
+    hideWhileLeveling = nil,
     showMissingCountOnly = "DisplayRefresh",
 }
 
@@ -314,7 +316,9 @@ local function ValidatePath(segments)
         or root == "buffTrackingMode"
         or root == "hideAllInVehicle"
         or root == "hideWhileMounted"
+        or root == "hideWhileResting"
         or root == "hideInLegacyInstances"
+        or root == "hideWhileLeveling"
         or root == "showMissingCountOnly"
     if isRootSetting then
         if #segments == 1 then

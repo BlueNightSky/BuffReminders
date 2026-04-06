@@ -444,6 +444,9 @@ L["Options.HideWhen.Legacy"] = "구 인스턴스"
 L["Options.HideWhen.Legacy.Title"] = "구 인스턴스에서 숨기기"
 L["Options.HideWhen.Legacy.Desc"] =
     "유산 전리품이 활성화된 구 인스턴스에서 모든 버프 알림을 숨깁니다."
+L["Options.HideWhen.Leveling"] = "레벨링 중"
+L["Options.HideWhen.Leveling.Title"] = "레벨링 중 숨기기"
+L["Options.HideWhen.Leveling.Desc"] = "최대 레벨 미만일 때 모든 버프 알림을 숨깁니다."
 
 -- ============================================================================
 -- OPTIONS: BUFF TRACKING MODE
