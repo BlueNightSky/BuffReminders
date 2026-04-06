@@ -196,6 +196,9 @@ local DEFAULT_BORDER_SIZE = BR.DEFAULT_BORDER_SIZE
 local DEFAULT_ICON_ZOOM = BR.DEFAULT_ICON_ZOOM
 local TEXCOORD_INSET = BR.TEXCOORD_INSET
 
+-- WoW API locals
+local PlaySoundFile = PlaySoundFile
+
 -- LibSharedMedia for font resolution
 local LSM = LibStub("LibSharedMedia-3.0")
 
@@ -247,6 +250,16 @@ for _, buffArray in ipairs({ PresenceBuffs, TargetedBuffs, SelfBuffs, PetBuffs }
             for _, id in ipairs(spellList) do
                 IconOverrides[id] = buff.displayIcon
             end
+        end
+    end
+end
+
+-- Build buff key → setting key mapping (resolves individual keys to groupId when grouped)
+local buffKeyToSettingKey = {}
+for _, buffArray in ipairs({ RaidBuffs, PresenceBuffs, TargetedBuffs, SelfBuffs, PetBuffs, BUFF_TABLES.consumable }) do
+    for _, buff in ipairs(buffArray) do
+        if buff.groupId then
+            buffKeyToSettingKey[buff.key] = buff.groupId
         end
     end
 end
@@ -319,6 +332,7 @@ end
 local defaults = {
     locked = true,
     enabledBuffs = {},
+    buffSounds = {},
     showOnlyInGroup = false,
     hideWhileResting = false,
     hideInCombat = false,
@@ -601,6 +615,10 @@ local CATEGORIES = { "raid", "presence", "targeted", "self", "pet", "consumable"
 
 -- Track previously visible frame keys for selective hiding (Phase 3 optimization)
 local previouslyVisibleKeys = {} ---@type table<string, boolean>
+
+-- Sound alert state: suppress on first cycle after load/test-toggle to avoid login spam
+local suppressSound = true
+local soundPlayedThisCycle = {} ---@type table<string, boolean>
 
 -- Layout signature tracking for skip-redundant-positioning (Phase 4 optimization)
 -- Signatures are concatenated visible frame keys; if unchanged, skip repositioning
@@ -1818,6 +1836,7 @@ ToggleTestMode = function()
             end
         end
         wipe(previouslyVisibleKeys)
+        suppressSound = true -- Prevent sound spam when exiting test mode
         -- Reset layout signatures so positioning runs fresh
         lastMainSignature = ""
         wipe(lastSplitSignatures)
@@ -2630,6 +2649,25 @@ HideDismissFrames = function()
     end
 end
 
+-- Play per-buff sound alert when an icon first appears.
+-- buffSounds is passed in from UpdateDisplay to avoid repeated BR.profile lookups.
+local function TryPlayBuffSound(key, buffSounds)
+    -- Resolve grouped buff keys (e.g. "beaconOfFaith" → "beacons")
+    local settingKey = buffKeyToSettingKey[key] or key
+    -- Deduplicate: don't play the same group sound twice in one cycle
+    if soundPlayedThisCycle[settingKey] then
+        return
+    end
+    local soundName = buffSounds[settingKey]
+    if soundName then
+        local soundFile = LSM:Fetch("sound", soundName)
+        if soundFile then
+            PlaySoundFile(soundFile, "Master")
+        end
+        soundPlayedThisCycle[settingKey] = true
+    end
+end
+
 -- Update the display
 UpdateDisplay = function()
     if not mainFrame then
@@ -2698,6 +2736,13 @@ UpdateDisplay = function()
     local visibleByCategory = BR.BuffState.visibleByCategory
     local anyVisible = false
 
+    -- Cache buffSounds once per cycle; nil when suppressed or empty (skips all sound checks)
+    local buffSounds = (not testMode and not suppressSound) and BR.profile.buffSounds or nil
+    if buffSounds and not next(buffSounds) then
+        buffSounds = nil
+    end
+    wipe(soundPlayedThisCycle)
+
     -- Reuse module-level tables (wiped to avoid per-call allocation)
     wipe(reusableVisibleKeys)
     wipe(reusableMainBuffs)
@@ -2723,6 +2768,9 @@ UpdateDisplay = function()
                     if frame then
                         local shown = RenderVisibleEntry(frame, entry)
                         if shown then
+                            if buffSounds and not previouslyVisibleKeys[entry.key] then
+                                TryPlayBuffSound(entry.key, buffSounds)
+                            end
                             if IsIconDetached(entry.key) then
                                 PositionDetachedIcon(entry.key, frame)
                             else
@@ -2751,6 +2799,9 @@ UpdateDisplay = function()
                     if frame then
                         local shown = RenderVisibleEntry(frame, entry)
                         if shown then
+                            if buffSounds and not previouslyVisibleKeys[entry.key] then
+                                TryPlayBuffSound(entry.key, buffSounds)
+                            end
                             if IsIconDetached(entry.key) then
                                 PositionDetachedIcon(entry.key, frame)
                             else
@@ -2801,6 +2852,7 @@ UpdateDisplay = function()
     for key in pairs(reusableVisibleKeys) do
         previouslyVisibleKeys[key] = true
     end
+    suppressSound = false
 
     -- Consumable dismiss button: show X badge on last visible consumable icon
     local consumableEntries = not testMode and visibleByCategory["consumable"]

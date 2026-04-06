@@ -168,6 +168,19 @@ english["Tab.Buffs"] = "Buffs"
 english["Tab.DisplayBehavior"] = "Display/Behavior"
 english["Tab.Settings"] = "Settings"
 english["Tab.Profiles"] = "Profiles"
+english["Tab.Sounds"] = "Sounds"
+
+-- ============================================================================
+-- OPTIONS: SOUND ALERTS
+-- ============================================================================
+english["Options.Sound.NoAlerts"] = "No sound alerts configured."
+english["Options.Sound.AddAlert"] = "Add Sound Alert"
+english["Options.Sound.Title"] = "Add Sound Alert"
+english["Options.Sound.SelectBuff"] = "Select Buff"
+english["Options.Sound.SelectSound"] = "Select Sound"
+english["Options.Sound.Preview"] = "Preview"
+english["Options.Sound.Save"] = "Save"
+english["Options.Sound.NoBuffs"] = "All buffs already have sounds."
 
 -- ============================================================================
 -- OPTIONS: GLOBAL DEFAULTS

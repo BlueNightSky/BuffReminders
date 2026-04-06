@@ -9,6 +9,9 @@ local _, BR = ...
 local floor, max, min, abs = math.floor, math.max, math.min, math.abs
 local tinsert, tsort, tremove = table.insert, table.sort, table.remove
 
+-- WoW API locals
+local PlaySoundFile = PlaySoundFile
+
 -- Aliases from BR namespace
 local Components = BR.Components
 local CreateButton = BR.CreateButton
@@ -84,7 +87,7 @@ local customBuffModal = nil
 -- Forward declarations
 local ShowGlowAdvanced, ShowCustomBuffModal
 local ShowRuneforgeModal, ShowHealthstoneModal, ShowSoulstoneModal, ShowPetPassiveModal, ShowPetSummonModal
-local ShowDelveFoodModal
+local ShowDelveFoodModal, ShowSoundAlertModal
 
 -- ============================================================================
 -- CONSTANTS
@@ -287,17 +290,19 @@ local function CreateOptionsPanel()
         end
     end
 
-    -- Create 4 tabs: Buffs, Display & Behavior, Settings, Import/Export
+    -- Create 5 tabs: Buffs, Display & Behavior, Sounds, Settings, Profiles
     tabButtons.buffs = Components.Tab(panel, { name = "buffs", label = L["Tab.Buffs"], width = 50 })
     tabButtons.displayBehavior =
         Components.Tab(panel, { name = "displayBehavior", label = L["Tab.DisplayBehavior"], width = 110 })
+    tabButtons.sounds = Components.Tab(panel, { name = "sounds", label = L["Tab.Sounds"], width = 60 })
     tabButtons.settings = Components.Tab(panel, { name = "settings", label = L["Tab.Settings"], width = 65 })
     tabButtons.profiles = Components.Tab(panel, { name = "profiles", label = L["Tab.Profiles"], width = 65 })
 
     -- Position tabs below title
     tabButtons.buffs:SetPoint("TOPLEFT", panel, "TOPLEFT", COL_PADDING, -30)
     tabButtons.displayBehavior:SetPoint("LEFT", tabButtons.buffs, "RIGHT", 2, 0)
-    tabButtons.settings:SetPoint("LEFT", tabButtons.displayBehavior, "RIGHT", 2, 0)
+    tabButtons.sounds:SetPoint("LEFT", tabButtons.displayBehavior, "RIGHT", 2, 0)
+    tabButtons.settings:SetPoint("LEFT", tabButtons.sounds, "RIGHT", 2, 0)
     tabButtons.profiles:SetPoint("LEFT", tabButtons.settings, "RIGHT", 2, 0)
 
     for name, tab in pairs(tabButtons) do
@@ -2663,6 +2668,211 @@ local function CreateOptionsPanel()
     RebuildCustomAnchorList()
     setLayout:Add(customAnchorList, nil, COMPONENT_GAP)
 
+    -- ========== SOUNDS TAB ==========
+    local soundsContent = CreateFrame("Frame", nil, panel)
+    soundsContent:SetPoint("TOPLEFT", 0, CONTENT_TOP)
+    soundsContent:SetSize(PANEL_WIDTH, 500)
+    soundsContent:Hide()
+    contentContainers.sounds = soundsContent
+
+    local SOUND_ROW_HEIGHT = 24
+    local SOUND_ICON_SIZE = 20
+    local soundRowPool = {} -- Reusable row frames to avoid frame leaks
+    local soundRowCount = 0 -- Number of active rows in current render
+
+    -- Build a lookup of all known buff keys to display names and icons.
+    -- Static buff info is cached; custom buffs are merged on each call.
+    local cachedStaticBuffInfo = nil
+    local function GetAllBuffInfo()
+        if not cachedStaticBuffInfo then
+            cachedStaticBuffInfo = {}
+            local seenGroups = {}
+            local allBuffArrays = { RaidBuffs, PresenceBuffs, TargetedBuffs, SelfBuffs, PetBuffs, Consumables }
+            for _, buffArray in ipairs(allBuffArrays) do
+                for _, buff in ipairs(buffArray) do
+                    if buff.groupId then
+                        if not seenGroups[buff.groupId] then
+                            seenGroups[buff.groupId] = true
+                            local groupInfo = BuffGroups[buff.groupId]
+                            local name = groupInfo and groupInfo.displayName or buff.name
+                            cachedStaticBuffInfo[buff.groupId] = {
+                                name = name,
+                                spellID = buff.displaySpells or buff.spellID,
+                            }
+                        end
+                    else
+                        cachedStaticBuffInfo[buff.key] = {
+                            name = buff.name,
+                            spellID = buff.displaySpells or buff.spellID,
+                        }
+                    end
+                end
+            end
+        end
+        -- Merge custom buffs (may change between calls)
+        local info = {}
+        for k, v in pairs(cachedStaticBuffInfo) do
+            info[k] = v
+        end
+        local db = BR.profile
+        if db.customBuffs then
+            for key, customBuff in pairs(db.customBuffs) do
+                info[key] = {
+                    name = customBuff.name or (L["CustomBuff.Action.Spell"] .. " " .. tostring(customBuff.spellID)),
+                    spellID = customBuff.spellID,
+                }
+            end
+        end
+        return info
+    end
+
+    -- Get or create a pooled row frame
+    local function AcquireSoundRow(index)
+        local row = soundRowPool[index]
+        if not row then
+            row = CreateFrame("Frame", nil, soundsContent)
+            row:SetSize(PANEL_WIDTH - COL_PADDING * 2, SOUND_ROW_HEIGHT)
+            row.icon = row:CreateTexture(nil, "ARTWORK")
+            row.icon:SetSize(SOUND_ICON_SIZE, SOUND_ICON_SIZE)
+            row.icon:SetPoint("LEFT", 0, 0)
+            row.nameText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            row.nameText:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+            row.soundText = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+            row.soundText:SetPoint("LEFT", row.nameText, "RIGHT", 8, 0)
+            -- Preview button
+            row.previewBtn = CreateFrame("Button", nil, row)
+            row.previewBtn:SetSize(14, 14)
+            row.previewBtn:SetPoint("RIGHT", row, "RIGHT", -24, 0)
+            row.previewTex = row.previewBtn:CreateTexture(nil, "ARTWORK")
+            row.previewTex:SetAllPoints()
+            row.previewTex:SetAtlas("chatframe-button-icon-voicechat")
+            row.previewBtn:SetScript("OnEnter", function()
+                row.previewTex:SetVertexColor(1, 1, 1, 1)
+            end)
+            row.previewBtn:SetScript("OnLeave", function()
+                row.previewTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
+            end)
+            -- Remove button
+            row.removeBtn = CreateFrame("Button", nil, row)
+            row.removeBtn:SetSize(14, 14)
+            row.removeBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+            row.removeTex = row.removeBtn:CreateTexture(nil, "ARTWORK")
+            row.removeTex:SetAllPoints()
+            row.removeTex:SetAtlas("common-icon-redx")
+            row.removeBtn:SetScript("OnEnter", function()
+                row.removeTex:SetVertexColor(1, 0.3, 0.3, 1)
+            end)
+            row.removeBtn:SetScript("OnLeave", function()
+                row.removeTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
+            end)
+            soundRowPool[index] = row
+        end
+        row.previewTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
+        row.removeTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
+        row:Show()
+        return row
+    end
+
+    local function RenderSoundAlertRows()
+        -- Hide all previously active rows
+        for i = 1, soundRowCount do
+            soundRowPool[i]:Hide()
+        end
+        soundRowCount = 0
+
+        local db = BR.profile
+        local buffSounds = db.buffSounds
+        local allBuffInfo = GetAllBuffInfo()
+        local y = -10
+
+        if not buffSounds or not next(buffSounds) then
+            -- Empty state
+            if not soundsContent.emptyText then
+                soundsContent.emptyText = soundsContent:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+                soundsContent.emptyText:SetPoint("TOPLEFT", COL_PADDING, -10)
+                soundsContent.emptyText:SetJustifyH("LEFT")
+            end
+            soundsContent.emptyText:SetText(L["Options.Sound.NoAlerts"])
+            soundsContent.emptyText:Show()
+            y = y - SOUND_ROW_HEIGHT
+        else
+            if soundsContent.emptyText then
+                soundsContent.emptyText:Hide()
+            end
+
+            -- Sort keys alphabetically by buff name
+            local sortedKeys = {}
+            for key in pairs(buffSounds) do
+                tinsert(sortedKeys, key)
+            end
+            tsort(sortedKeys, function(a, b)
+                local infoA = allBuffInfo[a]
+                local infoB = allBuffInfo[b]
+                local nameA = infoA and infoA.name or a
+                local nameB = infoB and infoB.name or b
+                return nameA < nameB
+            end)
+
+            for _, key in ipairs(sortedKeys) do
+                local soundName = buffSounds[key]
+                local buffInfo = allBuffInfo[key]
+                local displayName = buffInfo and buffInfo.name or key
+
+                soundRowCount = soundRowCount + 1
+                local row = AcquireSoundRow(soundRowCount)
+                row:SetPoint("TOPLEFT", COL_PADDING, y)
+
+                -- Update icon
+                if buffInfo and buffInfo.spellID then
+                    local texture = GetBuffTexture(buffInfo.spellID)
+                    if texture then
+                        row.icon:SetTexture(texture)
+                        row.icon:SetTexCoord(TEXCOORD_INSET, 1 - TEXCOORD_INSET, TEXCOORD_INSET, 1 - TEXCOORD_INSET)
+                    else
+                        row.icon:SetTexture(134400)
+                        row.icon:SetTexCoord(0, 1, 0, 1)
+                    end
+                else
+                    row.icon:SetTexture(134400)
+                    row.icon:SetTexCoord(0, 1, 0, 1)
+                end
+
+                row.nameText:SetText(displayName)
+                row.soundText:SetText("|cff888888" .. soundName .. "|r")
+
+                row.previewBtn:SetScript("OnClick", function()
+                    local soundFile = LSM:Fetch("sound", soundName)
+                    if soundFile then
+                        PlaySoundFile(soundFile, "Master")
+                    end
+                end)
+                row.removeBtn:SetScript("OnClick", function()
+                    db.buffSounds[key] = nil
+                    if not next(db.buffSounds) then
+                        db.buffSounds = nil
+                    end
+                    RenderSoundAlertRows()
+                end)
+
+                y = y - SOUND_ROW_HEIGHT
+            end
+        end
+
+        -- Add button (always at bottom)
+        if not soundsContent.addBtn then
+            soundsContent.addBtn = CreateButton(soundsContent, L["Options.Sound.AddAlert"], function()
+                ShowSoundAlertModal(RenderSoundAlertRows)
+            end)
+            soundsContent.addBtn:SetSize(160, 22)
+        end
+        soundsContent.addBtn:SetPoint("TOPLEFT", COL_PADDING, y - 10)
+    end
+
+    -- Render initial state and refresh on tab show
+    soundsContent:SetScript("OnShow", function()
+        RenderSoundAlertRows()
+    end)
+
     -- ========== PROFILES TAB ==========
     -- Use simple frame (not scrollable) to avoid nested scroll frame issues with edit boxes
     local profilesContent = CreateFrame("Frame", nil, panel)
@@ -4947,6 +5157,171 @@ ShowPetSummonModal = function()
 
     modal:SetHeight(max(-layout:GetY() + MARGIN, 80))
     petSummonModal = modal
+    modal:Show()
+end
+
+-- ============================================================================
+-- SOUND ALERT MODAL
+-- ============================================================================
+
+local soundAlertModal = nil
+local SOUND_MODAL_BUFF_ARRAYS = { RaidBuffs, PresenceBuffs, TargetedBuffs, SelfBuffs, PetBuffs, Consumables }
+
+-- Build buff options (all buffs that don't already have a sound)
+local function BuildBuffOptions()
+    local db = BR.profile
+    local opts = {}
+    local seenGroups = {}
+    for _, buffArray in ipairs(SOUND_MODAL_BUFF_ARRAYS) do
+        for _, buff in ipairs(buffArray) do
+            local key = buff.groupId or buff.key
+            if buff.groupId then
+                if seenGroups[buff.groupId] then
+                    key = nil -- skip duplicate group entries
+                else
+                    seenGroups[buff.groupId] = true
+                end
+            end
+            if key and not (db.buffSounds and db.buffSounds[key]) then
+                local name
+                if buff.groupId then
+                    local groupInfo = BuffGroups[buff.groupId]
+                    name = groupInfo and groupInfo.displayName or buff.name
+                else
+                    name = buff.name
+                end
+                tinsert(opts, { label = name, value = key })
+            end
+        end
+    end
+    -- Custom buffs
+    if db.customBuffs then
+        for key, customBuff in pairs(db.customBuffs) do
+            if not (db.buffSounds and db.buffSounds[key]) then
+                local name = customBuff.name or (L["CustomBuff.Action.Spell"] .. " " .. tostring(customBuff.spellID))
+                tinsert(opts, { label = name, value = key })
+            end
+        end
+    end
+    tsort(opts, function(a, b)
+        return a.label < b.label
+    end)
+    return opts
+end
+
+-- Build sound options from LSM
+local function BuildSoundOptions()
+    local soundList = LSM:List("sound")
+    local opts = {}
+    for _, name in ipairs(soundList) do
+        if name ~= "None" then
+            tinsert(opts, { label = name, value = name })
+        end
+    end
+    return opts
+end
+
+ShowSoundAlertModal = function(refreshCallback)
+    -- Destroy and recreate: dropdown scroll support depends on option count at creation time
+    if soundAlertModal then
+        soundAlertModal:Hide()
+        soundAlertModal:SetParent(nil)
+    end
+
+    local MODAL_WIDTH = 360
+    local MARGIN = 16
+
+    local modal = CreatePanel(nil, MODAL_WIDTH, 1, {
+        level = 200,
+        modal = true,
+    })
+
+    local title = modal:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", 0, -12)
+    title:SetText(L["Options.Sound.Title"])
+
+    local closeBtn = CreateButton(modal, "x", function()
+        modal:Hide()
+    end)
+    closeBtn:SetSize(22, 22)
+    closeBtn:SetPoint("TOPRIGHT", -5, -5)
+
+    local layout = Components.VerticalLayout(modal, { x = MARGIN, y = -36 })
+
+    -- State for selections
+    local selectedBuffKey = nil
+    local selectedSoundName = nil
+
+    local buffOpts = BuildBuffOptions()
+    local buffDropdown = Components.Dropdown(modal, {
+        label = L["Options.Sound.SelectBuff"],
+        width = 200,
+        maxItems = 15,
+        options = buffOpts,
+        onChange = function(val)
+            selectedBuffKey = val
+        end,
+    })
+    layout:Add(buffDropdown, nil, DROPDOWN_EXTRA)
+
+    local soundDropdown = Components.Dropdown(modal, {
+        label = L["Options.Sound.SelectSound"],
+        width = 200,
+        maxItems = 15,
+        options = BuildSoundOptions(),
+        onChange = function(val)
+            selectedSoundName = val
+        end,
+    })
+    layout:Add(soundDropdown, nil, DROPDOWN_EXTRA)
+
+    -- Preview + Save row
+    local btnRow = CreateFrame("Frame", nil, modal)
+    btnRow:SetSize(MODAL_WIDTH - MARGIN * 2, 22)
+
+    local previewBtn = CreateButton(modal, L["Options.Sound.Preview"], function()
+        if selectedSoundName then
+            local soundFile = LSM:Fetch("sound", selectedSoundName)
+            if soundFile then
+                PlaySoundFile(soundFile, "Master")
+            end
+        end
+    end)
+    previewBtn:SetSize(80, 22)
+    previewBtn:SetPoint("LEFT", btnRow, "LEFT", 0, 0)
+
+    local saveBtn = CreateButton(modal, L["Options.Sound.Save"], function()
+        if selectedBuffKey and selectedSoundName then
+            local db = BR.profile
+            if not db.buffSounds then
+                db.buffSounds = {}
+            end
+            db.buffSounds[selectedBuffKey] = selectedSoundName
+            modal:Hide()
+            if refreshCallback then
+                refreshCallback()
+            end
+        end
+    end)
+    saveBtn:SetSize(80, 22)
+    saveBtn:SetPoint("RIGHT", btnRow, "RIGHT", 0, 0)
+
+    layout:Add(btnRow, nil, COMPONENT_GAP)
+
+    modal:SetHeight(max(-layout:GetY() + MARGIN, 80))
+
+    -- Status text for when no buffs are available
+    if #buffOpts == 0 then
+        local noBuffsText = modal:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+        noBuffsText:SetPoint("TOP", btnRow, "BOTTOM", 0, -6)
+        noBuffsText:SetText(L["Options.Sound.NoBuffs"])
+    end
+
+    -- Sync local state from auto-selected first options
+    selectedBuffKey = buffDropdown.dropdown:GetValue()
+    selectedSoundName = soundDropdown.dropdown:GetValue()
+
+    soundAlertModal = modal
     modal:Show()
 end
 

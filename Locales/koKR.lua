@@ -159,6 +159,19 @@ L["Tab.Buffs"] = "버프"
 L["Tab.DisplayBehavior"] = "표시/동작"
 L["Tab.Settings"] = "설정"
 L["Tab.Profiles"] = "프로필"
+L["Tab.Sounds"] = "소리"
+
+-- ============================================================================
+-- OPTIONS: SOUND ALERTS
+-- ============================================================================
+L["Options.Sound.NoAlerts"] = "설정된 소리 알림이 없습니다."
+L["Options.Sound.AddAlert"] = "소리 알림 추가"
+L["Options.Sound.Title"] = "소리 알림 추가"
+L["Options.Sound.SelectBuff"] = "버프 선택"
+L["Options.Sound.SelectSound"] = "소리 선택"
+L["Options.Sound.Preview"] = "미리 듣기"
+L["Options.Sound.Save"] = "저장"
+L["Options.Sound.NoBuffs"] = "모든 버프에 이미 소리가 설정되어 있습니다."
 
 -- ============================================================================
 -- OPTIONS: GLOBAL DEFAULTS

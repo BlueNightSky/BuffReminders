@@ -720,6 +720,9 @@ function BR.CreatePanel(name, width, height, options)
         -- without also closing parent panels (unlike UISpecialFrames which closes all)
         panel:EnableKeyboard(true)
         panel:SetScript("OnKeyDown", function(self, key)
+            if InCombatLockdown() then
+                return
+            end
             if key == "ESCAPE" then
                 self:SetPropagateKeyboardInput(false)
                 self:Hide()

@@ -156,6 +156,19 @@ L["Tab.Buffs"] = "Buff"
 L["Tab.DisplayBehavior"] = "Visualizzazione"
 L["Tab.Settings"] = "Impostazioni"
 L["Tab.Profiles"] = "Profili"
+L["Tab.Sounds"] = "Suoni"
+
+-- ============================================================================
+-- OPTIONS: SOUND ALERTS
+-- ============================================================================
+L["Options.Sound.NoAlerts"] = "Nessun avviso sonoro configurato."
+L["Options.Sound.AddAlert"] = "Aggiungi avviso sonoro"
+L["Options.Sound.Title"] = "Aggiungi avviso sonoro"
+L["Options.Sound.SelectBuff"] = "Seleziona beneficio"
+L["Options.Sound.SelectSound"] = "Seleziona suono"
+L["Options.Sound.Preview"] = "Anteprima"
+L["Options.Sound.Save"] = "Salva"
+L["Options.Sound.NoBuffs"] = "Tutti i benefici hanno già dei suoni."
 
 -- ============================================================================
 -- OPTIONS: GLOBAL DEFAULTS

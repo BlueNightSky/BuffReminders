@@ -70,6 +70,7 @@ read_globals = {
     "IsResting",
     "IsMouseButtonDown",
     "IsShiftKeyDown",
+    "PlaySoundFile",
     "NUM_BAG_SLOTS",
     "ReloadUI",
     "Settings",
