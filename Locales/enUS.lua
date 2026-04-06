@@ -160,8 +160,6 @@ english["Display.MinimapRightClick"] = "|cFFCFCFCFRight click|r: Test mode"
 english["Display.DismissConsumables"] = "Hide consumable reminders until next loading screen"
 english["Display.LoginFirstInstall"] =
     "Thanks for installing! Type |cFFFFD100/br unlock|r to move the buff display, or use the button at the bottom of the |cFFFFD100/br|r options panel."
-english["Display.LoginGearIcons"] =
-    "Some buff settings (healthstone, soulstone, pets) have moved to gear icons next to their checkboxes in the Buffs tab."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS

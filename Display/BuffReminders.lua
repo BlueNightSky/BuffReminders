@@ -2073,6 +2073,19 @@ local function SetIconDesaturated(icon, desaturate)
     end
 end
 
+-- Reset a consumable frame's icon to its buff definition fallback and clear overlays.
+local function RestoreFallbackIcon(frame)
+    ClearConsumableOverlays(frame)
+    local def = frame.buffDef
+    local fallback = def and (def.displayIcon or def.buffIconID)
+    if type(fallback) == "table" then
+        fallback = fallback[1]
+    end
+    if fallback then
+        frame.icon:SetTexture(fallback)
+    end
+end
+
 -- Resolve a consumable frame's icon from bag items.
 -- Returns "items" if bag items found (sets icon, quality overlay, stack count),
 -- "missing" if no items but showConsumablesWithoutItems is on (icon greyed out),
@@ -2086,7 +2099,9 @@ local function ResolveConsumableFrame(frame)
         frame._cachedItems = items
     end
     if items and items[1] then
-        frame.icon:SetTexture(items[1].icon)
+        if items[1].icon then
+            frame.icon:SetTexture(items[1].icon)
+        end
         SetIconDesaturated(frame.icon, false)
         local mainSize = frame:GetWidth()
         local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(mainSize)
@@ -2098,15 +2113,7 @@ local function ResolveConsumableFrame(frame)
         return "items"
     end
     -- No items: fall back icon to buff definition
-    ClearConsumableOverlays(frame)
-    local def = frame.buffDef
-    local fallback = def and (def.displayIcon or def.buffIconID)
-    if type(fallback) == "table" then
-        fallback = fallback[1]
-    end
-    if fallback then
-        frame.icon:SetTexture(fallback)
-    end
+    RestoreFallbackIcon(frame)
     if (BR.profile.defaults or {}).showConsumablesWithoutItems then
         SetIconDesaturated(frame.icon, true)
         return "missing"
@@ -2202,7 +2209,12 @@ local function RenderVisibleEntry(frame, entry)
                 frame._cachedItems = items
             end
             if items and items[1] then
+                if items[1].icon then
+                    frame.icon:SetTexture(items[1].icon)
+                end
                 ApplyConsumableOverlays(frame, items[1])
+            else
+                RestoreFallbackIcon(frame)
             end
         end
     else -- "text"
@@ -4356,9 +4368,6 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         C_Timer.After(5, function()
             if isFirstInstall then
                 print("|cff00ccffBuffReminders:|r " .. L["Display.LoginFirstInstall"])
-            end
-            if not isFirstInstall and db.showLoginMessages ~= false then
-                print("|cff00ccffBuffReminders:|r " .. L["Display.LoginGearIcons"])
             end
         end)
     elseif event == "PLAYER_ENTERING_WORLD" then

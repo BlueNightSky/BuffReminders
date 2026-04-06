@@ -151,8 +151,6 @@ L["Display.MinimapRightClick"] = "|cFFCFCFCF우클릭|r: 테스트 모드"
 L["Display.DismissConsumables"] = "다음 로딩 화면 전까지 소모품 알림 숨기기"
 L["Display.LoginFirstInstall"] =
     "설치해 주셔서 감사합니다! |cFFFFD100/br unlock|r을 입력하여 버프 표시를 이동하거나, |cFFFFD100/br|r 옵션 패널 하단의 버튼을 사용하세요."
-L["Display.LoginGearIcons"] =
-    "일부 버프 설정(생명석, 영혼석, 소환수)이 버프 탭의 체크박스 옆 톱니바퀴 아이콘으로 이동했습니다."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS

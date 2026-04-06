@@ -148,8 +148,6 @@ L["Display.MinimapRightClick"] = "|cFFCFCFCFClick destro|r: Modalità test"
 L["Display.DismissConsumables"] = "Nascondi promemoria consumabili fino alla prossima schermata di caricamento"
 L["Display.LoginFirstInstall"] =
     "Grazie per l'installazione! Digita |cFFFFD100/br unlock|r per spostare il display dei buff, oppure usa il pulsante in fondo al pannello opzioni di |cFFFFD100/br|r."
-L["Display.LoginGearIcons"] =
-    "Alcune impostazioni buff (pietra della salute, pietra dell'anima, pet) sono state spostate nelle icone ingranaggio accanto alle relative caselle nella scheda Buff."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
