@@ -1597,7 +1597,12 @@ function BuffState.Refresh(refreshMode)
 
     -- Reset entries that will be recomputed this cycle.
     for _, entry in pairs(BuffState.entries) do
-        if not groupOnly or entry.category == "raid" or entry.category == "presence" or entry.category == "targeted" then
+        if
+            not groupOnly
+            or entry.category == "raid"
+            or entry.category == "presence"
+            or entry.category == "targeted"
+        then
             entry.visible = false
             entry.shouldGlow = false
             entry.countText = nil
@@ -1923,7 +1928,8 @@ function BuffState.Refresh(refreshMode)
         local freeMode = db.defaults and db.defaults.freeConsumableMode or "override"
         local freeVisible = freeMode == "override" and IsFreeConsumableVisible(db) or false
         -- In follow mode, healthstones use consumable category content gates (without ready check)
-        local consumableContentVisible = freeMode == "follow" and IsCategoryVisibleForContent("consumable", true) or false
+        local consumableContentVisible = freeMode == "follow" and IsCategoryVisibleForContent("consumable", true)
+            or false
         -- Dismiss overrides all consumable visibility (transient, resets on instance change)
         if consumablesDismissed then
             consumableVisible = false
@@ -1939,7 +1945,12 @@ function BuffState.Refresh(refreshMode)
             if buff.showOnInstanceEntry and (db.defaults and db.defaults.delveFoodTimer) then
                 -- Instance entry only consumable (e.g., delve food) — show for 30s on entry then auto-hide
                 -- Combat safety handled by Display layer clearing entry state on PLAYER_REGEN_DISABLED
-                if inDelveEntry and consumableVisible and IsBuffEnabled(settingKey) and PassesPreChecks(buff, nil, db) then
+                if
+                    inDelveEntry
+                    and consumableVisible
+                    and IsBuffEnabled(settingKey)
+                    and PassesPreChecks(buff, nil, db)
+                then
                     local shouldShow = ShouldShowConsumableBuff(buff)
                     if shouldShow then
                         SetEntryText(entry, buff.overlayText, consMissGlow)

@@ -617,10 +617,7 @@ local function IsTrackedDisplayUnit(unit)
     if not unit then
         return false
     end
-    return unit == "player"
-        or unit == "pet"
-        or unit:match("^party%d+$") ~= nil
-        or unit:match("^raid%d+$") ~= nil
+    return unit == "player" or unit == "pet" or unit:match("^party%d+$") ~= nil or unit:match("^raid%d+$") ~= nil
 end
 
 -- Track combat state via events (InCombatLockdown() can lag behind PLAYER_REGEN_DISABLED)

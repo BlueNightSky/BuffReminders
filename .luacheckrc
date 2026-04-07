@@ -95,6 +95,7 @@ read_globals = {
     "UnitIsUnit",
     "UnitIsVisible",
     "UnitLevel",
+    "UnitPhaseReason",
     "UnitRace",
 
     "strsplit",
