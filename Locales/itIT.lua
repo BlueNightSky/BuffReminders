@@ -75,6 +75,41 @@ L["Overlay.LessThanOneMinute"] = "<1m"
 L["Overlay.SecondsFormat"] = "%ds"
 
 -- ============================================================================
+-- CONSUMABLE STAT LABELS (icon overlays, keep very short)
+-- ============================================================================
+L["Label.Crit"] = "Crit"
+L["Label.Haste"] = "Cel"
+L["Label.Versatility"] = "Vers"
+L["Label.Mastery"] = "Maes"
+L["Label.Stamina"] = "Res"
+L["Label.Healing"] = "Cura"
+L["Label.Random"] = "Cas"
+L["Label.Speed"] = "Vel"
+L["Label.PvP"] = "PvP"
+L["Label.Feast"] = "Banch"
+L["Label.HasteShort"] = "C"
+L["Label.VersatilityShort"] = "V"
+L["Label.MasteryShort"] = "M"
+L["Label.CritVers"] = "Crit/V"
+L["Label.MasteryCrit"] = "M/Crit"
+L["Label.MasteryVers"] = "M/V"
+L["Label.MasteryHaste"] = "M/C"
+L["Label.HasteCrit"] = "C/Crit"
+L["Label.HasteVers"] = "C/V"
+L["Label.StaminaStr"] = "Res/For"
+L["Label.StaminaAgi"] = "Res/Agi"
+L["Label.StaminaInt"] = "Res/Int"
+L["Label.HighPrimary"] = "Al 1º"
+L["Label.HighSecondary"] = "Al 2º"
+L["Label.MidPrimary"] = "Me 1º"
+L["Label.LowPrimary"] = "Ba 1º"
+L["Label.LowSecondary"] = "Ba 2º"
+L["Label.RevivePet"] = "Risorgi anim."
+L["Label.Felguard"] = "Vilguardia"
+L["Badge.Hearty"] = "H"
+L["Badge.Fleeting"] = "F"
+
+-- ============================================================================
 -- BUFF GROUP DISPLAY NAMES
 -- ============================================================================
 L["Group.Beacons"] = "Fari"
