@@ -86,8 +86,7 @@ local customBuffModal = nil
 
 -- Forward declarations
 local ShowGlowAdvanced, ShowCustomBuffModal
-local ShowRuneforgeModal, ShowHealthstoneModal, ShowSoulstoneModal, ShowPetPassiveModal, ShowPetSummonModal
-local ShowDelveFoodModal, ShowSoundAlertModal
+local ShowRuneforgeModal, ShowHealthstoneModal, ShowSoulstoneModal, ShowPetPassiveModal, ShowPetSummonModal, ShowDelveFoodModal, ShowSoundAlertModal
 
 -- ============================================================================
 -- CONSTANTS
@@ -2750,7 +2749,7 @@ local function CreateOptionsPanel()
             -- Preview button
             row.previewBtn = CreateFrame("Button", nil, row)
             row.previewBtn:SetSize(14, 14)
-            row.previewBtn:SetPoint("RIGHT", row, "RIGHT", -24, 0)
+            row.previewBtn:SetPoint("RIGHT", row, "RIGHT", -48, 0)
             row.previewTex = row.previewBtn:CreateTexture(nil, "ARTWORK")
             row.previewTex:SetAllPoints()
             row.previewTex:SetAtlas("chatframe-button-icon-voicechat")
@@ -2759,6 +2758,19 @@ local function CreateOptionsPanel()
             end)
             row.previewBtn:SetScript("OnLeave", function()
                 row.previewTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
+            end)
+            -- Edit button
+            row.editBtn = CreateFrame("Button", nil, row)
+            row.editBtn:SetSize(14, 14)
+            row.editBtn:SetPoint("RIGHT", row, "RIGHT", -24, 0)
+            row.editTex = row.editBtn:CreateTexture(nil, "ARTWORK")
+            row.editTex:SetAllPoints()
+            row.editTex:SetTexture("Interface\\Buttons\\UI-OptionsButton")
+            row.editBtn:SetScript("OnEnter", function()
+                row.editTex:SetVertexColor(1, 1, 1, 1)
+            end)
+            row.editBtn:SetScript("OnLeave", function()
+                row.editTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
             end)
             -- Remove button
             row.removeBtn = CreateFrame("Button", nil, row)
@@ -2776,6 +2788,7 @@ local function CreateOptionsPanel()
             soundRowPool[index] = row
         end
         row.previewTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
+        row.editTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
         row.removeTex:SetVertexColor(0.7, 0.7, 0.7, 0.8)
         row:Show()
         return row
@@ -2853,6 +2866,9 @@ local function CreateOptionsPanel()
                     if soundFile then
                         PlaySoundFile(soundFile, "Master")
                     end
+                end)
+                row.editBtn:SetScript("OnClick", function()
+                    ShowSoundAlertModal(RenderSoundAlertRows, key, soundName, displayName)
                 end)
                 row.removeBtn:SetScript("OnClick", function()
                     db.buffSounds[key] = nil
@@ -5228,13 +5244,14 @@ local function BuildSoundOptions()
     return opts
 end
 
-ShowSoundAlertModal = function(refreshCallback)
+ShowSoundAlertModal = function(refreshCallback, editBuffKey, editSoundName, editBuffName)
     -- Destroy and recreate: dropdown scroll support depends on option count at creation time
     if soundAlertModal then
         soundAlertModal:Hide()
         soundAlertModal:SetParent(nil)
     end
 
+    local isEditing = editBuffKey ~= nil
     local MODAL_WIDTH = 360
     local MARGIN = 16
 
@@ -5245,7 +5262,7 @@ ShowSoundAlertModal = function(refreshCallback)
 
     local title = modal:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOP", 0, -12)
-    title:SetText(L["Options.Sound.Title"])
+    title:SetText(isEditing and L["Options.Sound.EditTitle"] or L["Options.Sound.Title"])
 
     local closeBtn = CreateButton(modal, "x", function()
         modal:Hide()
@@ -5256,10 +5273,17 @@ ShowSoundAlertModal = function(refreshCallback)
     local layout = Components.VerticalLayout(modal, { x = MARGIN, y = -36 })
 
     -- State for selections
-    local selectedBuffKey = nil
-    local selectedSoundName = nil
+    local selectedBuffKey = editBuffKey
+    local selectedSoundName = editSoundName
 
-    local buffOpts = BuildBuffOptions()
+    local buffOpts
+    if isEditing then
+        -- When editing, show only the current buff (locked)
+        buffOpts = { { label = editBuffName or editBuffKey, value = editBuffKey } }
+    else
+        buffOpts = BuildBuffOptions()
+    end
+
     local buffDropdown = Components.Dropdown(modal, {
         label = L["Options.Sound.SelectBuff"],
         width = 200,
@@ -5271,6 +5295,10 @@ ShowSoundAlertModal = function(refreshCallback)
     })
     layout:Add(buffDropdown, nil, DROPDOWN_EXTRA)
 
+    if isEditing then
+        buffDropdown:SetEnabled(false)
+    end
+
     local soundDropdown = Components.Dropdown(modal, {
         label = L["Options.Sound.SelectSound"],
         width = 200,
@@ -5281,6 +5309,10 @@ ShowSoundAlertModal = function(refreshCallback)
         end,
     })
     layout:Add(soundDropdown, nil, DROPDOWN_EXTRA)
+
+    if editSoundName then
+        soundDropdown:SetValue(editSoundName)
+    end
 
     -- Preview + Save row
     local btnRow = CreateFrame("Frame", nil, modal)
@@ -5317,15 +5349,17 @@ ShowSoundAlertModal = function(refreshCallback)
 
     modal:SetHeight(max(-layout:GetY() + MARGIN, 80))
 
-    -- Status text for when no buffs are available
-    if #buffOpts == 0 then
+    -- Status text for when no buffs are available (only relevant for add mode)
+    if not isEditing and #buffOpts == 0 then
         local noBuffsText = modal:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
         noBuffsText:SetPoint("TOP", btnRow, "BOTTOM", 0, -6)
         noBuffsText:SetText(L["Options.Sound.NoBuffs"])
     end
 
     -- Sync local state from auto-selected first options
-    selectedBuffKey = buffDropdown.dropdown:GetValue()
+    if not isEditing then
+        selectedBuffKey = buffDropdown.dropdown:GetValue()
+    end
     selectedSoundName = soundDropdown.dropdown:GetValue()
 
     soundAlertModal = modal

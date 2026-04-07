@@ -567,6 +567,7 @@ L["Options.Sound.Save"] = "保存"
 L["Options.Sound.SelectBuff"] = "选择增益"
 L["Options.Sound.SelectSound"] = "选择声音提醒"
 L["Options.Sound.Title"] = "添加声音提醒"
+L["Options.Sound.EditTitle"] = "编辑声音提醒"
 
 -- ============================================================================
 -- OPTIONS: DIALOGS
