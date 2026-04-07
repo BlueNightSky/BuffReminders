@@ -336,7 +336,6 @@ end
 local defaults = {
     locked = true,
     enabledBuffs = {},
-    buffSounds = {},
     showOnlyInGroup = false,
     hideWhileResting = false,
     hideInCombat = false,
