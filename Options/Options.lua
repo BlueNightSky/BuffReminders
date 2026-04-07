@@ -58,6 +58,7 @@ local GetBuffTexture = BR.Helpers.GetBuffTexture
 local ValidateSpellID = BR.Helpers.ValidateSpellID
 local ValidateItemID = BR.Helpers.ValidateItemID
 local GenerateCustomBuffKey = BR.Helpers.GenerateCustomBuffKey
+local SetBuffSound = BR.Helpers.SetBuffSound
 
 -- Display function aliases
 local UpdateDisplay = BR.Display.Update
@@ -2871,10 +2872,7 @@ local function CreateOptionsPanel()
                     ShowSoundAlertModal(RenderSoundAlertRows, key, soundName, displayName)
                 end)
                 row.removeBtn:SetScript("OnClick", function()
-                    db.buffSounds[key] = nil
-                    if not next(db.buffSounds) then
-                        db.buffSounds = nil
-                    end
+                    SetBuffSound(key, nil)
                     RenderSoundAlertRows()
                 end)
 
@@ -5331,11 +5329,7 @@ ShowSoundAlertModal = function(refreshCallback, editBuffKey, editSoundName, edit
 
     local saveBtn = CreateButton(modal, L["Options.Sound.Save"], function()
         if selectedBuffKey and selectedSoundName then
-            local db = BR.profile
-            if not db.buffSounds then
-                db.buffSounds = {}
-            end
-            db.buffSounds[selectedBuffKey] = selectedSoundName
+            SetBuffSound(selectedBuffKey, selectedSoundName)
             modal:Hide()
             if refreshCallback then
                 refreshCallback()

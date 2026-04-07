@@ -3366,6 +3366,20 @@ BR.Helpers = {
     ValidateSpellID = ValidateSpellID,
     ValidateItemID = ValidateItemID,
     GenerateCustomBuffKey = GenerateCustomBuffKey,
+    SetBuffSound = function(key, soundName)
+        local db = BR.profile
+        if soundName then
+            if not db.buffSounds then
+                db.buffSounds = {}
+            end
+            db.buffSounds[key] = soundName
+        elseif db.buffSounds then
+            db.buffSounds[key] = nil
+            if not next(db.buffSounds) then
+                db.buffSounds = nil
+            end
+        end
+    end,
 }
 
 -- Toggle lock state: when unlocked, show mover frames for dragging
