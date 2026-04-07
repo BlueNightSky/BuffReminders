@@ -159,19 +159,6 @@ L["Tab.Buffs"] = "버프"
 L["Tab.DisplayBehavior"] = "표시/동작"
 L["Tab.Settings"] = "설정"
 L["Tab.Profiles"] = "프로필"
-L["Tab.Sounds"] = "소리"
-
--- ============================================================================
--- OPTIONS: SOUND ALERTS
--- ============================================================================
-L["Options.Sound.NoAlerts"] = "설정된 소리 알림이 없습니다."
-L["Options.Sound.AddAlert"] = "소리 알림 추가"
-L["Options.Sound.Title"] = "소리 알림 추가"
-L["Options.Sound.SelectBuff"] = "버프 선택"
-L["Options.Sound.SelectSound"] = "소리 선택"
-L["Options.Sound.Preview"] = "미리 듣기"
-L["Options.Sound.Save"] = "저장"
-L["Options.Sound.NoBuffs"] = "모든 버프에 이미 소리가 설정되어 있습니다."
 
 -- ============================================================================
 -- OPTIONS: GLOBAL DEFAULTS
@@ -387,11 +374,6 @@ L["Options.PetPassiveSettings"] = "소환수 수동 설정"
 L["Options.PetPassiveSettings.Note"] = "수동 모드 소환수 알림을 설정합니다."
 L["Options.PetSummonSettings"] = "소환수 소환 설정"
 L["Options.PetSummonSettings.Note"] = "소환수 소환 동작을 설정합니다."
-L["Options.DelveFoodSettings"] = "구렁 음식 설정"
-L["Options.DelveFoodSettings.Note"] = "구렁 음식 알림 동작을 설정합니다."
-L["Options.DelveFoodTimer"] = "30초 후 자동 숨김"
-L["Options.DelveFoodTimer.Desc"] =
-    "활성화하면 구렁 음식 알림이 구렁 입장 후 30초 동안만 표시되고 자동으로 숨겨집니다. 비활성화하면 구렁 안에서 버프가 없는 동안 알림이 계속 표시됩니다."
 
 -- ============================================================================
 -- OPTIONS: LAYOUT
@@ -444,9 +426,6 @@ L["Options.HideWhen.Legacy"] = "구 인스턴스"
 L["Options.HideWhen.Legacy.Title"] = "구 인스턴스에서 숨기기"
 L["Options.HideWhen.Legacy.Desc"] =
     "유산 전리품이 활성화된 구 인스턴스에서 모든 버프 알림을 숨깁니다."
-L["Options.HideWhen.Leveling"] = "레벨링 중"
-L["Options.HideWhen.Leveling.Title"] = "레벨링 중 숨기기"
-L["Options.HideWhen.Leveling.Desc"] = "최대 레벨 미만일 때 모든 버프 알림을 숨깁니다."
 
 -- ============================================================================
 -- OPTIONS: BUFF TRACKING MODE

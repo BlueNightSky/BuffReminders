@@ -102,9 +102,6 @@ L["Tooltip.MayShowExtraIcon.Desc"] =
 L["Tooltip.InstanceEntryReminder"] = "副本进本提示"
 L["Tooltip.InstanceEntryReminder.Desc"] =
     "进入地下城时会短暂显示放置灵魂井的提示。施放法术或30秒后将消失。"
-L["Tooltip.DelvesOnly"] = "仅限地下堡"
-L["Tooltip.DelvesOnly.Desc"] =
-    "进入地下堡时会短暂显示吃瓦莉拉食物的提示。30秒后或检测到增益时将消失。"
 
 -- ============================================================================
 -- GLOW TYPE NAMES
@@ -154,8 +151,6 @@ L["Display.MinimapRightClick"] = "|cFFCFCFCF右键点击|r: 测试模式"
 L["Display.DismissConsumables"] = "在下一次读条前隐藏消耗品提示"
 L["Display.LoginFirstInstall"] =
     "感谢安装！输入 |cFFFFD100/br unlock|r 来移动增益显示，或者使用 |cFFFFD100/br|r 选项面板底部的按钮。"
-L["Display.LoginGearIcons"] =
-    "部分增益设置（治疗石、灵魂石、宠物）已移至增益标签页中复选框旁边的齿轮图标内。"
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
