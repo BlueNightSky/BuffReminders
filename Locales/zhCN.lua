@@ -47,14 +47,14 @@ L["Overlay.NoFaith"] = "没有\n道标"
 L["Overlay.NoLight"] = "没有\n道标"
 L["Overlay.NoES"] = "没有\n大地盾"
 L["Overlay.NoSource"] = "没有\n魔力之源"
-L["Overlay.NoScales"] = "没有\n鳞片"
+L["Overlay.NoScales"] = "没有\n龙鳞"
 L["Overlay.NoLink"] = "没有\n共生"
 L["Overlay.NoAttune"] = "没有\n协调"
 L["Overlay.NoFamiliar"] = "没有\n魔宠"
 L["Overlay.DropWell"] = "拉糖"
 L["Overlay.NoGrim"] = "没有\n魔典"
 L["Overlay.BurningRush"] = "爆燃冲刺"
-L["Overlay.NoRite"] = "没有\n仪式"
+L["Overlay.NoRite"] = "没有\n祭礼"
 L["Overlay.ApplyPoison"] = "上毒药"
 L["Overlay.NoForm"] = "没有\n形态"
 L["Overlay.NoEL"] = "没有\n大地生命"
@@ -78,12 +78,97 @@ L["Overlay.LessThanOneMinute"] = "<1分"
 L["Overlay.SecondsFormat"] = "%d秒"
 
 -- ============================================================================
+-- CONSUMABLE STAT LABELS (icon overlays, keep very short)
+-- ============================================================================
+L["Label.Crit"] = "暴击"
+L["Label.Haste"] = "急速"
+L["Label.Versatility"] = "全能"
+L["Label.Mastery"] = "精通"
+L["Label.Stamina"] = "耐力"
+L["Label.Healing"] = "治疗"
+L["Label.Random"] = "随机"
+L["Label.Speed"] = "加速"
+L["Label.PvP"] = "PvP"
+L["Label.Feast"] = "大餐"
+L["Label.HasteShort"] = "急"
+L["Label.VersatilityShort"] = "全"
+L["Label.MasteryShort"] = "精"
+L["Label.CritVers"] = "暴/全"
+L["Label.MasteryCrit"] = "精/暴"
+L["Label.MasteryVers"] = "精/全"
+L["Label.MasteryHaste"] = "精/急"
+L["Label.HasteCrit"] = "急/暴"
+L["Label.HasteVers"] = "急/全"
+L["Label.StaminaStr"] = "耐/力"
+L["Label.StaminaAgi"] = "耐/敏"
+L["Label.StaminaInt"] = "耐/智"
+L["Label.HighPrimary"] = "高主属性"
+L["Label.HighSecondary"] = "高副属性"
+L["Label.MidPrimary"] = "中主属性"
+L["Label.LowPrimary"] = "低主属性"
+L["Label.LowSecondary"] = "低副属性"
+L["Label.RevivePet"] = "复活宠物"
+L["Label.Felguard"] = "恶魔卫士"
+L["Badge.Hearty"] = "丰盛"
+L["Badge.Fleeting"] = "飞逝"
+
+-- ============================================================================
+-- BUFF NAMES
+-- ============================================================================
+L["Buff.ArcaneFamiliar"] = "奥术魔宠"
+L["Buff.ArcaneIntellect"] = "奥术智慧"
+L["Buff.AtrophicNumbingPoison"] = "萎缩/迟钝毒药"
+L["Buff.Attunement"] = "同调"
+L["Buff.AugmentRune"] = "强化符文"
+L["Buff.BattleShout"] = "战斗怒吼"
+L["Buff.BeaconOfFaith"] = "信仰道标"
+L["Buff.BeaconOfLight"] = "圣光道标"
+L["Buff.BlessingOfTheBronze"] = "青铜龙的祝福"
+L["Buff.BlisteringScales"] = "炽火龙鳞"
+L["Buff.BurningRush"] = "爆燃冲刺"
+L["Buff.CreateSoulwell"] = "制造灵魂井"
+L["Buff.DelveFood"] = "地下堡食物"
+L["Buff.DevotionAura"] = "虔诚光环"
+L["Buff.EarthShield"] = "大地之盾"
+L["Buff.EarthShieldSelf"] = "大地之盾（自己）"
+L["Buff.EarthlivingWeapon"] = "大地生命武器"
+L["Buff.FlametongueWeapon"] = "火舌武器"
+L["Buff.Flask"] = "合剂"
+L["Buff.Food"] = "食物"
+L["Buff.GrimoireOfSacrifice"] = "牺牲魔典"
+L["Buff.Healthstone"] = "治疗石"
+L["Buff.HunterPet"] = "猎人宠物"
+L["Buff.MarkOfTheWild"] = "野性印记"
+L["Buff.PetPassive"] = "宠物被动"
+L["Buff.PowerWordFortitude"] = "真言术：韧"
+L["Buff.RiteOfAdjuration"] = "恳求祭礼"
+L["Buff.RiteOfSanctification"] = "圣言祭礼"
+L["Buff.RoguePoisons"] = "潜行者毒药"
+L["Buff.RuneforgeMH"] = "符文熔铸（主手）"
+L["Buff.RuneforgeOH"] = "符文熔铸（副手）"
+L["Buff.Shadowform"] = "暗影形态"
+L["Buff.ShieldNoTalent"] = "护盾（无天赋）"
+L["Buff.Skyfury"] = "天怒"
+L["Buff.Soulstone"] = "灵魂石"
+L["Buff.SourceOfMagic"] = "魔力之源"
+L["Buff.SymbioticRelationship"] = "共生关系"
+L["Buff.TidecallersGuard"] = "唤潮者的护卫"
+L["Buff.UnholyGhoul"] = "食尸鬼"
+L["Buff.WarlockDemon"] = "术士恶魔"
+L["Buff.WaterElemental"] = "水元素"
+L["Buff.WaterLightningShield"] = "水盾/闪电盾"
+L["Buff.Weapon"] = "武器"
+L["Buff.WeaponOH"] = "副手武器"
+L["Buff.WindfuryWeapon"] = "风怒武器"
+L["Buff.WrongDemon"] = "恶魔不对"
+
+-- ============================================================================
 -- BUFF GROUP DISPLAY NAMES
 -- ============================================================================
 L["Group.Beacons"] = "圣光道标"
 L["Group.DKRunes"] = "DK符文"
 L["Group.ShamanImbues"] = "萨满武器注能"
-L["Group.PaladinRites"] = "圣骑士仪式"
+L["Group.PaladinRites"] = "圣骑士祭礼"
 L["Group.Pets"] = "宠物"
 L["Group.ShamanShields"] = "萨满护盾"
 L["Group.Flask"] = "合剂"
@@ -102,9 +187,6 @@ L["Tooltip.MayShowExtraIcon.Desc"] =
 L["Tooltip.InstanceEntryReminder"] = "副本进本提示"
 L["Tooltip.InstanceEntryReminder.Desc"] =
     "进入地下城时会短暂显示放置灵魂井的提示。施放法术或30秒后将消失。"
-L["Tooltip.DelvesOnly"] = "仅限地下堡"
-L["Tooltip.DelvesOnly.Desc"] =
-    "进入地下堡时会短暂显示吃瓦莉拉食物的提示。30秒后或检测到增益时将消失。"
 
 -- ============================================================================
 -- GLOW TYPE NAMES
@@ -154,8 +236,6 @@ L["Display.MinimapRightClick"] = "|cFFCFCFCF右键点击|r: 测试模式"
 L["Display.DismissConsumables"] = "在下一次读条前隐藏消耗品提示"
 L["Display.LoginFirstInstall"] =
     "感谢安装！输入 |cFFFFD100/br unlock|r 来移动增益显示，或者使用 |cFFFFD100/br|r 选项面板底部的按钮。"
-L["Display.LoginGearIcons"] =
-    "部分增益设置（治疗石、灵魂石、宠物）已移至增益标签页中复选框旁边的齿轮图标内。"
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
@@ -164,13 +244,13 @@ L["Tab.Buffs"] = "增益"
 L["Tab.DisplayBehavior"] = "显示与行为"
 L["Tab.Settings"] = "设置"
 L["Tab.Profiles"] = "配置文件"
+L["Tab.Sounds"] = "声音提醒"
 
 -- ============================================================================
 -- OPTIONS: GLOBAL DEFAULTS
 -- ============================================================================
 L["Options.GlobalDefaults"] = "全局默认值"
-L["Options.GlobalDefaults.Note"] =
-    "（应用于所有类别，除非被自定义外观覆盖）"
+L["Options.GlobalDefaults.Note"] = "（应用于所有类别，除非被自定义外观覆盖）"
 L["Options.Default"] = "默认"
 L["Options.Font"] = "字体"
 
@@ -215,15 +295,13 @@ L["Options.Glow.YOffset"] = "Y轴偏移"
 -- ============================================================================
 L["Options.HidePvPMatchStart"] = "PvP比赛开始时隐藏"
 L["Options.HidePvPMatchStart.Title"] = "PvP比赛开始时隐藏"
-L["Options.HidePvPMatchStart.Desc"] =
-    "PvP比赛开始后（准备阶段结束）隐藏此类别。"
+L["Options.HidePvPMatchStart.Desc"] = "PvP比赛开始后（准备阶段结束）隐藏此类别。"
 L["Options.ReadyCheckOnly"] = "仅在就位确认时显示"
 L["Options.ReadyCheckOnly.Desc"] = "仅在就位确认后的15秒内显示此类别中的增益。"
 L["Options.Visibility"] = "显示条件"
 L["Options.PerCategoryCustomization"] = "按类别自定义"
 L["Options.DetachIcon"] = "分离"
-L["Options.DetachIcon.Desc"] =
-    "将此图标移至可独立移动的单独框体中。"
+L["Options.DetachIcon.Desc"] = "将此图标移至可独立移动的单独框体中。"
 
 -- ============================================================================
 -- OPTIONS: HEALTHSTONE
@@ -234,8 +312,7 @@ L["Options.Healthstone.AlwaysShow"] = "始终显示"
 L["Options.Healthstone.Visibility"] = "治疗石显示"
 L["Options.Healthstone.Visibility.Desc"] =
     "设置何时显示治疗石提示。\n\n|cffffcc00仅就位确认时:|r 仅在就位确认（15秒内）时显示。\n|cffffcc00就位确认 + 术士始终显示:|r 术士始终显示，其他职业仅在就位确认时显示。\n|cffffcc00始终显示:|r 在符合设置的内容类型中始终显示。"
-L["Options.Healthstone.WarlockAlwaysDesc"] =
-    "术士始终显示提示，其他职业仅在就位确认时显示"
+L["Options.Healthstone.WarlockAlwaysDesc"] = "术士始终显示提示，其他职业仅在就位确认时显示"
 L["Options.Healthstone.ReadyCheckDesc"] = "在就位确认后15秒内显示"
 L["Options.Healthstone.AlwaysDesc"] = "在符合当前内容类型时始终显示"
 L["Options.Healthstone.LowStock"] = "治疗石不足警告"
@@ -275,8 +352,7 @@ L["Options.FreeConsumables.Override.Desc"] =
 -- ============================================================================
 L["Options.Icons"] = "图标"
 L["Options.ShowText"] = "在图标上显示文本"
-L["Options.ShowText.Desc"] =
-    "在此类别的增益图标上显示层数或缺失文本覆盖。"
+L["Options.ShowText.Desc"] = "在此类别的增益图标上显示层数或缺失文本覆盖。"
 L["Options.ShowMissingCountOnly"] = "仅显示缺失数量"
 L["Options.ShowMissingCountOnly.Desc"] =
     "仅显示缺失增益的数量（例如：”1“），而不是完整的分数形式（例如：”19/20“）。"
@@ -292,8 +368,7 @@ L["Options.ClickToCast"] = "点击施法"
 L["Options.ClickToCast.DescFull"] =
     "你可以点击增益图标来施放对应的法术（仅限非战斗状态）。只对你的角色可施放的法术有效。"
 L["Options.HoverHighlight"] = "悬停高亮"
-L["Options.HoverHighlight.Desc"] =
-    "将鼠标悬停在可点击的增益图标上时，显示微弱的高亮效果。"
+L["Options.HoverHighlight.Desc"] = "将鼠标悬停在可点击的增益图标上时，显示微弱的高亮效果。"
 
 -- ============================================================================
 -- OPTIONS: PET
@@ -303,12 +378,10 @@ L["Options.PetSpecIcon.Title"] = "悬停时宠物专精图标"
 L["Options.PetSpecIcon.Desc"] =
     "鼠标悬停时，宠物图标将变为对应的专精技能（狡诈、狂野、坚韧）。"
 L["Options.ShowItemTooltips"] = "显示物品提示信息"
-L["Options.ShowItemTooltips.Desc"] =
-    "将鼠标悬停在消耗品图标上时显示物品详细信息。"
+L["Options.ShowItemTooltips.Desc"] = "将鼠标悬停在消耗品图标上时显示物品详细信息。"
 L["Options.Behavior"] = "行为"
 L["Options.PetPassiveCombat"] = "仅在战斗中提示被动宠物"
-L["Options.PetPassiveCombat.Desc"] =
-    "仅在战斗中显示被动宠物提示。禁用时则始终显示。"
+L["Options.PetPassiveCombat.Desc"] = "仅在战斗中显示被动宠物提示。禁用时则始终显示。"
 L["Options.FelDomination"] = "召唤前使用邪能统御"
 L["Options.FelDomination.Title"] = "邪能统御"
 L["Options.FelDomination.Desc"] =
@@ -333,8 +406,7 @@ L["Options.PetLabels.SizePct"] = "尺寸占比 %"
 -- ============================================================================
 L["Options.ConsumableTextScale"] = "文本缩放"
 L["Options.ConsumableTextScale.Title"] = "消耗品文本大小"
-L["Options.ConsumableTextScale.Desc"] =
-    "物品数量和品质标签相对于图标大小的字体缩放比例。"
+L["Options.ConsumableTextScale.Desc"] = "物品数量和品质标签相对于图标大小的字体缩放比例。"
 L["Options.ItemDisplay"] = "物品显示"
 L["Options.ItemDisplay.IconOnly"] = "仅图标"
 L["Options.ItemDisplay.IconOnlyDesc"] = "显示数量最多的物品"
@@ -379,17 +451,20 @@ L["Options.PetPassiveSettings"] = "被动宠物设置"
 L["Options.PetPassiveSettings.Note"] = "设置被动模式宠物的提示行为。"
 L["Options.PetSummonSettings"] = "宠物召唤设置"
 L["Options.PetSummonSettings.Note"] = "配置宠物召唤行为。"
+L["Options.DelveFoodSettings"] = "地下堡食物设置"
+L["Options.DelveFoodSettings.Note"] = "配置地下堡食物提示行为。"
+L["Options.DelveFoodTimer"] = "30秒后自动隐藏"
+L["Options.DelveFoodTimer.Desc"] =
+    "启用后，地下堡食物提示会在进入地下堡后显示30秒，然后自动隐藏。禁用后，只要你在地下堡中且缺少该增益，提示就会一直显示。"
 
 -- ============================================================================
 -- OPTIONS: LAYOUT
 -- ============================================================================
 L["Options.Layout"] = "布局"
 L["Options.Priority"] = "优先级"
-L["Options.Priority.Desc"] =
-    "调整此类在整合框体中的顺序。数值越小越靠前。"
+L["Options.Priority.Desc"] = "调整此类在整合框体中的顺序。数值越小越靠前。"
 L["Options.SplitFrame"] = "分离为独立框体"
-L["Options.SplitFrame.Desc"] =
-    "将此类别中的增益显示在可独立移动的单独框体中。"
+L["Options.SplitFrame.Desc"] = "将此类别中的增益显示在可独立移动的单独框体中。"
 L["Options.DisplayPriority"] = "显示优先级"
 
 -- ============================================================================
@@ -429,8 +504,10 @@ L["Options.HideWhen.Mounted.Desc"] =
     "乘骑坐骑时隐藏所有增益提示。优先级高于类别特定的坐骑隐藏设置。"
 L["Options.HideWhen.Legacy"] = "旧资料片副本"
 L["Options.HideWhen.Legacy.Title"] = "在旧资料片副本中隐藏"
-L["Options.HideWhen.Legacy.Desc"] =
-    "在激活传承战利品模式的旧资料片副本中隐藏所有增益提示。"
+L["Options.HideWhen.Legacy.Desc"] = "在激活传承战利品模式的旧资料片副本中隐藏所有增益提示。"
+L["Options.HideWhen.Leveling"] = "练级时"
+L["Options.HideWhen.Leveling.Title"] = "练级时隐藏"
+L["Options.HideWhen.Leveling.Desc"] = "未满级时隐藏所有增益提示"
 
 -- ============================================================================
 -- OPTIONS: BUFF TRACKING MODE
@@ -456,8 +533,7 @@ L["Options.BuffTracking.Mode.Desc"] =
 -- OPTIONS: PROFILES TAB
 -- ============================================================================
 L["Options.ActiveProfile"] = "当前配置文件"
-L["Options.ActiveProfile.Desc"] =
-    "在已保存的设置之间切换。每个角色可以使用不同的配置文件。"
+L["Options.ActiveProfile.Desc"] = "在已保存的设置之间切换。每个角色可以使用不同的配置文件。"
 L["Options.SelectProfile"] = "选择配置文件"
 L["Options.Profile"] = "配置文件"
 L["Options.CopyFrom"] = "复制自"
@@ -481,6 +557,18 @@ L["Options.FailedExport"] = "导出失败"
 L["Options.UnknownError"] = "未知错误"
 
 -- ============================================================================
+-- OPTIONS: SOUND ALERTS
+-- ============================================================================
+L["Options.Sound.AddAlert"] = "添加声音提醒"
+L["Options.Sound.NoAlerts"] = "未配置声音提醒。"
+L["Options.Sound.NoBuffs"] = "所有增益已配置声音提醒。"
+L["Options.Sound.Preview"] = "预览"
+L["Options.Sound.Save"] = "保存"
+L["Options.Sound.SelectBuff"] = "选择增益"
+L["Options.Sound.SelectSound"] = "选择声音提醒"
+L["Options.Sound.Title"] = "添加声音提醒"
+
+-- ============================================================================
 -- OPTIONS: DIALOGS
 -- ============================================================================
 L["Dialog.Cancel"] = "取消"
@@ -488,8 +576,7 @@ L["Dialog.DeleteCustomBuff"] = '是否删除自定义增益 "%s"？'
 L["Dialog.ResetProfile"] =
     "是否将当前配置文件重置为默认值？\n\n当前配置文件的所有自定义设置将被删除并重载UI。"
 L["Dialog.Reset"] = "重置"
-L["Dialog.ReloadPrompt"] =
-    "设置导入成功！\n是否重载UI以应用更改？"
+L["Dialog.ReloadPrompt"] = "设置导入成功！\n是否重载UI以应用更改？"
 L["Dialog.Reload"] = "重载"
 L["Dialog.NewProfilePrompt"] = "请输入新配置文件的名称："
 L["Dialog.Create"] = "创建"
@@ -500,11 +587,9 @@ L["Dialog.Close"] = "关闭"
 -- OPTIONS: TEST / LOCK
 -- ============================================================================
 L["Options.LockUnlock"] = "锁定 / 解锁"
-L["Options.LockUnlock.Desc"] =
-    "解锁后将显示锚点手柄，以便调整增益框体的位置。"
+L["Options.LockUnlock.Desc"] = "解锁后将显示锚点手柄，以便调整增益框体的位置。"
 L["Options.TestAppearance"] = "测试图标外观"
-L["Options.TestAppearance.Desc"] =
-    "使用模拟数据显示选定的增益以预览外观。"
+L["Options.TestAppearance.Desc"] = "使用模拟数据显示选定的增益以预览外观。"
 L["Options.Test"] = "测试"
 L["Options.StopTest"] = "停止测试"
 L["Options.AnchorHint"] = "点击锚点以更改其对齐位置或坐标。"
@@ -527,8 +612,7 @@ L["CustomBuff.Appearance"] = "外观"
 L["CustomBuff.Conditions"] = "条件"
 L["CustomBuff.ShowIn"] = "显示位置"
 L["CustomBuff.ClickAction"] = "点击动作"
-L["CustomBuff.SettingsMovedNote"] =
-    "显示条件和就位确认设置已移至每个增益的编辑菜单中。"
+L["CustomBuff.SettingsMovedNote"] = "显示条件和就位确认设置已移至每个增益的编辑菜单中。"
 
 -- Custom buff mode toggles
 L["CustomBuff.WhenActive"] = "激活时"
@@ -606,8 +690,7 @@ L["CustomBuff.Error"] = "错误:"
 -- ============================================================================
 L["Options.JoinDiscord"] = "加入Discord"
 L["Options.JoinDiscord.Title"] = "点击查看邀请链接"
-L["Options.JoinDiscord.Desc"] =
-    "有反馈、功能请求或发现BUG？\n欢迎加入我们的Discord！"
+L["Options.JoinDiscord.Desc"] = "有反馈、功能请求或发现BUG？\n欢迎加入我们的Discord！"
 
 -- ============================================================================
 -- OPTIONS: CUSTOM ANCHOR FRAMES
