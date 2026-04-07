@@ -80,7 +80,7 @@ L["Overlay.SecondsFormat"] = "%d秒"
 -- ============================================================================
 -- CONSUMABLE STAT LABELS (icon overlays, keep very short)
 -- ============================================================================
-L["Label.Crit"] = "暴击"
+L["Label.Crit"] = "爆击"
 L["Label.Haste"] = "急速"
 L["Label.Versatility"] = "全能"
 L["Label.Mastery"] = "精通"
@@ -93,11 +93,11 @@ L["Label.Feast"] = "大餐"
 L["Label.HasteShort"] = "急"
 L["Label.VersatilityShort"] = "全"
 L["Label.MasteryShort"] = "精"
-L["Label.CritVers"] = "暴/全"
-L["Label.MasteryCrit"] = "精/暴"
+L["Label.CritVers"] = "爆/全"
+L["Label.MasteryCrit"] = "精/爆"
 L["Label.MasteryVers"] = "精/全"
 L["Label.MasteryHaste"] = "精/急"
-L["Label.HasteCrit"] = "急/暴"
+L["Label.HasteCrit"] = "急/爆"
 L["Label.HasteVers"] = "急/全"
 L["Label.StaminaStr"] = "耐/力"
 L["Label.StaminaAgi"] = "耐/敏"
@@ -183,7 +183,7 @@ L["Group.WeaponBuff"] = "武器增益"
 -- ============================================================================
 L["Tooltip.MayShowExtraIcon"] = "可能显示额外图标"
 L["Tooltip.MayShowExtraIcon.Desc"] =
-    "在施放此法术之前，该提示可能会与水之护盾/闪电之盾提示同时出现。因为系统无法确定你是想对自己施放大地之盾，还是想给队友施放大地之盾的同时给自己施放水之护盾/闪电之盾。"
+    "在施放此法术之前，该提示可能会与水盾/闪电盾提示同时出现。因为系统无法确定你是想对自己施放大地盾，还是想给队友施放大地盾的同时给自己施放水盾/闪电盾。"
 L["Tooltip.InstanceEntryReminder"] = "副本进本提示"
 L["Tooltip.InstanceEntryReminder.Desc"] =
     "进入地下城时会短暂显示放置灵魂井的提示。施放法术或30秒后将消失。"
