@@ -990,7 +990,8 @@ BR.BUFF_TABLES = {
             name = L["Buff.DelveFood"],
             overlayText = L["Overlay.NoFood"],
             groupId = "delveFood",
-            showOnInstanceEntry = true, -- Only show for 30s on delve entry (food is NPC-controlled)
+            showOnInstanceEntry = true, -- When delveFoodTimer is enabled, only show for 30s on delve entry
+            noExpirationGlow = true, -- 10-min duration makes standard thresholds meaningless
             visibilityCondition = BR.IsInDelve,
             disabledInCompetitivePvP = true,
         },
