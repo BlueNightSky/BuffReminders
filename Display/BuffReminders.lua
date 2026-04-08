@@ -52,6 +52,7 @@ local addonName, BR = ...
 ---@field missingGlowYOffset? number
 ---@field fontFace? string
 ---@field showConsumablesWithoutItems? boolean
+---@field showWithoutItemsOnlyOnReadyCheck? boolean
 ---@field delveFoodOnly? boolean
 ---@field delveFoodTimer? boolean
 ---@field freeConsumableMode? "follow"|"override"
@@ -386,7 +387,8 @@ local defaults = {
         expirationThreshold = 15, -- minutes
         glowType = 2, -- BR.Glow.Type: Pixel=1, AutoCast=2, Border=3, Proc=4 (expiring default)
         glowSize = 2,
-        showConsumablesWithoutItems = false,
+        showConsumablesWithoutItems = true,
+        showWithoutItemsOnlyOnReadyCheck = true,
         delveFoodOnly = true,
         delveFoodTimer = false,
         freeConsumableMode = "override",
@@ -2153,7 +2155,11 @@ local function ResolveConsumableFrame(frame)
     end
     -- No items: fall back icon to buff definition
     RestoreFallbackIcon(frame)
-    if (BR.profile.defaults or {}).showConsumablesWithoutItems then
+    local defs = BR.profile.defaults or {}
+    if defs.showConsumablesWithoutItems then
+        if defs.showWithoutItemsOnlyOnReadyCheck and not BR.BuffState.GetReadyCheckState() then
+            return false
+        end
         SetIconDesaturated(frame.icon, true)
         return "missing"
     end
@@ -3625,7 +3631,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 37
+        local DB_VERSION = 38
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -4355,6 +4361,14 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     db.defaults.soulstoneVisibility = "always"
                     overrides.soulstone = nil
                 end
+            end,
+            [38] = function()
+                -- Enable "show consumables without items" + "only on ready check" for all users
+                if not db.defaults then
+                    db.defaults = {}
+                end
+                db.defaults.showConsumablesWithoutItems = true
+                db.defaults.showWithoutItemsOnlyOnReadyCheck = true
             end,
         }
 

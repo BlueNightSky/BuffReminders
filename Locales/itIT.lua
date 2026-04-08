@@ -444,6 +444,10 @@ L["Options.ShowWithoutItems"] = "Mostra senza oggetto in borsa"
 L["Options.ShowWithoutItems.Title"] = "Mostra consumabili senza oggetti"
 L["Options.ShowWithoutItems.Desc"] =
     "Se abilitato, i promemoria consumabili vengono mostrati anche se non hai l'oggetto nelle borse. Se disabilitato, vengono mostrati solo i consumabili che hai effettivamente con te."
+L["Options.ShowWithoutItemsReadyCheckOnly"] = "Solo al ready check"
+L["Options.ShowWithoutItemsReadyCheckOnly.Title"] = "Mostra oggetti mancanti solo al ready check"
+L["Options.ShowWithoutItemsReadyCheckOnly.Desc"] =
+    "Se abilitato, i consumabili non nelle borse vengono mostrati solo durante un ready check. Utile per ricordarti di rifornirti prima di un pull."
 L["Options.DelveFoodOnly"] = "Solo cibo scorribande nelle scorribande"
 L["Options.DelveFoodOnly.Desc"] =
     "Quando sei in una scorribanda, nascondi tutti i promemoria consumabili tranne il cibo delle scorribande."

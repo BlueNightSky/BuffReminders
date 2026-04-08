@@ -1919,9 +1919,31 @@ local function CreateOptionsPanel()
                 },
                 onChange = function(checked)
                     BR.Config.Set("defaults.showConsumablesWithoutItems", checked)
+                    Components.RefreshAll()
                 end,
             })
             catLayout:Add(showWithoutItemsHolder, nil, COMPONENT_GAP)
+
+            local SHOW_WITHOUT_INDENT = 12
+            catLayout:SetX(catLayout:GetX() + SHOW_WITHOUT_INDENT)
+            local readyCheckOnlyHolder = Components.Checkbox(catContent, {
+                label = L["Options.ShowWithoutItemsReadyCheckOnly"],
+                get = function()
+                    return BR.Config.Get("defaults.showWithoutItemsOnlyOnReadyCheck", false) == true
+                end,
+                enabled = function()
+                    return BR.Config.Get("defaults.showConsumablesWithoutItems", false) == true
+                end,
+                tooltip = {
+                    title = L["Options.ShowWithoutItemsReadyCheckOnly.Title"],
+                    desc = L["Options.ShowWithoutItemsReadyCheckOnly.Desc"],
+                },
+                onChange = function(checked)
+                    BR.Config.Set("defaults.showWithoutItemsOnlyOnReadyCheck", checked)
+                end,
+            })
+            catLayout:Add(readyCheckOnlyHolder, nil, COMPONENT_GAP)
+            catLayout:SetX(catLayout:GetX() - SHOW_WITHOUT_INDENT)
 
             local delveFoodOnlyHolder = Components.Checkbox(catContent, {
                 label = L["Options.DelveFoodOnly"],

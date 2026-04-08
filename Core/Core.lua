@@ -254,6 +254,7 @@ local DefaultSettingKeys = {
     missingGlowXOffset = "VisualsRefresh",
     missingGlowYOffset = "VisualsRefresh",
     showConsumablesWithoutItems = "DisplayRefresh",
+    showWithoutItemsOnlyOnReadyCheck = "DisplayRefresh",
     delveFoodOnly = "DisplayRefresh",
     delveFoodTimer = "DisplayRefresh",
     freeConsumableMode = "DisplayRefresh",

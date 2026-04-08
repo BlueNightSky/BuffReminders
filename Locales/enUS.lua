@@ -457,6 +457,10 @@ english["Options.ShowWithoutItems"] = "Show when not in bags"
 english["Options.ShowWithoutItems.Title"] = "Show consumables without items"
 english["Options.ShowWithoutItems.Desc"] =
     "When enabled, consumable reminders are shown even if you don't have the item in your bags. When disabled, only consumables you actually carry are shown."
+english["Options.ShowWithoutItemsReadyCheckOnly"] = "Only on ready check"
+english["Options.ShowWithoutItemsReadyCheckOnly.Title"] = "Show missing items only on ready check"
+english["Options.ShowWithoutItemsReadyCheckOnly.Desc"] =
+    "When enabled, consumables not in your bags are only shown during a ready check. Useful for a quick reminder to restock before a pull."
 english["Options.DelveFoodOnly"] = "Only delve food in delves"
 english["Options.DelveFoodOnly.Desc"] = "When inside a delve, hide all consumable reminders except delve food."
 
