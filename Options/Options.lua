@@ -2449,18 +2449,6 @@ local function CreateOptionsPanel()
     local HIDE_INDENT = 16
     setLayout:SetX(setX + HIDE_INDENT)
 
-    local restingHolder = Components.Checkbox(settingsContent, {
-        label = L["Options.HideWhen.Resting"],
-        get = function()
-            return BR.profile.hideWhileResting == true
-        end,
-        tooltip = { title = L["Options.HideWhen.Resting.Title"], desc = L["Options.HideWhen.Resting.Desc"] },
-        onChange = function(checked)
-            BR.Config.Set("hideWhileResting", checked)
-        end,
-    })
-    setLayout:Add(restingHolder, nil, COMPONENT_GAP)
-
     local combatHolder = Components.Checkbox(settingsContent, {
         label = L["Options.HideWhen.Combat"],
         get = function()
@@ -2491,6 +2479,21 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(combatExpiringHolder, nil, COMPONENT_GAP)
 
+    local mountedHolder = Components.Checkbox(settingsContent, {
+        label = L["Options.HideWhen.Mounted"],
+        tooltip = {
+            title = L["Options.HideWhen.Mounted.Title"],
+            desc = L["Options.HideWhen.Mounted.Desc"],
+        },
+        get = function()
+            return BR.profile.hideWhileMounted == true
+        end,
+        onChange = function(checked)
+            BR.Config.Set("hideWhileMounted", checked)
+        end,
+    })
+    setLayout:Add(mountedHolder, nil, COMPONENT_GAP)
+
     local vehicleHolder = Components.Checkbox(settingsContent, {
         label = L["Options.HideWhen.Vehicle"],
         tooltip = {
@@ -2506,20 +2509,17 @@ local function CreateOptionsPanel()
     })
     setLayout:Add(vehicleHolder, nil, COMPONENT_GAP)
 
-    local mountedHolder = Components.Checkbox(settingsContent, {
-        label = L["Options.HideWhen.Mounted"],
-        tooltip = {
-            title = L["Options.HideWhen.Mounted.Title"],
-            desc = L["Options.HideWhen.Mounted.Desc"],
-        },
+    local restingHolder = Components.Checkbox(settingsContent, {
+        label = L["Options.HideWhen.Resting"],
         get = function()
-            return BR.profile.hideWhileMounted == true
+            return BR.profile.hideWhileResting == true
         end,
+        tooltip = { title = L["Options.HideWhen.Resting.Title"], desc = L["Options.HideWhen.Resting.Desc"] },
         onChange = function(checked)
-            BR.Config.Set("hideWhileMounted", checked)
+            BR.Config.Set("hideWhileResting", checked)
         end,
     })
-    setLayout:Add(mountedHolder, nil, COMPONENT_GAP)
+    setLayout:Add(restingHolder, nil, COMPONENT_GAP)
 
     local legacyHolder = Components.Checkbox(settingsContent, {
         label = L["Options.HideWhen.Legacy"],
