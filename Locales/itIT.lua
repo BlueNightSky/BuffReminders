@@ -40,6 +40,7 @@ L["Category.CustomNote"] = "(traccia qualsiasi buff/bagliore per ID incantesimo)
 L["Overlay.NoDrPoison"] = "NO\nVEL\nLET"
 L["Overlay.NoAura"] = "NO\nAURA"
 L["Overlay.NoStone"] = "NO\nPIETRA"
+L["Overlay.NoSoulstone"] = "NO\nPIETRA\nANIMA"
 L["Overlay.NoFaith"] = "NO\nFEDE"
 L["Overlay.NoLight"] = "NO\nLUCE"
 L["Overlay.NoES"] = "NO\nES"
