@@ -129,6 +129,7 @@ local RootSettings = {
     hideInLegacyInstances = "VisibilityRefresh",
     hideWhileLeveling = "VisibilityRefresh",
     petPassiveOnlyInCombat = "VisibilityRefresh",
+    bronzeHideInCombat = "VisibilityRefresh",
 }
 
 -- Per-category settings (path = categorySettings.{category}.{key})

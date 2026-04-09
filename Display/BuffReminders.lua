@@ -348,6 +348,7 @@ local defaults = {
     hideWhileLeveling = false,
     showMissingCountOnly = false,
     petPassiveOnlyInCombat = false,
+    bronzeHideInCombat = false,
     optionsPanelScale = 1.2, -- base scale (displayed as 100%)
     showLoginMessages = true,
 

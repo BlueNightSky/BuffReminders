@@ -1653,12 +1653,18 @@ function BuffState.Refresh(refreshMode)
     -- Process raid buffs (coverage - need everyone to have them)
     local raidVisible = IsCategoryVisibleForContent("raid")
     local raidExGlow, raidMissGlow, raidThreshold = GetCategoryGlowSettings("raid")
+    local bronzeHiddenInCombat = inCombat and db.bronzeHideInCombat
     for i, buff in ipairs(RaidBuffs) do
         local entry = GetOrCreateEntry(buff.key, "raid", i)
         local scope =
             GetTrackingScope(trackingMode, buff.class, "raid", HasCasterForBuff(buff.class, buff.levelRequired))
 
-        if IsBuffEnabled(buff.key) and raidVisible and scope.show then
+        if
+            not (bronzeHiddenInCombat and buff.key == "bronze")
+            and IsBuffEnabled(buff.key)
+            and raidVisible
+            and scope.show
+        then
             local missing, total, minRemaining = CountMissingBuff(buff.spellID, buff.key, scope.playerOnly)
 
             if missing > 0 then
