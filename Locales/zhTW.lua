@@ -43,6 +43,7 @@ L["Category.CustomNote"] = "（按法術ID追蹤增益或高亮）"
 L["Overlay.NoDrPoison"] = "沒有\n毒藥"
 L["Overlay.NoAura"] = "沒有\n光環"
 L["Overlay.NoStone"] = "沒有\n糖"
+L["Overlay.NoSoulstone"] = "沒有\n靈魂石"
 L["Overlay.NoFaith"] = "沒有\n信標"
 L["Overlay.NoLight"] = "沒有\n信標"
 L["Overlay.NoES"] = "沒有\n大地盾"
@@ -53,7 +54,7 @@ L["Overlay.NoAttune"] = "沒有\n同調"
 L["Overlay.NoFamiliar"] = "沒有\n魔寵"
 L["Overlay.DropWell"] = "置放\n靈魂井"
 L["Overlay.NoGrim"] = "沒有\n魔典"
-L["Overlay.BurningRush"] = "爆燃衝刺"
+L["Overlay.BurningRush"] = "燃燒狂奔"
 L["Overlay.NoRite"] = "沒有\n儀式"
 L["Overlay.ApplyPoison"] = "上毒藥"
 L["Overlay.NoForm"] = "沒有\n形態"
@@ -111,6 +112,62 @@ L["Label.RevivePet"] = "復活寵物"
 L["Label.Felguard"] = "惡魔守衛"
 L["Badge.Hearty"] = "H"
 L["Badge.Fleeting"] = "F"
+
+-- ============================================================================
+-- BUFF NAMES (used in Options panel checkboxes and sound notification list)
+-- ============================================================================
+-- Raid
+L["Buff.ArcaneIntellect"] = "祕法智力"
+L["Buff.BattleShout"] = "戰鬥怒吼"
+L["Buff.BlessingOfTheBronze"] = "青銅龍的祝福"
+L["Buff.MarkOfTheWild"] = "野性印記"
+L["Buff.PowerWordFortitude"] = "真言術：韌"
+L["Buff.Skyfury"] = "天怒"
+-- Presence
+L["Buff.AtrophicNumbingPoison"] = "萎縮/麻痺毒藥"
+L["Buff.DevotionAura"] = "虔誠光環"
+L["Buff.Soulstone"] = "靈魂石"
+-- Targeted
+L["Buff.BeaconOfFaith"] = "虔信信標"
+L["Buff.BeaconOfLight"] = "聖光信標"
+L["Buff.BlisteringScales"] = "極熾鱗片"
+L["Buff.EarthShield"] = "大地之盾"
+L["Buff.SourceOfMagic"] = "魔力之源"
+L["Buff.SymbioticRelationship"] = "共生關係"
+-- Self
+L["Buff.ArcaneFamiliar"] = "秘法魔寵"
+L["Buff.Attunement"] = "黑曜同調"
+L["Buff.CreateSoulwell"] = "製造靈魂之井"
+L["Buff.GrimoireOfSacrifice"] = "犧牲魔典"
+L["Buff.BurningRush"] = "燃燒狂奔"
+L["Buff.RiteOfAdjuration"] = "裁決儀式"
+L["Buff.RiteOfSanctification"] = "聖化儀式"
+L["Buff.RoguePoisons"] = "盜賊毒藥"
+L["Buff.RuneforgeMH"] = "符文熔爐(主手)"
+L["Buff.RuneforgeOH"] = "符文熔爐(副手)"
+L["Buff.Shadowform"] = "暗影型態"
+L["Buff.EarthlivingWeapon"] = "大地生命武器"
+L["Buff.FlametongueWeapon"] = "火舌武器"
+L["Buff.TidecallersGuard"] = "喚潮者之禦"
+L["Buff.WindfuryWeapon"] = "風怒武器"
+L["Buff.EarthShieldSelf"] = "自身大地之盾"
+L["Buff.WaterLightningShield"] = "水/閃電之盾"
+L["Buff.ShieldNoTalent"] = "盾(無天賦)"
+-- Pet
+L["Buff.PetPassive"] = "寵物被動"
+L["Buff.HunterPet"] = "獵人寵物"
+L["Buff.UnholyGhoul"] = "穢邪食屍鬼"
+L["Buff.WarlockDemon"] = "術士惡魔"
+L["Buff.WaterElemental"] = "水元素"
+L["Buff.WrongDemon"] = "錯誤惡魔"
+-- Consumable
+L["Buff.AugmentRune"] = "增強符文"
+L["Buff.Flask"] = "精鍊"
+L["Buff.DelveFood"] = "探究食物"
+L["Buff.Food"] = "食物增益"
+L["Buff.Healthstone"] = "治療石"
+L["Buff.Weapon"] = "武器增益"
+L["Buff.WeaponOH"] = "副手武器增益"
 
 -- ============================================================================
 -- BUFF GROUP DISPLAY NAMES
@@ -202,6 +259,7 @@ L["Tab.Sounds"] = "音效"
 L["Options.Sound.NoAlerts"] = "未設定聲音警報。"
 L["Options.Sound.AddAlert"] = "新增聲音警報"
 L["Options.Sound.Title"] = "新增聲音警報"
+L["Options.Sound.EditTitle"] = "編輯聲音警報"
 L["Options.Sound.SelectBuff"] = "選擇增益"
 L["Options.Sound.SelectSound"] = "選擇聲音"
 L["Options.Sound.Preview"] = "預覽"
@@ -289,13 +347,13 @@ L["Options.Healthstone.Threshold.Desc"] =
 -- ============================================================================
 L["Options.Soulstone.Visibility"] = "靈魂石顯示"
 L["Options.Soulstone.Visibility.Desc"] =
-    "設置何時顯示靈魂石提示。\n\n|cffffcc00僅準備確認時:|r 僅在準備確認時顯示（預設）。\n|cffffcc00準備確認 + 術士始終顯示:|r 術士始終顯示，其他職業僅在準備確認時顯示。\n|cffffcc00始終顯示:|r 只要特殊增益類別可見就顯示。"
+    "設置何時顯示靈魂石提示。\n\n|cffffcc00僅準備確認時:|r 僅在準備確認時顯示（預設）。\n|cffffcc00準備確認 + 術士始終顯示:|r 術士始終顯示，其他職業僅在準備確認時顯示。\n|cffffcc00始終顯示:|r 只要職業增益類別可見就顯示。"
 L["Options.Soulstone.ReadyCheckOnly"] = "僅準備確認時"
 L["Options.Soulstone.ReadyCheckWarlock"] = "準備確認 + 術士始終顯示"
 L["Options.Soulstone.AlwaysShow"] = "始終顯示"
 L["Options.Soulstone.ReadyCheckDesc"] = "在準備確認後15秒內顯示"
 L["Options.Soulstone.WarlockAlwaysDesc"] = "術士始終顯示提示，其他職業僅在準備確認時顯示"
-L["Options.Soulstone.AlwaysDesc"] = "只要特殊增益類別可見就顯示"
+L["Options.Soulstone.AlwaysDesc"] = "只要職業增益類別可見就顯示"
 L["Options.Soulstone.HideCooldown"] = "冷卻時隱藏（術士）"
 L["Options.Soulstone.HideCooldown.Desc"] =
     "啟用後，當靈魂石法術處於冷卻中時，不會向術士顯示提示。僅適用於術士。"
@@ -388,6 +446,10 @@ L["Options.ShowWithoutItems"] = "背包中沒有也顯示"
 L["Options.ShowWithoutItems.Title"] = "沒有物品也顯示"
 L["Options.ShowWithoutItems.Desc"] =
     "啟用後，即使背包中沒有該物品，也會顯示消耗品提示。禁用後，僅顯示實際擁有的消耗品。"
+L["Options.ShowWithoutItemsReadyCheckOnly"] = "只有在準備確認"
+L["Options.ShowWithoutItemsReadyCheckOnly.Title"] = "只在準備確認時顯示缺失的物品"
+L["Options.ShowWithoutItemsReadyCheckOnly.Desc"] =
+    "當啟用後，不在您背包中的消耗品僅在準備確認時顯示。對於在拉怪前快速提醒補充庫存很有用。"
 L["Options.DelveFoodOnly"] = "在探究中僅顯示探究食物"
 L["Options.DelveFoodOnly.Desc"] = "在探究中隱藏除探究食物外的所有消耗品提示。"
 
@@ -434,7 +496,7 @@ L["Options.DisplayPriority"] = "顯示優先級"
 -- ============================================================================
 L["Options.CustomAppearance"] = "使用自定義外觀"
 L["Options.CustomAppearance.Desc"] =
-    "禁用時，此類別將繼承全局預設值的外觀設置。必須分離為獨立框架才能自定義生長方向。"
+    "禁用時，此類別將繼承全局預設值的外觀設置。必須分離為獨立框架才能自定義增長方向。"
 L["Options.Customize"] = "自定義"
 L["Options.ResetPosition"] = "重置位置"
 L["Options.MasqueNote"] = "縮放和邊框設置由Masque管理。"
@@ -489,7 +551,7 @@ L["Options.BuffTracking.Smart.Desc"] =
     "對你的職業提供的增益追蹤整個隊伍，對其他職業的增益僅檢查自身。"
 L["Options.BuffTracking.Mode"] = "增益追蹤模式"
 L["Options.BuffTracking.Mode.Desc"] =
-    "設置要顯示的團隊和特殊增益，以及是追蹤整個隊伍還是僅追蹤自身。"
+    "設置要顯示的團隊和職業增益，以及是追蹤整個隊伍還是僅追蹤自身。"
 
 -- ============================================================================
 -- OPTIONS: PROFILES TAB
@@ -714,8 +776,8 @@ L["Content.OtherScenarios"] = "其他場景戰役"
 -- Dungeon difficulty
 L["Content.NormalDungeons"] = "普通地下城"
 L["Content.HeroicDungeons"] = "英雄地下城"
-L["Content.MythicDungeons"] = "史詩地下城"
-L["Content.MythicPlus"] = "傳奇鑰石"
+L["Content.MythicDungeons"] = "傳奇地下城"
+L["Content.MythicPlus"] = "傳奇+鑰石"
 L["Content.TimewalkingDungeons"] = "時光漫游地下城"
 L["Content.FollowerDungeons"] = "追隨者地下城"
 
@@ -723,7 +785,7 @@ L["Content.FollowerDungeons"] = "追隨者地下城"
 L["Content.LFR"] = "隨機團隊"
 L["Content.NormalRaids"] = "普通團隊副本"
 L["Content.HeroicRaids"] = "英雄團隊副本"
-L["Content.MythicRaids"] = "史詩團隊副本"
+L["Content.MythicRaids"] = "傳奇團隊副本"
 
 -- PvP types
 L["Content.Arena"] = "競技場"
