@@ -1003,10 +1003,12 @@ end
 local function IsPlayerBuffActive(spellID, role)
     local minRemaining = nil
     local targetEntry = nil
+    local hasBeneficiary = not role
     for _, data in ipairs(currentValidUnits) do
         -- Skip NPCs in content where they can't receive player buffs
         if data.isPlayer or includeNPCsInCounting then
             if not role or UnitGroupRolesAssigned(data.unit) == role then
+                hasBeneficiary = true
                 local hasBuff, remaining, sourceUnit = UnitHasBuff(data.unit, spellID)
                 if hasBuff then
                     local isFromPlayer = sourceUnit and UnitIsUnit(sourceUnit, "player")
@@ -1031,6 +1033,10 @@ local function IsPlayerBuffActive(spellID, role)
                 end
             end
         end
+    end
+    -- No alive beneficiary with this role → treat as active (nothing to cast on)
+    if not hasBeneficiary then
+        return true
     end
     return minRemaining ~= nil, minRemaining, targetEntry
 end
