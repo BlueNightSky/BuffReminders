@@ -19,19 +19,20 @@ local IsCategorySplit = BR.Helpers.IsCategorySplit
 -- Chat request: categories that support "request buff in chat" on click
 local chatRequestableCategories = { raid = true, presence = true }
 local requestOnCooldown = {}
-local REQUEST_COOLDOWN = 30
+local REQUEST_COOLDOWN = 5
 
-local function GetRequestChannel()
-    if IsInGroup(2) then -- 2 = instance group
-        return "INSTANCE_CHAT"
+--- Build a macro string that sends a chat request message via the appropriate channel.
+---@param msg string The message text
+---@return string macrotext
+local function BuildChatRequestMacro(msg)
+    if IsInGroup(2) then -- instance group
+        return "/instance " .. msg
+    elseif IsInRaid() then
+        return "/raid " .. msg
+    elseif IsInGroup() then
+        return "/party " .. msg
     end
-    if IsInRaid() then
-        return "RAID"
-    end
-    if IsInGroup() then
-        return "PARTY"
-    end
-    return "SAY"
+    return "/say " .. msg
 end
 
 -- ============================================================================
@@ -237,10 +238,20 @@ local function CreateClickOverlay(frame)
             local key = self._br_chatRequestKey
             if not requestOnCooldown[key] and IsInGroup() then
                 requestOnCooldown[key] = true
+                -- Blank the macro to prevent spamming; restore after cooldown.
+                -- SetAttribute is safe here: overlays are hidden during combat via
+                -- state driver, so PostClick only fires outside combat lockdown.
+                local msg = self._br_chatRequestMsg
+                self:SetAttribute("macrotext", "")
                 C_Timer.After(REQUEST_COOLDOWN, function()
                     requestOnCooldown[key] = nil
+                    -- Restore macro if overlay is still a chat-request button.
+                    -- If in combat lockdown, skip — SetupChatRequestOverlay will
+                    -- re-set the macro when SyncSecureButtons runs after combat.
+                    if self._br_chatRequestKey and not InCombatLockdown() then
+                        self:SetAttribute("macrotext", BuildChatRequestMacro(msg))
+                    end
                 end)
-                SendChatMessage(self._br_chatRequestMsg, GetRequestChannel())
             end
             return
         end
@@ -1000,8 +1011,9 @@ local function SetupChatRequestOverlay(frame, showHighlight)
     overlay.itemID = nil
     overlay._br_chatRequestKey = frame.key
     overlay._br_chatRequestMsg = L["ChatRequest." .. frame.key] or frame.displayName
+    requestOnCooldown[frame.key] = nil -- Clear stale cooldown from prior setup
     overlay:SetAttribute("type", "macro")
-    overlay:SetAttribute("macrotext", "")
+    overlay:SetAttribute("macrotext", BuildChatRequestMacro(overlay._br_chatRequestMsg))
     overlay:EnableMouse(true)
     if overlay.highlight then
         overlay.highlight:SetShown(showHighlight)
