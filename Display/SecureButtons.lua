@@ -21,18 +21,16 @@ local chatRequestableCategories = { raid = true, presence = true }
 local requestOnCooldown = {}
 local REQUEST_COOLDOWN = 5
 
---- Build a macro string that sends a chat request message via the appropriate channel.
----@param msg string The message text
----@return string macrotext
-local function BuildChatRequestMacro(msg)
+--- Returns the macro slash command prefix for the current group type.
+local function GetChatRequestPrefix()
     if IsInGroup(2) then -- instance group
-        return "/instance " .. msg
+        return "/instance "
     elseif IsInRaid() then
-        return "/raid " .. msg
+        return "/raid "
     elseif IsInGroup() then
-        return "/party " .. msg
+        return "/party "
     end
-    return "/say " .. msg
+    return "/say "
 end
 
 -- ============================================================================
@@ -229,7 +227,11 @@ local function CreateClickOverlay(frame)
     end)
     -- Re-evaluate dynamic macros before each click, refresh display after
     overlay:SetScript("PreClick", function(self)
-        if self._br_clickMacroFn then
+        if self._br_chatRequestKey and not requestOnCooldown[self._br_chatRequestKey] then
+            -- Rebuild macro each click to pick up current group type (party→raid).
+            -- Safe outside combat (overlay hidden via state driver in combat).
+            self:SetAttribute("macrotext", GetChatRequestPrefix() .. self._br_chatRequestMsg)
+        elseif self._br_clickMacroFn then
             self:SetAttribute("macrotext", self._br_clickMacroFn(self._br_clickMacroSpellID))
         end
     end)
@@ -249,7 +251,7 @@ local function CreateClickOverlay(frame)
                     -- If in combat lockdown, skip — SetupChatRequestOverlay will
                     -- re-set the macro when SyncSecureButtons runs after combat.
                     if self._br_chatRequestKey and not InCombatLockdown() then
-                        self:SetAttribute("macrotext", BuildChatRequestMacro(msg))
+                        self:SetAttribute("macrotext", GetChatRequestPrefix() .. msg)
                     end
                 end)
             end
@@ -1013,7 +1015,7 @@ local function SetupChatRequestOverlay(frame, showHighlight)
     overlay._br_chatRequestMsg = L["ChatRequest." .. frame.key] or frame.displayName
     requestOnCooldown[frame.key] = nil -- Clear stale cooldown from prior setup
     overlay:SetAttribute("type", "macro")
-    overlay:SetAttribute("macrotext", BuildChatRequestMacro(overlay._br_chatRequestMsg))
+    overlay:SetAttribute("macrotext", GetChatRequestPrefix() .. overlay._br_chatRequestMsg)
     overlay:EnableMouse(true)
     if overlay.highlight then
         overlay.highlight:SetShown(showHighlight)
