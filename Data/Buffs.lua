@@ -111,6 +111,7 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 ---@field showOnInstanceEntry? boolean Only show when entering an instance (not M+), skip normal buff checks
 ---@field showWhenPresent? boolean Show when buff IS active (inverts normal "show when missing" logic)
+---@field noClickToCast? boolean Suppress click-to-cast overlay (e.g., CastSpellByID can't toggle this spell)
 ---@field noExpirationGlow? boolean Suppress expiration glow (for permanent enchants or intentionally short buffs)
 ---@field skipSpellKnownCheck? boolean Skip the "player knows spell" check (for custom/dynamic entries)
 
@@ -588,6 +589,7 @@ BR.BUFF_TABLES = {
             class = "WARLOCK",
             overlayText = L["Overlay.BurningRush"],
             showWhenPresent = true,
+            noClickToCast = true,
             glowDetectable = true, -- Action bar glow fallback when aura API is restricted
         },
         -- Paladin weapon rites (alphabetical: Adjuration, Sanctification)

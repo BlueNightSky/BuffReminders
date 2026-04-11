@@ -212,7 +212,7 @@ end
 ---@param frame table The parent buff frame
 local function CreateClickOverlay(frame)
     local overlay = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
-    overlay:RegisterForClicks("AnyDown", "AnyUp")
+    overlay:RegisterForClicks("AnyDown")
     overlay:EnableMouse(false)
     overlay:Hide()
     -- Auto-hide in combat (secure state driver), auto-show after
@@ -390,7 +390,7 @@ end
 ---@return table btn The created button
 local function CreateActionButton()
     local btn = CreateFrame("Button", nil, UIParent, "SecureActionButtonTemplate")
-    btn:RegisterForClicks("AnyDown", "AnyUp")
+    btn:RegisterForClicks("AnyDown")
     btn:Hide()
     -- Start hidden — state driver activated by SyncSecureButtons() after positioning
     RegisterStateDriver(btn, "visibility", "hide")
@@ -1333,7 +1333,7 @@ local function UpdateActionButtons(category)
                         if overlay.highlight then
                             overlay.highlight:SetShown(frameHighlight)
                         end
-                    elseif castableID then
+                    elseif castableID and not (frame.buffDef and frame.buffDef.noClickToCast) then
                         if not frame.clickOverlay then
                             CreateClickOverlay(frame)
                         end
