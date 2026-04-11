@@ -108,8 +108,13 @@ local BuffState = {
     lastUpdate = 0,
 }
 
--- Cache player class (set once on init via SetPlayerClass)
-local playerClass = nil
+-- Player class and name are constant for the session
+local _, playerClass = UnitClass("player")
+local playerName = GetUnitName("player", true)
+
+-- Player level and max expansion level (updated via SetPlayerLevel on PLAYER_LEVEL_UP)
+local playerLevel = UnitLevel("player")
+local maxExpansionLevel = GetMaxLevelForPlayerExpansion()
 
 -- Ready check state (set via SetReadyCheckState)
 local inReadyCheck = false
@@ -289,6 +294,10 @@ end
 -- can re-target them automatically. Not persisted to SavedVariables.
 ---@type table<string, {name: string, class: string}>
 local lastTargets = {}
+
+-- Reusable set for last-target pruning (avoids per-refresh allocation)
+---@type table<string, true>
+local activeNames = {}
 
 ---Get the last known target for a targeted buff
 ---@param buffKey string
@@ -470,10 +479,7 @@ local function BuildValidUnitCache()
 
     -- Keep player spec in allySpecCache so CountMissingBuff can use a single
     -- lookup path (allySpecCache[name]) for both the player and allies.
-    local playerName = GetUnitName("player", true)
-    if playerName then
-        allySpecCache[playerName] = GetPlayerSpecId()
-    end
+    allySpecCache[playerName] = GetPlayerSpecId()
 
     -- Determine if NPCs should count for buff tracking this refresh.
     -- Follower dungeons and delves (scenarios) have NPC companions that can receive buffs.
@@ -490,10 +496,8 @@ local function BuildValidUnitCache()
 
     if groupSize == 0 then
         -- Solo player
-        local _, class = UnitClass("player")
-        local name = GetUnitName("player", true)
-        currentValidUnits[1] = AcquireUnitEntry("player", class, true, name)
-        classMaxLevels[class] = UnitLevel("player")
+        currentValidUnits[1] = AcquireUnitEntry("player", playerClass, true, playerName)
+        classMaxLevels[playerClass] = playerLevel
         return
     end
 
@@ -525,15 +529,14 @@ local function BuildValidUnitCache()
     end
 
     -- Prune last targets: remove entries for players no longer in the group
-    for buffKey, entry in pairs(lastTargets) do
-        local found = false
-        for _, data in ipairs(currentValidUnits) do
-            if data.name == entry.name then
-                found = true
-                break
-            end
+    wipe(activeNames)
+    for _, data in ipairs(currentValidUnits) do
+        if data.name then
+            activeNames[data.name] = true
         end
-        if not found then
+    end
+    for buffKey, entry in pairs(lastTargets) do
+        if not activeNames[entry.name] then
             lastTargets[buffKey] = nil
         end
     end
@@ -821,11 +824,9 @@ local function IsCustomBuffVisibleForContent(buff)
 
     -- Level filter
     if lc.levelFilter then
-        local playerLevel = UnitLevel("player")
-        local maxLevel = GetMaxLevelForPlayerExpansion()
-        if lc.levelFilter == "maxLevel" and playerLevel < maxLevel then
+        if lc.levelFilter == "maxLevel" and playerLevel < maxExpansionLevel then
             return false
-        elseif lc.levelFilter == "belowMaxLevel" and playerLevel >= maxLevel then
+        elseif lc.levelFilter == "belowMaxLevel" and playerLevel >= maxExpansionLevel then
             return false
         end
     end
@@ -2148,10 +2149,22 @@ function BuffState.Refresh(refreshMode)
     BR.CallbackRegistry:TriggerEvent("BuffStateChanged")
 end
 
----Set the player class (called once on init)
----@param class ClassName
-function BuffState.SetPlayerClass(class)
-    playerClass = class
+---Set the player level (called on PLAYER_LEVEL_UP)
+---@param level number
+function BuffState.SetPlayerLevel(level)
+    playerLevel = level
+end
+
+---Set the max expansion level (called on UPDATE_EXPANSION_LEVEL)
+---@param level number
+function BuffState.SetMaxExpansionLevel(level)
+    maxExpansionLevel = level
+end
+
+---@return number playerLevel
+---@return number maxExpansionLevel
+function BuffState.GetLevelInfo()
+    return playerLevel, maxExpansionLevel
 end
 
 ---Set the ready check state
@@ -2362,7 +2375,7 @@ if LibSpec then
     specFrame:SetScript("OnEvent", function()
         -- Build set of current group member names
         local currentNames = {}
-        currentNames[GetUnitName("player", true)] = true
+        currentNames[playerName] = true
         if IsInRaid() then
             for i = 1, GetNumGroupMembers() do
                 local name = GetUnitName("raid" .. i, true)

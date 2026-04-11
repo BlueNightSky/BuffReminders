@@ -199,10 +199,6 @@ local TEXCOORD_INSET = BR.TEXCOORD_INSET
 
 -- WoW API locals
 local PlaySoundFile = PlaySoundFile
-local UnitLevel = UnitLevel
-local GetMaxLevelForPlayerExpansion = GetMaxLevelForPlayerExpansion
-local playerLevel -- Cached on PLAYER_ENTERING_WORLD, updated on PLAYER_LEVEL_UP
-local maxPlayerLevel -- Cached on PLAYER_ENTERING_WORLD, updated on UPDATE_EXPANSION_LEVEL
 
 -- LibSharedMedia for font resolution
 local LSM = LibStub("LibSharedMedia-3.0")
@@ -2760,7 +2756,8 @@ UpdateDisplay = function(refreshMode)
             return
         end
 
-        if db.hideWhileLeveling and playerLevel and maxPlayerLevel and playerLevel < maxPlayerLevel then
+        local playerLevel, maxExpansionLevel = BR.BuffState.GetLevelInfo()
+        if db.hideWhileLeveling and playerLevel < maxExpansionLevel then
             HideAllDisplayFrames()
             return
         end
@@ -3551,7 +3548,6 @@ end
 eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     if event == "ADDON_LOADED" and arg1 == addonName then
         _, playerClass = UnitClass("player")
-        BR.BuffState.SetPlayerClass(playerClass)
         local isFirstInstall = not BuffRemindersDB
         if not BuffRemindersDB then
             BuffRemindersDB = {}
@@ -4507,8 +4503,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Sync flags with current state (in case of reload)
         inCombat = InCombatLockdown()
         isResting = IsResting()
-        playerLevel = UnitLevel("player")
-        maxPlayerLevel = GetMaxLevelForPlayerExpansion()
+        BR.BuffState.SetPlayerLevel(UnitLevel("player"))
+        BR.BuffState.SetMaxExpansionLevel(GetMaxLevelForPlayerExpansion())
         BR.BuffState.SetInCombat(inCombat)
         -- Detect PvP prep phase: in a PvP instance but match not yet started.
         -- Default is false (restricted), so reloads during active matches stay safe.
@@ -4683,10 +4679,10 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         isResting = IsResting()
         SetDirty()
     elseif event == "PLAYER_LEVEL_UP" then
-        playerLevel = arg1 -- PLAYER_LEVEL_UP passes new level as arg1
+        BR.BuffState.SetPlayerLevel(arg1)
         SetDirty()
     elseif event == "UPDATE_EXPANSION_LEVEL" then
-        maxPlayerLevel = GetMaxLevelForPlayerExpansion()
+        BR.BuffState.SetMaxExpansionLevel(GetMaxLevelForPlayerExpansion())
         SetDirty()
     elseif event == "READY_CHECK" then
         -- Cancel any existing timer
