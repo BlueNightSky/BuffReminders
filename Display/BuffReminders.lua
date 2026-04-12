@@ -3562,6 +3562,7 @@ ClearInstanceEntryState = function()
     end
     BR.BuffState.SetInstanceEntryState(false)
     eventFrame:UnregisterEvent("UNIT_SPELLCAST_SUCCEEDED")
+    eventFrame:UnregisterEvent("UNIT_SPELLCAST_START")
 end
 
 ClearDelveEntryState = function()
@@ -4571,6 +4572,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 end
                 BR.BuffState.SetInstanceEntryState(true)
                 eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
+                eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player")
                 UpdateDisplay()
                 instanceEntryTimer = C_Timer.NewTimer(30, function()
                     ClearInstanceEntryState()
@@ -4779,7 +4781,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             BR.BuffState.SetInVehicle(event == "UNIT_ENTERED_VEHICLE")
             UpdateDisplay()
         end
-    elseif event == "UNIT_SPELLCAST_SUCCEEDED" then
+    elseif event == "UNIT_SPELLCAST_SUCCEEDED" or event == "UNIT_SPELLCAST_START" then
         if SOULWELL_SPELL_IDS[arg3] then
             ClearInstanceEntryState()
             UpdateDisplay()
