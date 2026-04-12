@@ -915,6 +915,7 @@ BR.BUFF_TABLES = {
             displayIcon = 136216, -- Felguard icon
             excludeSpellID = 108503, -- Grimoire of Sacrifice: pet intentionally sacrificed
             requireSpecId = 266, -- Demonology only
+            requiresSpellID = 30146, -- Summon Felguard must be known
             groupId = "pets",
             customCheck = function()
                 if not UnitExists("pet") then
