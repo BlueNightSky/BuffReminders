@@ -46,7 +46,7 @@ Core\Core.lua
 Core\Profiles.lua
 Data\Buffs.lua
 Data\Beneficiaries.lua
-Data\CombatSafeSpells.lua
+Data\AuraWhitelist.lua
 Data\ConsumableItems.lua
 Data\Pets.lua
 Core\ConsumableMemory.lua

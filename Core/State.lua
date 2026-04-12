@@ -242,8 +242,8 @@ local includeNPCsInCounting = false
 -- Note: inCombat (set via SetInCombat) is used by CountMissingBuff to skip NPCs during
 -- combat/encounters — NPC buff spell IDs aren't on the Blizzard aura whitelist.
 
--- Aura-safe spell whitelist loaded from Data/CombatSafeSpells.lua
-local COMBAT_SAFE_SPELLS = BR.COMBAT_SAFE_SPELLS
+-- Aura-safe spell whitelist loaded from Data/AuraWhitelist.lua
+local AURA_WHITELIST = BR.AURA_WHITELIST
 
 ---Determine if a buff's detection method works in aura-restricted contexts (combat + M+ keystones).
 ---Non-aura detection (weapon enchants, inventory checks) is always safe.
@@ -279,10 +279,10 @@ local function IsAuraTrackable(buff)
 
     -- All queried spell IDs must be in the whitelist
     if type(idsToCheck) == "number" then
-        return COMBAT_SAFE_SPELLS[idsToCheck] ~= nil
+        return AURA_WHITELIST[idsToCheck] ~= nil
     end
     for _, id in ipairs(idsToCheck) do
-        if not COMBAT_SAFE_SPELLS[id] then
+        if not AURA_WHITELIST[id] then
             return false
         end
     end
