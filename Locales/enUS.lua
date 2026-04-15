@@ -14,6 +14,7 @@ local english = {}
 local L = setmetatable({}, {
     __index = english,
 })
+---@type table<string, string>
 BR.L = L
 
 -- ============================================================================
@@ -305,6 +306,9 @@ english["Options.UseCustomColor"] = "Use Custom Color"
 english["Options.UseCustomColor.Desc"] =
     "When enabled, the proc glow is desaturated and recolored.\nThis looks less vibrant than the default proc glow."
 english["Options.ExpirationReminder"] = "Expiration Reminder"
+english["Options.PreKeyThreshold"] = "Pre-Key Threshold"
+english["Options.PreKeyThreshold.Desc"] =
+    "Use a longer expiration threshold when inside a Mythic dungeon (M0) before a keystone is inserted.\nHelps ensure your buffs are fresh before the key goes in."
 
 -- Glow params
 english["Options.Glow.Type"] = "Type:"

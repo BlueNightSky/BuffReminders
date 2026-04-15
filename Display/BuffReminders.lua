@@ -20,6 +20,7 @@ local addonName, BR = ...
 ---@field showExpirationGlow boolean
 ---@field showMissingGlow boolean
 ---@field expirationThreshold number
+---@field preKeyThreshold number
 ---@field glowType number
 ---@field glowColor? number[]
 ---@field glowSize number
@@ -384,6 +385,7 @@ local defaults = {
         showExpirationGlow = true,
         showMissingGlow = true,
         expirationThreshold = 15, -- minutes
+        preKeyThreshold = 0, -- minutes (0 = off); used in M0 before inserting a keystone
         glowType = 2, -- BR.Glow.Type: Pixel=1, AutoCast=2, Border=3, Proc=4 (expiring default)
         glowSize = 2,
         showConsumablesWithoutItems = true,

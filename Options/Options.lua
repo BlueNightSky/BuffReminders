@@ -1038,6 +1038,24 @@ local function CreateOptionsPanel()
     })
     displayBehaviorLayout:Add(defThresholdHolder, nil, COMPONENT_GAP)
 
+    local preKeyThresholdHolder = Components.Slider(displayBehaviorContent, {
+        label = L["Options.PreKeyThreshold"],
+        tooltip = { title = L["Options.PreKeyThreshold"], desc = L["Options.PreKeyThreshold.Desc"] },
+        min = 0,
+        max = 60,
+        step = 5,
+        get = function()
+            return BR.profile.defaults and BR.profile.defaults.preKeyThreshold or 0
+        end,
+        formatValue = function(val)
+            return val == 0 and L["Options.Off"] or (val .. " " .. L["Options.Min"])
+        end,
+        onChange = function(val)
+            BR.Config.Set("defaults.preKeyThreshold", val)
+        end,
+    })
+    displayBehaviorLayout:Add(preKeyThresholdHolder, nil, COMPONENT_GAP)
+
     -- Per-Category Customization section
     displayBehaviorLayout:Space(8)
     LayoutSectionHeader(displayBehaviorLayout, displayBehaviorContent, L["Options.PerCategoryCustomization"])

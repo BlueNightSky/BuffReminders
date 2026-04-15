@@ -1546,6 +1546,15 @@ local function GetCategoryGlowSettings(cat)
     local expiringGlow = BR.Config.GetCategorySetting(cat, "showExpirationGlow") ~= false
     local missingGlow = BR.Config.GetCategorySetting(cat, "showMissingGlow") ~= false
     local threshold = (BR.Config.GetCategorySetting(cat, "expirationThreshold") or 15) * 60
+    -- In M0 dungeons (before inserting a keystone), use pre-key threshold if higher
+    local defs = BR.profile and BR.profile.defaults
+    local preKey = defs and defs.preKeyThreshold or 0
+    if preKey > 0 and GetCurrentContentType() == "dungeon" and GetCurrentDifficultyKey() == "mythic" then
+        local preKeySec = preKey * 60
+        if preKeySec > threshold then
+            threshold = preKeySec
+        end
+    end
     return expiringGlow, missingGlow, threshold
 end
 
