@@ -526,6 +526,16 @@ BR.BUFF_TABLES = {
             overlayText = L["Overlay.NoLink"],
             clickMacro = TargetedClickMacro("symbioticRelationship"),
         },
+        {
+            spellID = 412710,
+            key = "timelessness",
+            name = L["Buff.Timelessness"],
+            class = "EVOKER",
+            overlayText = L["Overlay.NoTimeless"],
+            requireSpecId = 1473, -- Augmentation
+            requiresSpellID = 412710,
+            clickMacro = TargetedClickMacro("timelessness"),
+        },
     },
     ---@type SelfBuff[]
     self = {
