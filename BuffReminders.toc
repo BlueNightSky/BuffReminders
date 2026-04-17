@@ -70,4 +70,10 @@ Options\Modals\PetSummon.lua
 Options\Modals\DelveFood.lua
 Options\Modals\Bronze.lua
 Options\Modals\ChatRequest.lua
+Options\Tabs\DisplayBehavior_Category.lua
+Options\Tabs\DisplayBehavior.lua
+Options\Tabs\Buffs.lua
+Options\Tabs\Sounds.lua
+Options\Tabs\Settings.lua
+Options\Tabs\Profiles.lua
 Options\Options.lua
