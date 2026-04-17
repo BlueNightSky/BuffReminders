@@ -50,6 +50,7 @@ L["Overlay.NoES"] = "沒有\n大地盾"
 L["Overlay.NoSource"] = "沒有\n魔源"
 L["Overlay.NoScales"] = "沒有\n鱗片"
 L["Overlay.NoLink"] = "沒有\n共生"
+L["Overlay.NoTimeless"] = "沒有\n永恆"
 L["Overlay.NoAttune"] = "沒有\n同調"
 L["Overlay.NoFamiliar"] = "沒有\n魔寵"
 L["Overlay.DropWell"] = "置放\n靈魂井"
@@ -134,6 +135,7 @@ L["Buff.BlisteringScales"] = "極熾鱗片"
 L["Buff.EarthShield"] = "大地之盾"
 L["Buff.SourceOfMagic"] = "魔力之源"
 L["Buff.SymbioticRelationship"] = "共生關係"
+L["Buff.Timelessness"] = "永恆不朽"
 -- Self
 L["Buff.ArcaneFamiliar"] = "秘法魔寵"
 L["Buff.Attunement"] = "黑曜同調"
@@ -274,6 +276,13 @@ L["Options.GlobalDefaults"] = "全局預設值"
 L["Options.GlobalDefaults.Note"] = "（套用於所有類別，除非被自定義外觀覆蓋）"
 L["Options.Default"] = "預設"
 L["Options.Font"] = "字體"
+L["Options.TextOutline"] = "外框樣式"
+L["Options.TextOutline.None"] = "無"
+L["Options.TextOutline.Outline"] = "外框"
+L["Options.TextOutline.Thick"] = "粗外框"
+L["Options.TextOutline.Monochrome"] = "單色"
+L["Options.TextOutline.OutlineMono"] = "外框 + 單色"
+L["Options.TextOutline.ThickMono"] = "粗外框 + 單色"
 
 -- ============================================================================
 -- OPTIONS: GLOW SETTINGS
@@ -406,7 +415,7 @@ L["Options.ChatRequestModal.ResetAll"] = "重置全部"
 -- Asian translators: translate these so chat messages match your locale.
 L["ChatRequest.intellect"] = "請補上祕法智力的增益"
 L["ChatRequest.attackPower"] = "請補上戰鬥怒吼的增益"
-L["ChatRequest.bronze"] = "請補上青銅龍的祝福的增益"
+L["ChatRequest.bronze"] = "請補上青銅龍的祝福增益"
 L["ChatRequest.versatility"] = "請補上野性印記的增益"
 L["ChatRequest.stamina"] = "請補上真言術：韌的增益"
 L["ChatRequest.skyfury"] = "請補上天怒增益"
@@ -487,6 +496,19 @@ L["Options.RuneMainHand"] = "主手"
 L["Options.RuneOffHand"] = "副手"
 L["Options.RuneTwoHanded"] = "雙手"
 L["Options.RuneDualWield"] = "雙持"
+
+
+-- ============================================================================
+-- OPTIONS: ROGUE POISON PREFERENCES
+-- ============================================================================
+L["Options.RoguePoisonPreferences"] = "盜賊毒藥偏好"
+L["Options.RoguePoisonNote"] =
+    "選擇要應用的毒藥及其優先順序（頂部=最高）。停用的毒藥永遠不會被施放，也不會觸發提醒。"
+L["Options.PoisonLethal"] = "致命"
+L["Options.PoisonNonLethal"] = "非致命"
+L["Options.PoisonMoveUp"] = "優先級上升"
+L["Options.PoisonMoveDown"] = "優先級下降"
+L["Options.PoisonReset"] = "重置回預設"
 
 -- ============================================================================
 -- OPTIONS: BUFF SETTINGS GEAR ICONS
