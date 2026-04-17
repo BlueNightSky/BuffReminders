@@ -159,6 +159,7 @@ local lastTargetTooltip
 local function ShowLastTargetTooltip(anchor, name, class)
     if not lastTargetTooltip then
         local fontPath = BR.Display.GetFontPath()
+        local outlineFlag = BR.Display.GetOutline()
         local tip = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
         tip:SetFrameStrata("TOOLTIP")
         tip:SetBackdrop({
@@ -169,7 +170,7 @@ local function ShowLastTargetTooltip(anchor, name, class)
         tip:SetBackdropColor(0.08, 0.08, 0.08, 0.95)
         tip:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
         tip.name = tip:CreateFontString(nil, "OVERLAY")
-        tip.name:SetFont(fontPath, 13, "OUTLINE")
+        tip.name:SetFont(fontPath, 13, outlineFlag)
         tip.name:SetPoint("CENTER", 0, 0)
         lastTargetTooltip = tip
     end
@@ -746,6 +747,7 @@ local function SyncSecureButtons()
         return
     end
     local fontPath = BR.Display.GetFontPath()
+    local outlineFlag = BR.Display.GetOutline()
     for _, frame in pairs(BR.Display.frames) do
         -- Sync click overlay
         local overlay = frame.clickOverlay
@@ -865,7 +867,7 @@ local function SyncSecureButtons()
                                     btn.count:SetText(
                                         btn._br_count and btn._br_count > 1 and tostring(btn._br_count) or ""
                                     )
-                                    btn.count:SetFont(fontPath, cFontSize, "OUTLINE")
+                                    btn.count:SetFont(fontPath, cFontSize, outlineFlag)
                                     -- Quality atlas icon (holder frame at +10 to draw above borders/glows)
                                     if btn._br_qualityAtlas then
                                         if not btn._br_qualityIcon then

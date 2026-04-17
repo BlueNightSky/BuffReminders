@@ -52,6 +52,7 @@ local addonName, BR = ...
 ---@field missingGlowXOffset? number
 ---@field missingGlowYOffset? number
 ---@field fontFace? string
+---@field textOutline? "NONE"|"OUTLINE"|"THICKOUTLINE"|"MONOCHROME"|"OUTLINE, MONOCHROME"|"THICKOUTLINE, MONOCHROME"
 ---@field showConsumablesWithoutItems? boolean
 ---@field showWithoutItemsOnlyOnReadyCheck? boolean
 ---@field delveFoodOnly? boolean
@@ -229,6 +230,22 @@ local function ResolveFontPath()
     fontPath = STANDARD_TEXT_FONT
 end
 
+-- Cached outline flag — resolved on load and updated when the setting changes (via VisualsRefresh).
+-- "NONE" in saved settings is translated to "" at the WoW API level.
+local outlineFlag = "OUTLINE"
+
+---Resolve the text outline flag from saved settings and update the cache
+local function ResolveOutline()
+    local value = BR.profile and BR.profile.defaults and BR.profile.defaults.textOutline
+    if value == "NONE" then
+        outlineFlag = ""
+    elseif value == nil then
+        outlineFlag = "OUTLINE"
+    else
+        outlineFlag = value
+    end
+end
+
 -- Global API table for external addon integration
 BuffReminders = {}
 
@@ -374,6 +391,7 @@ local defaults = {
         iconSize = 64,
         -- iconWidth: nil = same as iconSize (square). Set explicitly for non-square icons.
         textSize = 20,
+        textOutline = "OUTLINE",
         iconAlpha = 1,
         textAlpha = 1,
         textColor = { 1, 1, 1 },
@@ -667,6 +685,9 @@ BR.Display = BR.Display or {}
 BR.Display.defaults = defaults
 BR.Display.GetFontPath = function()
     return fontPath
+end
+BR.Display.GetOutline = function()
+    return outlineFlag
 end
 
 ---Check if a category is split into its own frame
@@ -1109,7 +1130,7 @@ local function ShowTextFrame(frame, overlayText, shouldGlow, category, cachedGlo
         frame.qualityIcon:Hide()
     end
     if overlayText then
-        frame.count:SetFont(fontPath, GetFrameFontSize(frame, OVERLAY_TEXT_SCALE), "OUTLINE")
+        frame.count:SetFont(fontPath, GetFrameFontSize(frame, OVERLAY_TEXT_SCALE), outlineFlag)
         frame.count:SetText(overlayText)
         frame.count:Show()
     else
@@ -1333,7 +1354,7 @@ local function CreateBuffFrame(buff, category)
     frame.count = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalLarge")
     frame.count:SetPoint("CENTER", catSettings.textOffsetX or 0, catSettings.textOffsetY or 0)
     frame.count:SetTextColor(textColor[1], textColor[2], textColor[3], textAlpha)
-    frame.count:SetFont(fontPath, GetFontSize(1, catSettings.textSize), "OUTLINE")
+    frame.count:SetFont(fontPath, GetFontSize(1, catSettings.textSize), outlineFlag)
 
     -- Stack count (bottom-right, WoW-standard item count style) for consumables
     frame.stackCount = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
@@ -1358,7 +1379,7 @@ local function CreateBuffFrame(buff, category)
         frame.buffText:SetFont(
             fontPath,
             (raidCs and raidCs.buffTextSize) or GetFontSize(0.8, catSettings.textSize),
-            "OUTLINE"
+            outlineFlag
         )
         frame.buffText:SetTextColor(textColor[1], textColor[2], textColor[3], textAlpha)
         frame.buffText:SetText(L["Overlay.Buff"])
@@ -1423,7 +1444,7 @@ local function GetOrCreateExtraFrame(frame, index)
     extra.count = extra:CreateFontString(nil, "OVERLAY", "NumberFontNormalLarge")
     extra.count:SetPoint("CENTER", 0, 0)
     extra.count:SetTextColor(textColor[1], textColor[2], textColor[3], textAlpha)
-    extra.count:SetFont(fontPath, GetFontSize(1, catSettings.textSize), "OUTLINE")
+    extra.count:SetFont(fontPath, GetFontSize(1, catSettings.textSize), outlineFlag)
     extra.count:Hide()
 
     extra:SetAlpha(catSettings.iconAlpha or 1)
@@ -2072,7 +2093,7 @@ local function ApplyConsumableOverlays(frame, item, fontSize)
             frame.statLabel = frame:CreateFontString(nil, "OVERLAY")
             frame.statLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)
         end
-        frame.statLabel:SetFont(fontPath, fontSize, "OUTLINE")
+        frame.statLabel:SetFont(fontPath, fontSize, outlineFlag)
         frame.statLabel:SetTextColor(1, 1, 1, 1)
         frame.statLabel:SetText(item.statLabel)
         frame.statLabel:Show()
@@ -2106,7 +2127,7 @@ local function ApplyConsumableOverlays(frame, item, fontSize)
                 frame.badgeLabel = frame:CreateFontString(nil, "OVERLAY")
                 frame.badgeLabel:SetPoint("LEFT", frame, "LEFT", 2, 0)
             end
-            frame.badgeLabel:SetFont(fontPath, fontSize, "OUTLINE")
+            frame.badgeLabel:SetFont(fontPath, fontSize, outlineFlag)
             frame.badgeLabel:SetTextColor(bc.r, bc.g, bc.b, 1)
             frame.badgeLabel:SetText(item.badge)
             frame.badgeLabel:Show()
@@ -2178,7 +2199,7 @@ local function ResolveConsumableFrame(frame)
         local mainSize = frame:GetWidth()
         local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(mainSize)
         frame.count:Hide()
-        frame.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
+        frame.stackCount:SetFont(fontPath, cFontSize, outlineFlag)
         frame.stackCount:SetText(items[1].count)
         frame.stackCount:Show()
         ApplyConsumableOverlays(frame, items[1], cFontSize)
@@ -2217,7 +2238,7 @@ local function RenderVisibleEntry(frame, entry)
             -- Seed initial text, then hand off to per-frame OnUpdate for smooth countdown
             local remaining = entry.eatingExpirationTime - GetTime()
             if remaining > 0 then
-                frame.count:SetFont(fontPath, GetFrameFontSize(frame), "OUTLINE")
+                frame.count:SetFont(fontPath, GetFrameFontSize(frame), outlineFlag)
                 frame.count:SetText(FormatEatingTime(remaining))
                 frame.count:Show()
             else
@@ -2272,7 +2293,7 @@ local function RenderVisibleEntry(frame, entry)
         if frame.buffCategory == "consumable" then
             SetIconDesaturated(frame.icon, false)
         end
-        frame.count:SetFont(fontPath, GetFrameFontSize(frame), "OUTLINE")
+        frame.count:SetFont(fontPath, GetFrameFontSize(frame), outlineFlag)
         frame.count:SetText(entry.countText or "")
         frame.count:Show()
         frame:Show()
@@ -2371,7 +2392,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra:SetParent(frame)
                 extra:SetSize(size, size)
                 extra.icon:SetTexture(items[i].icon)
-                extra.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
+                extra.stackCount:SetFont(fontPath, cFontSize, outlineFlag)
                 extra.stackCount:SetText(items[i].count > 1 and tostring(items[i].count) or "")
                 extra.stackCount:Show()
                 extra.count:Hide()
@@ -2432,7 +2453,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra:SetParent(parentFrame)
                 extra:SetSize(expandedSize, frame:GetHeight())
                 extra.icon:SetTexture(items[i].icon)
-                extra.stackCount:SetFont(fontPath, cFontSize, "OUTLINE")
+                extra.stackCount:SetFont(fontPath, cFontSize, outlineFlag)
                 extra.stackCount:SetText(items[i].count)
                 extra.count:Hide()
                 local showText = ShouldShowText(frame.buffCategory)
@@ -2496,7 +2517,7 @@ local function UpdatePetLabels(frame, petAction)
     local ratio = scale / 100
     local nameSize = max(7, floor(frame:GetWidth() * 0.18 * ratio))
     local familySize = max(7, floor(nameSize * 0.85))
-    frame._br_pet_name_text:SetFont(fontPath, nameSize, "OUTLINE")
+    frame._br_pet_name_text:SetFont(fontPath, nameSize, outlineFlag)
     frame._br_pet_name_text:ClearAllPoints()
     frame._br_pet_name_text:SetPoint("TOP", frame, "BOTTOM", 0, -2)
     frame._br_pet_name_text:SetText(petAction.label or "")
@@ -2505,7 +2526,7 @@ local function UpdatePetLabels(frame, petAction)
 
     local family = petAction.petFamily
     if family and family ~= "" then
-        frame._br_pet_family_text:SetFont(fontPath, familySize, "OUTLINE")
+        frame._br_pet_family_text:SetFont(fontPath, familySize, outlineFlag)
         frame._br_pet_family_text:ClearAllPoints()
         frame._br_pet_family_text:SetPoint("TOP", frame._br_pet_name_text, "BOTTOM", 0, -1)
         frame._br_pet_family_text:SetText(family)
@@ -2517,7 +2538,7 @@ local function UpdatePetLabels(frame, petAction)
 
     if petAction.petSpiritBeast then
         local anchor = (family and family ~= "") and frame._br_pet_family_text or frame._br_pet_name_text
-        frame._br_pet_extra_text:SetFont(fontPath, familySize, "OUTLINE")
+        frame._br_pet_extra_text:SetFont(fontPath, familySize, outlineFlag)
         frame._br_pet_extra_text:ClearAllPoints()
         frame._br_pet_extra_text:SetPoint("TOP", anchor, "BOTTOM", 0, -1)
         frame._br_pet_extra_text:SetText(L["Pet.SpiritBeast"])
@@ -3251,7 +3272,7 @@ local function UpdateVisuals()
         local size = catSettings.iconSize or 64
         local width = GetEffectiveWidth(catSettings.iconWidth, size)
         frame:SetSize(width, size)
-        frame.count:SetFont(fontPath, GetFrameFontSize(frame, 1), "OUTLINE")
+        frame.count:SetFont(fontPath, GetFrameFontSize(frame, 1), outlineFlag)
 
         -- Text position offset
         frame.count:ClearAllPoints()
@@ -3269,10 +3290,10 @@ local function UpdateVisuals()
         if frame.statLabel or frame.badgeLabel or frame.qualityIcon then
             local flSize = BR.SecureButtons.ComputeConsumableFontSize(size)
             if frame.statLabel then
-                frame.statLabel:SetFont(fontPath, flSize, "OUTLINE")
+                frame.statLabel:SetFont(fontPath, flSize, outlineFlag)
             end
             if frame.badgeLabel then
-                frame.badgeLabel:SetFont(fontPath, flSize, "OUTLINE")
+                frame.badgeLabel:SetFont(fontPath, flSize, outlineFlag)
             end
             if frame.qualityIcon then
                 local qOffset = -floor(size * 0.125)
@@ -3288,7 +3309,7 @@ local function UpdateVisuals()
             frame.buffText:SetFont(
                 fontPath,
                 (raidCs and raidCs.buffTextSize) or GetFrameFontSize(frame, 0.8),
-                "OUTLINE"
+                outlineFlag
             )
             frame.buffText:SetTextColor(tc[1], tc[2], tc[3], ta)
             frame.buffText:ClearAllPoints()
@@ -3346,6 +3367,7 @@ end
 -- Visual changes (icon size, zoom, border, text visibility, font)
 CallbackRegistry:RegisterCallback("VisualsRefresh", function()
     ResolveFontPath()
+    ResolveOutline()
     ResetLayoutSignatures()
     wipe(expiringGlowCache)
     wipe(missingGlowCache)
@@ -4572,6 +4594,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.SetInVehicle(UnitInVehicle("player") == true)
         BR.StateHelpers.ScanEatingState()
         ResolveFontPath()
+        ResolveOutline()
         if not mainFrame then
             InitializeFrames()
             -- Initialize action buttons for categories with clickable enabled

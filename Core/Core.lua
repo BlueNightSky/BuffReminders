@@ -279,6 +279,7 @@ local DefaultSettingKeys = {
     useFelDomination = "DisplayRefresh",
     -- Font (global-only, lives under defaults)
     fontFace = "VisualsRefresh",
+    textOutline = "VisualsRefresh",
     position = false, -- No auto-refresh, saved directly by movers
 }
 

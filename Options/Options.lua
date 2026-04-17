@@ -980,6 +980,27 @@ local function CreateOptionsPanel()
     })
     displayBehaviorLayout:Add(defFontHolder, nil, COMPONENT_GAP)
 
+    local defOutlineHolder = Components.Dropdown(displayBehaviorContent, {
+        label = L["Options.TextOutline"],
+        labelWidth = 50,
+        options = {
+            { label = L["Options.TextOutline.None"], value = "NONE" },
+            { label = L["Options.TextOutline.Outline"], value = "OUTLINE" },
+            { label = L["Options.TextOutline.Thick"], value = "THICKOUTLINE" },
+            { label = L["Options.TextOutline.Monochrome"], value = "MONOCHROME" },
+            { label = L["Options.TextOutline.OutlineMono"], value = "OUTLINE, MONOCHROME" },
+            { label = L["Options.TextOutline.ThickMono"], value = "THICKOUTLINE, MONOCHROME" },
+        },
+        width = 200,
+        get = function()
+            return (BR.profile.defaults and BR.profile.defaults.textOutline) or "OUTLINE"
+        end,
+        onChange = function(val)
+            BR.Config.Set("defaults.textOutline", val)
+        end,
+    })
+    displayBehaviorLayout:Add(defOutlineHolder, nil, COMPONENT_GAP)
+
     local defDirHolder = Components.DirectionButtons(displayBehaviorContent, {
         labelWidth = 50,
         get = function()

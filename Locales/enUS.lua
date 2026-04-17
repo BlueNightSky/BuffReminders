@@ -286,6 +286,13 @@ english["Options.GlobalDefaults"] = "Global Defaults"
 english["Options.GlobalDefaults.Note"] = "(All categories inherit these unless overridden with a custom appearance)"
 english["Options.Default"] = "Default"
 english["Options.Font"] = "Font"
+english["Options.TextOutline"] = "Outline Style"
+english["Options.TextOutline.None"] = "None"
+english["Options.TextOutline.Outline"] = "Outline"
+english["Options.TextOutline.Thick"] = "Thick Outline"
+english["Options.TextOutline.Monochrome"] = "Monochrome"
+english["Options.TextOutline.OutlineMono"] = "Outline + Monochrome"
+english["Options.TextOutline.ThickMono"] = "Thick + Monochrome"
 
 -- ============================================================================
 -- OPTIONS: GLOW SETTINGS
