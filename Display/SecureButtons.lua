@@ -284,6 +284,10 @@ local function CreateClickOverlay(frame)
     -- Tooltip: show last target name for targeted buffs, or item tooltip for consumables
     overlay:HookScript("OnEnter", function()
         if frame.buffDef and (frame.buffCategory == "targeted" or frame.buffDef.castOnOthers) then
+            -- Only the caster class has a meaningful last-target (e.g. Soulstone: warlocks only)
+            if frame.buffDef.class and frame.buffDef.class ~= playerClass then
+                return
+            end
             local name, class = BR.StateHelpers.GetLastTarget(frame.buffDef.key)
             if name then
                 ShowLastTargetTooltip(overlay, name, class)

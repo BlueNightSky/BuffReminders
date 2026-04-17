@@ -603,22 +603,33 @@ local function GetUnitSpellIDs(buffKey, spellIDs, class)
     return spellIDs
 end
 
----Scan player-cast buffs on a unit looking for a specific spellID.
+---Scan player-cast buffs on a unit looking for a spellID (or any of a list).
 ---Used as a fallback when GetUnitAuraBySpellID returns another player's instance
 ---(e.g., two Aug Evokers both casting Blistering Scales on the same tank).
 ---The "HELPFUL|PLAYER" filter narrows iteration to only the player's own buffs.
 ---@param unit string
----@param spellID number
+---@param spellIDs SpellID
 ---@return boolean found
 ---@return number? remainingTime
-local function UnitHasBuffFromPlayer(unit, spellID)
+local function UnitHasBuffFromPlayer(unit, spellIDs)
+    local singleId = type(spellIDs) == "number" and spellIDs or nil ---@type number?
     local i = 1
     local auraData = C_UnitAuras.GetAuraDataByIndex(unit, i, "HELPFUL|PLAYER")
     while auraData do
         -- spellId is a tainted secret value for non-whitelisted auras in restricted contexts
         -- (combat, encounters, M+). pcall avoids the error; tainted auras simply don't match.
         local ok, match = pcall(function()
-            return auraData.spellId == spellID
+            local sid = auraData.spellId
+            if singleId then
+                return sid == singleId
+            end
+            local idList = spellIDs --[[@as number[] ]]
+            for _, id in ipairs(idList) do
+                if sid == id then
+                    return true
+                end
+            end
+            return false
         end)
         if ok and match then
             local remaining
@@ -960,11 +971,16 @@ end
 ---Uses currentValidUnits cache built at start of refresh cycle
 ---@param spellIDs SpellID
 ---@param playerOnly? boolean Only check the player, not the group
+---@param playerCastOnly? boolean Count only auras cast by the player (e.g. castOnOthers for the caster class)
 ---@return boolean hasBuff
 ---@return number? minRemaining
----@return table? targetEntry First non-player unit entry that has the buff (for castOnOthers tracking)
-local function HasPresenceBuff(spellIDs, playerOnly)
+---@return table? targetEntry First non-player unit entry that has the buff
+local function HasPresenceBuff(spellIDs, playerOnly, playerCastOnly)
     if playerOnly or #currentValidUnits <= 1 then
+        if playerCastOnly then
+            local hasBuff, remaining = UnitHasBuffFromPlayer("player", spellIDs)
+            return hasBuff, remaining, nil
+        end
         local hasBuff, remaining = UnitHasBuff("player", spellIDs)
         return hasBuff, remaining, nil
     end
@@ -976,7 +992,12 @@ local function HasPresenceBuff(spellIDs, playerOnly)
     for _, data in ipairs(currentValidUnits) do
         -- Skip NPCs in content where they can't receive player buffs
         if data.isPlayer or includeNPCsInCounting then
-            local hasBuff, remaining = UnitHasBuff(data.unit, spellIDs)
+            local hasBuff, remaining, sourceUnit = UnitHasBuff(data.unit, spellIDs)
+            -- When restricted to player-cast auras, another player's cast may mask ours via
+            -- GetUnitAuraBySpellID. Fall back to a HELPFUL|PLAYER scan to find our own.
+            if playerCastOnly and hasBuff and not (sourceUnit and UnitIsUnit(sourceUnit, "player")) then
+                hasBuff, remaining = UnitHasBuffFromPlayer(data.unit, spellIDs)
+            end
             if hasBuff then
                 found = true
                 if not targetEntry and not UnitIsUnit(data.unit, "player") then
@@ -1830,7 +1851,11 @@ function BuffState.Refresh(refreshMode)
                             SetEntryText(entry, buff.overlayText, presMissGlow)
                         end
                     else
-                        local hasBuff, minRemaining, targetEntry = HasPresenceBuff(buff.spellID, scope.playerOnly)
+                        -- castOnOthers: only count our own cast for the caster class so we get
+                        -- the right target (and don't hide the icon because another caster covered it).
+                        local isOwnCaster = buff.castOnOthers and buff.class == playerClass
+                        local hasBuff, minRemaining, targetEntry =
+                            HasPresenceBuff(buff.spellID, scope.playerOnly, isOwnCaster)
                         -- customCheck gates display (e.g., soulstone CD tracking for warlocks)
                         local customOk = true
                         if not hasBuff and buff.customCheck then
@@ -1845,7 +1870,7 @@ function BuffState.Refresh(refreshMode)
                             TrySetEntryExpiring(entry, minRemaining, presThreshold, presExGlow)
                         end
                         -- Track who has castOnOthers buffs for sticky click-to-cast targeting
-                        if buff.castOnOthers and hasBuff and not inCombat then
+                        if isOwnCaster and hasBuff and not inCombat then
                             if targetEntry and targetEntry.name then
                                 local existing = lastTargets[buff.key]
                                 if existing then
