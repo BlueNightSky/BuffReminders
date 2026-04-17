@@ -905,10 +905,11 @@ end
 ---@param spellIDs SpellID
 ---@param buffKey? string Used for class benefit filtering
 ---@param playerOnly? boolean Only check the player, not the group
+---@param playersOnly? boolean Exclude NPCs from the count (e.g. buffs NPCs provide themselves)
 ---@return number missing
 ---@return number total
 ---@return number? minRemaining
-local function CountMissingBuff(spellIDs, buffKey, playerOnly)
+local function CountMissingBuff(spellIDs, buffKey, playerOnly, playersOnly)
     local missing = 0
     local total = 0
     local minRemaining = nil
@@ -930,13 +931,14 @@ local function CountMissingBuff(spellIDs, buffKey, playerOnly)
         return missing, total, minRemaining
     end
 
+    local countNPCs = includeNPCsInCounting and not inCombat and not playersOnly
     for _, data in ipairs(currentValidUnits) do
         -- Skip NPCs unless in whitelisted content. During combat, also skip NPCs here:
         -- NPC-cast raid buff spell IDs (e.g., 432661) aren't combat-whitelisted, so
         -- UnitHasBuff returns nil causing false missing counts. Targeted buffs (HasPresenceBuff,
         -- IsPlayerBuffActive) use player-cast spell IDs that ARE whitelisted, so they
         -- still include NPCs via the unchanged includeNPCsInCounting check.
-        if data.isPlayer or (includeNPCsInCounting and not inCombat) then
+        if data.isPlayer or countNPCs then
             if UnitBenefitsFromBuff(specBeneficiaries, beneficiaries, allySpecCache[data.name], data.class) then
                 total = total + 1
                 local hasBuff, remaining = UnitHasBuff(data.unit, GetUnitSpellIDs(buffKey, spellIDs, data.class))
@@ -1675,7 +1677,8 @@ function BuffState.Refresh(refreshMode)
             and raidVisible
             and scope.show
         then
-            local missing, total, minRemaining = CountMissingBuff(buff.spellID, buff.key, scope.playerOnly)
+            local missing, total, minRemaining =
+                CountMissingBuff(buff.spellID, buff.key, scope.playerOnly, buff.playersOnly)
 
             if missing > 0 then
                 entry.visible = true
