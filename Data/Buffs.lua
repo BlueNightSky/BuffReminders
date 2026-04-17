@@ -492,7 +492,6 @@ BR.BUFF_TABLES = {
             key = "blisteringScales",
             name = L["Buff.BlisteringScales"],
             class = "EVOKER",
-            beneficiaryRole = "TANK",
             overlayText = L["Overlay.NoScales"],
             requireSpecId = 1473, -- Augmentation
             requiresSpellID = 360827,
