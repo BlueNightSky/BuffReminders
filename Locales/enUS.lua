@@ -510,6 +510,18 @@ english["Options.RuneTwoHanded"] = "Two-Handed"
 english["Options.RuneDualWield"] = "Dual Wield"
 
 -- ============================================================================
+-- OPTIONS: ROGUE POISON PREFERENCES
+-- ============================================================================
+english["Options.RoguePoisonPreferences"] = "Rogue Poison Preferences"
+english["Options.RoguePoisonNote"] =
+    "Choose which poisons to apply and their priority order (top = highest). Disabled poisons are never cast and do not trigger reminders."
+english["Options.PoisonLethal"] = "Lethal"
+english["Options.PoisonNonLethal"] = "Non-Lethal"
+english["Options.PoisonMoveUp"] = "Move up in priority"
+english["Options.PoisonMoveDown"] = "Move down in priority"
+english["Options.PoisonReset"] = "Reset to Default"
+
+-- ============================================================================
 -- OPTIONS: BUFF SETTINGS GEAR ICONS
 -- ============================================================================
 english["Options.HealthstoneSettings"] = "Healthstone Settings"
