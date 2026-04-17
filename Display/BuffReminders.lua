@@ -380,6 +380,10 @@ local defaults = {
         [252] = { mainhand = { [6245] = true } }, -- Unholy: Apocalypse
     },
 
+    -- Rogue poison preferences: ordered list per category, array index = priority (1 = highest).
+    -- Shared with Data/Buffs.lua; DeepCopyDefault produces an independent per-profile copy.
+    roguePoisonPreferences = BR.DEFAULT_POISON_PREFERENCES,
+
     minimap = {
         hide = true,
     },
