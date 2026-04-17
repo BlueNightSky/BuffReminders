@@ -49,6 +49,7 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field name string
 ---@field class ClassName
 ---@field levelRequired? number
+---@field playersOnly? boolean Exclude NPCs from the count (e.g. buffs NPCs provide themselves)
 
 ---@class PresenceBuff
 ---@field spellID SpellID
@@ -367,6 +368,7 @@ BR.BUFF_TABLES = {
             name = L["Buff.BlessingOfTheBronze"],
             class = "EVOKER",
             levelRequired = 30,
+            playersOnly = true, -- NPCs have their own bronze variant (e.g. 432658)
         },
         {
             spellID = { 1126, 432661 },
