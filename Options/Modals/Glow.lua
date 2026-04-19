@@ -189,11 +189,7 @@ local function Show(targetCategory, glowKind)
     local function UnregisterDynamicHolders()
         for _, h in ipairs(dynamicHolders) do
             h:Hide()
-            for ri = #BR.RefreshableComponents, 1, -1 do
-                if BR.RefreshableComponents[ri] == h then
-                    table.remove(BR.RefreshableComponents, ri)
-                end
-            end
+            Components.Unregister(h)
         end
     end
 

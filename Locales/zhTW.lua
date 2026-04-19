@@ -497,7 +497,6 @@ L["Options.RuneOffHand"] = "副手"
 L["Options.RuneTwoHanded"] = "雙手"
 L["Options.RuneDualWield"] = "雙持"
 
-
 -- ============================================================================
 -- OPTIONS: ROGUE POISON PREFERENCES
 -- ============================================================================

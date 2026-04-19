@@ -209,18 +209,19 @@ local function Show()
         row.upBtn = upBtn
         row.downBtn = downBtn
         row.entry = entry
+        row.checkbox = holder
         return row
     end
 
     local function BuildRows()
-        -- Tear down any existing rows (re-open path after profile switch, etc.). This
-        -- leaves orphaned Checkbox holders in Components.RefreshableComponents, but
-        -- re-open is rare; Reset uses ResetToDefaults below to avoid this leak on the
-        -- common path.
+        -- Tear down any existing rows (re-open path after profile switch, etc.).
+        -- Unregister each row's Checkbox holder so stale entries don't accumulate
+        -- in the refresh registry across rebuilds.
         for _, category in ipairs({ "lethal", "nonLethal" }) do
             for _, row in ipairs(rows[category]) do
                 row:Hide()
                 row:SetParent(nil)
+                Components.Unregister(row.checkbox)
             end
             rows[category] = {}
         end
@@ -234,8 +235,8 @@ local function Show()
     end
 
     -- Reset: reorder prefs in place and re-enable all, then sync rows to match.
-    -- Does NOT rebuild row frames — that would orphan the old Checkbox holders in
-    -- Components.RefreshableComponents and leak a bit of memory per Reset click.
+    -- Does NOT rebuild row frames — avoids the rebuild cost since entry tables
+    -- survive tsort and row Checkbox holders can be reused.
     local function ResetToDefaults()
         local prefs = EnsureRoguePoisonPrefs()
         for _, category in ipairs({ "lethal", "nonLethal" }) do
