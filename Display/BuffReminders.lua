@@ -65,6 +65,7 @@ local addonName, BR = ...
 ---@field consumableRebuffColor? number[]
 ---@field consumableDisplayMode? "icon_only"|"sub_icons"|"expanded"
 ---@field consumableTextScale? number
+---@field hideLegacyConsumables? boolean
 ---@field petDisplayMode? "generic"|"expanded"
 ---@field petLabels? boolean
 ---@field petLabelScale? number
@@ -429,6 +430,7 @@ local defaults = {
         consumableDisplayMode = "sub_icons",
         consumableTextScale = 25,
         showConsumableTooltips = false,
+        hideLegacyConsumables = true,
         petDisplayMode = "generic", -- "generic" or "expanded"
         petLabels = true,
         petSpecIconOnHover = true,
@@ -4572,6 +4574,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         C_Timer.After(5, function()
             if isFirstInstall then
                 print("|cff00ccffBuffReminders:|r " .. L["Display.LoginFirstInstall"])
+            elseif BR.profile.showLoginMessages ~= false and not BR.aceDB.global.legacyConsumablesNoticeShown then
+                print("|cff00ccffBuffReminders:|r " .. L["Display.LoginLegacyConsumables"])
+                BR.aceDB.global.legacyConsumablesNoticeShown = true
             end
         end)
     elseif event == "PLAYER_ENTERING_WORLD" then
