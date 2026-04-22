@@ -218,12 +218,35 @@ end
 -- All SetFont calls read this local directly instead of calling LSM:Fetch() every time.
 local fontPath = STANDARD_TEXT_FONT
 
+-- LSM can register fonts whose file assets can't be loaded (e.g. another addon points to
+-- a missing TTF). We probe each path with a hidden FontString + pcall so we never hand a
+-- broken path to SetFont, which would hard-error and break the display / options panel.
+local fontProbe = UIParent:CreateFontString(nil, "BACKGROUND")
+fontProbe:Hide()
+local fontPathValidCache = {}
+
+---Check whether a font file path is loadable by the WoW client
+---@param path string? LSM-resolved font file path
+---@return boolean valid true if path is non-nil and SetFont succeeds
+local function IsFontPathValid(path)
+    if not path then
+        return false
+    end
+    local cached = fontPathValidCache[path]
+    if cached ~= nil then
+        return cached
+    end
+    local ok = pcall(fontProbe.SetFont, fontProbe, path, 12, "")
+    fontPathValidCache[path] = ok
+    return ok
+end
+
 ---Resolve the font path from saved settings and update the cache
 local function ResolveFontPath()
     local fontName = BR.profile and BR.profile.defaults and BR.profile.defaults.fontFace
     if fontName then
         local path = LSM:Fetch("font", fontName)
-        if path then
+        if IsFontPathValid(path) then
             fontPath = path
             return
         end
@@ -3452,6 +3475,7 @@ BR.Helpers = {
     ValidateSpellID = ValidateSpellID,
     ValidateItemID = ValidateItemID,
     GenerateCustomBuffKey = GenerateCustomBuffKey,
+    IsFontPathValid = IsFontPathValid,
     SetBuffSound = function(key, soundName)
         local db = BR.profile
         if soundName then
