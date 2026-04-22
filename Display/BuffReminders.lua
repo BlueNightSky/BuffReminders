@@ -4611,6 +4611,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidateSpecCache()
         BR.BuffState.InvalidateOffHandCache()
+        BR.BuffState.InvalidatePetCache()
         -- Sync flags with current state (in case of reload)
         inCombat = InCombatLockdown()
         isResting = IsResting()
@@ -4764,6 +4765,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         end
     elseif event == "UNIT_PET" then
         if arg1 == "player" then
+            BR.BuffState.InvalidatePetCache()
             SetDirty("full")
         end
     elseif event == "PET_BAR_UPDATE" then
@@ -4828,6 +4830,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Invalidate caches when player changes spec
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidateOffHandCache()
+        BR.BuffState.InvalidatePetCache()
 
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.InvalidateConsumableCache()
@@ -4843,12 +4846,14 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
     elseif event == "TRAIT_CONFIG_UPDATED" then
         -- Invalidate spell cache when talents change (within same spec)
         BR.BuffState.InvalidateSpellCache()
+        BR.BuffState.InvalidatePetCache()
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.RefreshOverlaySpells()
         SetDirty()
     elseif event == "SPELLS_CHANGED" then
         -- Catch delayed spell availability after spec/talent changes (noisy event, keep cheap)
         BR.BuffState.InvalidateSpellCache()
+        BR.BuffState.InvalidatePetCache()
         BR.PetHelpers.InvalidatePetActions()
     elseif event == "PLAYER_EQUIPMENT_CHANGED" then
         BR.BuffState.InvalidateItemCache()
