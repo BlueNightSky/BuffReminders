@@ -61,6 +61,8 @@ read_globals = {
     "GetLocale",
     "GetSpecializationInfoForClassID",
     "GetSpecializationRole",
+    "GetShapeshiftForm",
+    "GetShapeshiftFormInfo",
     "GetTime",
     "GetWeaponEnchantInfo",
     "InCombatLockdown",
