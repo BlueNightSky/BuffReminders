@@ -229,6 +229,11 @@ local function Build(ctx)
                 desc = L["Options.BuffTracking.OnlyMine.Desc"],
             },
             {
+                value = "self_only",
+                label = L["Options.BuffTracking.SelfOnly"],
+                desc = L["Options.BuffTracking.SelfOnly.Desc"],
+            },
+            {
                 value = "smart",
                 label = L["Options.BuffTracking.Smart"],
                 desc = L["Options.BuffTracking.Smart.Desc"],

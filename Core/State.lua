@@ -905,6 +905,13 @@ local SCOPE_HIDDEN = { show = false, playerOnly = false }
 local SCOPE_PLAYER_ONLY = { show = true, playerOnly = true }
 local SCOPE_GROUP = { show = true, playerOnly = false }
 
+---Modes that hide buffs from classes other than the player's.
+---@param trackingMode string
+---@return boolean
+local function ModeHidesOtherClasses(trackingMode)
+    return trackingMode == "my_buffs" or trackingMode == "self_only"
+end
+
 ---Determine visibility and scan scope for a buff based on tracking mode.
 ---Raid buffs go on everyone, so "scan group" means showing coverage numbers.
 ---Presence buffs live on the caster, so "scan group" means finding if anyone has the aura.
@@ -918,11 +925,17 @@ local function GetTrackingScope(trackingMode, buffClass, category, hasCaster, ca
     if not hasCaster then
         return SCOPE_HIDDEN
     end
-    if trackingMode == "my_buffs" and buffClass ~= playerClass then
+    if ModeHidesOtherClasses(trackingMode) and buffClass ~= playerClass then
         return SCOPE_HIDDEN
     end
 
-    if trackingMode == "personal" then
+    if trackingMode == "self_only" then
+        -- Only my class's buffs on me. castOnOthers (e.g., Soulstone) lives on the target, not me.
+        if category == "presence" and castOnOthers then
+            return SCOPE_HIDDEN
+        end
+        return SCOPE_PLAYER_ONLY
+    elseif trackingMode == "personal" then
         -- Presence buffs from other classes exist only on the caster, not on you.
         -- castOnOthers buffs (Soulstone) are someone else's responsibility in personal mode.
         if category == "presence" and (buffClass ~= playerClass or castOnOthers) then
@@ -1544,7 +1557,7 @@ local function PassesPreChecks(buff, presentClasses, db)
     -- Class filtering
     if buff.class then
         local trackingMode = db.buffTrackingMode
-        if trackingMode == "my_buffs" and buff.class ~= playerClass then
+        if ModeHidesOtherClasses(trackingMode) and buff.class ~= playerClass then
             return false
         end
         if presentClasses and not presentClasses[buff.class] then
@@ -1946,7 +1959,8 @@ function BuffState.Refresh(refreshMode)
     end
 
     -- Process targeted buffs (player's own buff responsibility)
-    local targetedVisible = IsCategoryVisibleForContent("targeted")
+    -- self_only mode tracks only buffs on the player; targeted buffs live on other units.
+    local targetedVisible = IsCategoryVisibleForContent("targeted") and trackingMode ~= "self_only"
     local targExGlow, targMissGlow, targThreshold = GetCategoryGlowSettings("targeted")
     for i, buff in ipairs(TargetedBuffs) do
         local entry = GetOrCreateEntry(buff.key, "targeted", i)
