@@ -3597,6 +3597,8 @@ eventFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
 eventFrame:RegisterEvent("SPELLS_CHANGED")
 eventFrame:RegisterEvent("UNIT_PET")
 eventFrame:RegisterEvent("PET_BAR_UPDATE")
+eventFrame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
+eventFrame:RegisterEvent("UPDATE_SHAPESHIFT_FORMS")
 eventFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 eventFrame:RegisterEvent("PET_STABLE_UPDATE")
 eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
@@ -3712,7 +3714,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations — each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 39
+        local DB_VERSION = 40
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 → v3.x)
@@ -4477,6 +4479,18 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     end
                 end
             end,
+
+            -- [40] Disable druidWrongForm by default (off-by-default new buff;
+            -- nested defaults don't reliably merge once a profile has its own
+            -- enabledBuffs table, so write the value directly).
+            [40] = function()
+                if not db.enabledBuffs then
+                    db.enabledBuffs = {}
+                end
+                if db.enabledBuffs.druidWrongForm == nil then
+                    db.enabledBuffs.druidWrongForm = false
+                end
+            end,
         }
 
         -- Run pending migrations
@@ -4612,6 +4626,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateSpecCache()
         BR.BuffState.InvalidateOffHandCache()
         BR.BuffState.InvalidatePetCache()
+        BR.BuffState.InvalidateStanceCache()
         -- Sync flags with current state (in case of reload)
         inCombat = InCombatLockdown()
         isResting = IsResting()
@@ -4770,6 +4785,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         end
     elseif event == "PET_BAR_UPDATE" then
         SetDirty()
+    elseif event == "UPDATE_SHAPESHIFT_FORM" or event == "UPDATE_SHAPESHIFT_FORMS" then
+        BR.BuffState.InvalidateStanceCache()
+        SetDirty()
     elseif event == "PET_STABLE_UPDATE" then
         BR.PetHelpers.InvalidatePetActions()
         SetDirty()
@@ -4831,6 +4849,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidateOffHandCache()
         BR.BuffState.InvalidatePetCache()
+        BR.BuffState.InvalidateStanceCache()
 
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.InvalidateConsumableCache()
@@ -4847,6 +4866,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Invalidate spell cache when talents change (within same spec)
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidatePetCache()
+        BR.BuffState.InvalidateStanceCache()
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.RefreshOverlaySpells()
         SetDirty()
@@ -4854,6 +4874,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Catch delayed spell availability after spec/talent changes (noisy event, keep cheap)
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidatePetCache()
+        BR.BuffState.InvalidateStanceCache()
         BR.PetHelpers.InvalidatePetActions()
     elseif event == "PLAYER_EQUIPMENT_CHANGED" then
         BR.BuffState.InvalidateItemCache()
