@@ -22,6 +22,11 @@ local GlowType = BR.Glow.Type
 -- Default glow color (yellow, matches LibCustomGlow default)
 BR.Glow.DEFAULT_COLOR = { 0.95, 0.95, 0.32, 1 }
 
+-- Forward-declared so the OnSizeChanged retry below (defined before SetExpiration)
+-- can sync the high-level expiration-glow state once a deferred dispatch finally fires.
+local EXPIRATION_KEY = "BR_expiration"
+local GLOW_STATE_KEY = "_brGlowState"
+
 -- All LCG and pulsing-border state lives on a dedicated child frame whose parent
 -- never changes. LCG's FramePoolResetter clears parent[frame.name] via GetParent()
 -- on release; giving it a stable parent avoids the "doesn't belong to this pool"
@@ -198,6 +203,47 @@ local GLOW_STOP = {
     LCG.ProcGlow_Stop,
 }
 
+-- Deferred-dispatch retry: when Glow.Start is called before the host's rect has
+-- resolved (frame shown but not yet anchored by PositionMainContainer), LCG would
+-- size all glow textures to 0×0. We stash the requested args on the host and let
+-- WoW's OnSizeChanged event fire the dispatch the moment the layout pass settles —
+-- without waiting on the addon's throttled UpdateDisplay tick. Mirrors the
+-- WeakAuras Glow sub-region pattern (UpdateSize → SetVisible(true)).
+local function FlushPending(host)
+    if host:GetWidth() < 1 or host:GetHeight() < 1 then
+        return
+    end
+    local pending = host._brGlowPending
+    if not pending then
+        return
+    end
+    for key, req in pairs(pending) do
+        local fn = GLOW_START[req.typeIndex]
+        if fn then
+            fn(host, req.color, key, req.size, req.xOff, req.yOff, req.params)
+            -- Sync caller state for the high-level expiration glow; SetExpiration
+            -- gates on state.started so without this flip it would re-dispatch
+            -- on the next render (harmless but wasteful).
+            if key == EXPIRATION_KEY then
+                local owner = host:GetParent()
+                local state = owner and owner[GLOW_STATE_KEY]
+                if state then
+                    state.started = true
+                end
+            end
+        end
+        pending[key] = nil
+    end
+end
+
+local function EnsureSizeRetry(host)
+    if host._brSizeRetryHooked then
+        return
+    end
+    host._brSizeRetryHooked = true
+    host:HookScript("OnSizeChanged", FlushPending)
+end
+
 ---Start a glow by type index
 ---@param frame table
 ---@param typeIndex number BR.Glow.Type value (Pixel, AutoCast, Border, Proc)
@@ -207,7 +253,7 @@ local GLOW_STOP = {
 ---@param xOffset? number Extra horizontal outward offset (default 0)
 ---@param yOffset? number Extra vertical outward offset (default 0)
 ---@param params? table Advanced glow params (type-specific: lines, frequency, length, particles, scale, duration, startAnim)
----@return boolean started true if the glow was dispatched, false if unknown type or host not sized
+---@return boolean started true if the glow was dispatched, false if unknown type or host not sized (deferred)
 function BR.Glow.Start(frame, typeIndex, color, key, size, xOffset, yOffset, params)
     size = size or 2
     xOffset = xOffset or 0
@@ -222,7 +268,25 @@ function BR.Glow.Start(frame, typeIndex, color, key, size, xOffset, yOffset, par
         host:GetWidth()
     end
     if host:GetWidth() < 1 or host:GetHeight() < 1 then
+        -- Defer: stash the request and let OnSizeChanged dispatch when the rect resolves.
+        local pending = host._brGlowPending
+        if not pending then
+            pending = {}
+            host._brGlowPending = pending
+        end
+        pending[key] = {
+            typeIndex = typeIndex,
+            color = color,
+            size = size,
+            xOff = xOffset,
+            yOff = yOffset,
+            params = params,
+        }
+        EnsureSizeRetry(host)
         return false
+    end
+    if host._brGlowPending then
+        host._brGlowPending[key] = nil
     end
     fn(host, color, key, size, xOffset, yOffset, params)
     return true
@@ -236,6 +300,9 @@ function BR.Glow.Stop(frame, typeIndex, key)
     local host = frame._brGlowHost
     if not host then
         return
+    end
+    if host._brGlowPending then
+        host._brGlowPending[key] = nil
     end
     local fn = GLOW_STOP[typeIndex]
     if fn then
@@ -255,11 +322,8 @@ end
 -- ============================================================================
 -- HIGH-LEVEL GLOW FUNCTIONS
 -- ============================================================================
-
-local EXPIRATION_KEY = "BR_expiration"
-
--- Per-frame glow state key (avoids polluting frame namespace with multiple keys)
-local GLOW_STATE_KEY = "_brGlowState"
+-- EXPIRATION_KEY and GLOW_STATE_KEY are declared near the top of this file so
+-- the deferred-dispatch retry above can sync state.started cross-cuttingly.
 
 ---Compare two color tables {r, g, b, a} for equality
 ---@param a number[]|nil
@@ -378,10 +442,13 @@ function BR.Glow.SetExpiration(frame, show, category, cachedSettings)
         local xOff = borderOffset + glowXOff
         local yOff = borderOffset + glowYOff
 
-        -- Already glowing with the same type, size, color, and offsets — don't restart (preserves animation state)
+        -- Already glowing with the same type, size, color, and offsets — don't restart (preserves animation state).
+        -- state.started gates the short-circuit: a deferred-but-not-yet-dispatched
+        -- request keeps started=false so the host's OnSizeChanged retry owns the dispatch.
         if
             state
             and state.showing
+            and state.started
             and state.typeIndex == typeIndex
             and state.size == size
             and state.xOff == xOff
@@ -392,30 +459,29 @@ function BR.Glow.SetExpiration(frame, show, category, cachedSettings)
             return
         end
 
-        -- Stop previous glow if any parameter changed
+        -- Stop previous glow (or pending request) if any parameter changed
         if state and state.showing then
             BR.Glow.Stop(frame, state.typeIndex, EXPIRATION_KEY)
-            state.showing = false
         end
 
-        -- Only commit state if Start actually dispatched; an unsized host returns
-        -- false and we leave state.showing=false so the next render retries rather
-        -- than short-circuiting on the "already glowing" gate above.
-        if BR.Glow.Start(frame, typeIndex, color, EXPIRATION_KEY, size, xOff, yOff, params) then
-            frame[GLOW_STATE_KEY] = {
-                showing = true,
-                typeIndex = typeIndex,
-                size = size,
-                color = color,
-                xOff = xOff,
-                yOff = yOff,
-                params = params,
-            }
-        end
+        -- Always commit intent. started=false means dispatch was deferred to OnSizeChanged;
+        -- the retry hook flips state.started to true once the host's rect resolves.
+        local started = BR.Glow.Start(frame, typeIndex, color, EXPIRATION_KEY, size, xOff, yOff, params)
+        frame[GLOW_STATE_KEY] = {
+            showing = true,
+            started = started,
+            typeIndex = typeIndex,
+            size = size,
+            color = color,
+            xOff = xOff,
+            yOff = yOff,
+            params = params,
+        }
     else
         if state and state.showing then
             BR.Glow.Stop(frame, state.typeIndex, EXPIRATION_KEY)
             state.showing = false
+            state.started = false
         end
     end
 end
