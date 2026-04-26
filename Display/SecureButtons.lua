@@ -33,6 +33,15 @@ local function GetChatRequestPrefix()
     return "/say "
 end
 
+--- Resolve the chat-request message for a buff key from the current profile.
+--- Used by SetupChatRequestOverlay (initial setup) and RefreshChatRequestMacros
+--- (refresh on profile switch / group transition) so both paths produce the same
+--- text without duplicating the lookup chain.
+local function ResolveChatRequestMsg(frame)
+    local customMsg = (BR.profile.chatRequestMessages or {})[frame.key]
+    return (customMsg and customMsg ~= "") and customMsg or L["ChatRequest." .. frame.key] or frame.displayName
+end
+
 -- Debug print for chat-request click pipeline. Toggled via /br debug.
 -- Fires only on user-driven events (clicks, setup, cooldown timer, chat echo) —
 -- never on hot loops. Output is plain English (developer-facing diagnostic).
@@ -405,17 +414,16 @@ local function CreateClickOverlay(frame)
             self:Hide()
         end
     end)
-    -- Re-evaluate dynamic macros before each click, refresh display after
+    -- Re-evaluate dynamic macros before each click, refresh display after.
+    -- IMPORTANT: do NOT SetAttribute("macrotext") here for chat-request overlays.
+    -- WoW's secure dispatcher can read the attribute snapshot before PreClick's
+    -- write propagates, leading to stale prefix being sent (e.g. "/say" instead
+    -- of "/party" right after joining a group). Macrotext is kept current via
+    -- SetupChatRequestOverlay + RefreshChatRequestMacros (GROUP_ROSTER_UPDATE).
     overlay:SetScript("PreClick", function(self, button, down)
         DebugLog("PreClick", self, format("button=%s down=%s", tostring(button), tostring(down)))
         if self._br_chatRequestKey and not requestOnCooldown[self._br_chatRequestKey] then
-            -- Rebuild macro each click to pick up current group type (party→raid).
-            -- Safe outside combat (overlay hidden via state driver in combat).
-            local prefix = GetChatRequestPrefix()
-            local msg = self._br_chatRequestMsg
-            self:SetAttribute("macrotext", prefix .. msg)
-            DebugLog("PreClick→setMacro", self)
-            NoteChatAttempt(self._br_chatRequestKey, msg, prefix)
+            NoteChatAttempt(self._br_chatRequestKey, self._br_chatRequestMsg, GetChatRequestPrefix())
         elseif self._br_clickMacroFn then
             self:SetAttribute("macrotext", self._br_clickMacroFn(self._br_clickMacroSpellID))
         end
@@ -429,16 +437,17 @@ local function CreateClickOverlay(frame)
                 -- Blank the macro to prevent spamming; restore after cooldown.
                 -- SetAttribute is safe here: overlays are hidden during combat via
                 -- state driver, so PostClick only fires outside combat lockdown.
-                local msg = self._br_chatRequestMsg
                 self:SetAttribute("macrotext", "")
                 DebugLog("PostClick→cooldownSet", self, "scheduled restore in " .. REQUEST_COOLDOWN .. "s")
                 C_Timer.After(REQUEST_COOLDOWN, function()
                     requestOnCooldown[key] = nil
                     -- Restore macro if overlay is still a chat-request button.
+                    -- Read msg fresh from the overlay so a custom-message edit
+                    -- during the cooldown window picks up the latest text.
                     -- If in combat lockdown, skip — SetupChatRequestOverlay will
                     -- re-set the macro when SyncSecureButtons runs after combat.
-                    if self._br_chatRequestKey and not InCombatLockdown() then
-                        self:SetAttribute("macrotext", GetChatRequestPrefix() .. msg)
+                    if self._br_chatRequestKey and self._br_chatRequestMsg and not InCombatLockdown() then
+                        self:SetAttribute("macrotext", GetChatRequestPrefix() .. self._br_chatRequestMsg)
                         DebugLog("CooldownTimer→restored", self)
                     else
                         DebugLog(
@@ -1235,10 +1244,7 @@ local function SetupChatRequestOverlay(frame, showHighlight)
     overlay._br_clickMacroSpellID = nil
     overlay.itemID = nil
     overlay._br_chatRequestKey = frame.key
-    local customMsg = (BR.profile.chatRequestMessages or {})[frame.key]
-    overlay._br_chatRequestMsg = (customMsg and customMsg ~= "") and customMsg
-        or L["ChatRequest." .. frame.key]
-        or frame.displayName
+    overlay._br_chatRequestMsg = ResolveChatRequestMsg(frame)
     overlay._br_parent_frame = frame
     overlay._br_setup_at = GetTime()
     requestOnCooldown[frame.key] = nil -- Clear stale cooldown from prior setup
@@ -1612,6 +1618,36 @@ local function UpdateActionButtons(category)
     ScheduleSecureSync()
 end
 
+-- Refresh chat-request overlays to pick up group-type changes (party↔raid,
+-- instance group transitions) and per-profile message changes. Called on
+-- GROUP_ROSTER_UPDATE / GROUP_FORMED / PLAYER_ENTERING_WORLD / profile switch
+-- so the macrotext is always current at click time — replacing the old pattern
+-- of rebuilding inside PreClick, which was subject to secure-dispatcher
+-- hardware-event timing.
+local function RefreshChatRequestMacros()
+    -- Frames may not exist yet if a roster event fires before the first
+    -- PLAYER_ENTERING_WORLD initializes them.
+    if InCombatLockdown() or not BR.Display or not BR.Display.frames then
+        return
+    end
+    local prefix = GetChatRequestPrefix()
+    for _, frame in pairs(BR.Display.frames) do
+        local overlay = frame.clickOverlay
+        if overlay and overlay._br_chatRequestKey then
+            -- Re-resolve message from the current profile (profile switch may
+            -- have changed chatRequestMessages[key] since setup).
+            local msg = ResolveChatRequestMsg(frame)
+            overlay._br_chatRequestMsg = msg
+            -- Skip overlays whose macrotext is currently blanked for cooldown —
+            -- the cooldown timer will restore with the latest prefix/msg when it fires.
+            -- Guard against nil msg (frame.displayName fallback may be missing).
+            if msg and not requestOnCooldown[overlay._br_chatRequestKey] then
+                overlay:SetAttribute("macrotext", prefix .. msg)
+            end
+        end
+    end
+end
+
 -- Refresh overlay spell attributes for all frames (e.g., after spec change).
 -- Re-checks talent/spec pre-filters and IsPlayerSpell, updates EnableMouse + spell attribute.
 -- Also refreshes consumable action buttons.
@@ -1638,6 +1674,7 @@ end
 BR.SecureButtons = {
     UpdateActionButtons = UpdateActionButtons,
     RefreshOverlaySpells = RefreshOverlaySpells,
+    RefreshChatRequestMacros = RefreshChatRequestMacros,
     GetConsumableActionItems = GetConsumableActionItems,
     UpdateConsumableButtons = UpdateConsumableButtons,
     InvalidateConsumableCache = InvalidateConsumableCache,
