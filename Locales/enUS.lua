@@ -478,6 +478,10 @@ english["Options.ConsumableTextScale"] = "Text scale"
 english["Options.ConsumableTextScale.Title"] = "Consumable text scale"
 english["Options.ConsumableTextScale.Desc"] =
     "Font size for item counts and quality (R1/R2/R3) labels as a percentage of icon size."
+english["Options.HideConsumableLabels"] = "Hide stat labels"
+english["Options.HideConsumableLabels.Title"] = "Hide consumable stat labels"
+english["Options.HideConsumableLabels.Desc"] =
+    'Hide the small stat labels (e.g. "Hi 1st", "Lo 2nd") shown on the top-left of consumable icons.'
 english["Options.ItemDisplay"] = "Item display"
 english["Options.ItemDisplay.IconOnly"] = "Icon only"
 english["Options.ItemDisplay.IconOnlyDesc"] = "Shows the item with the highest count"
