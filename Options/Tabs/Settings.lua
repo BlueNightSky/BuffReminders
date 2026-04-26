@@ -261,7 +261,7 @@ local function Build(ctx)
             desc = L["Options.BuffTracking.SelfOnlyOutsideInstances.Desc"],
         },
         get = function()
-            return BR.profile.selfOnlyOutsideInstances == true
+            return BR.Config.Get("selfOnlyOutsideInstances", true)
         end,
         enabled = function()
             return BR.Config.Get("buffTrackingMode", "all") ~= "self_only"

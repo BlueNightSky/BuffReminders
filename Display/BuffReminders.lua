@@ -4498,7 +4498,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
 
             -- [40] Disable druidWrongForm by default (off-by-default new buff;
             -- nested defaults don't reliably merge once a profile has its own
-            -- enabledBuffs table, so write the value directly).
+            -- enabledBuffs table, so write the value directly). Also drops the
+            -- now-unused legacyConsumablesNoticeShown global flag (replaced by
+            -- selfOnlyOutsideNoticeShown).
             [40] = function()
                 if not db.enabledBuffs then
                     db.enabledBuffs = {}
@@ -4506,6 +4508,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 if db.enabledBuffs.druidWrongForm == nil then
                     db.enabledBuffs.druidWrongForm = false
                     db.enabledBuffs.warriorWrongStance = false
+                end
+                if BR.aceDB and BR.aceDB.global then
+                    BR.aceDB.global.legacyConsumablesNoticeShown = nil
                 end
             end,
         }
@@ -4629,11 +4634,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         C_Timer.After(5, function()
             if isFirstInstall then
                 print("|cff00ccffBuffReminders:|r " .. L["Display.LoginFirstInstall"])
-            elseif BR.profile.showLoginMessages ~= false and not BR.aceDB.global.legacyConsumablesNoticeShown then
-                print("|cff00ccffBuffReminders:|r " .. L["Display.LoginLegacyConsumables"])
-                BR.aceDB.global.legacyConsumablesNoticeShown = true
-            elseif BR.profile.showLoginMessages ~= false then
+            elseif BR.profile.showLoginMessages ~= false and not BR.aceDB.global.selfOnlyOutsideNoticeShown then
                 print("|cff00ccffBuffReminders:|r " .. L["Display.LoginSelfOnlyOutside"])
+                BR.aceDB.global.selfOnlyOutsideNoticeShown = true
             end
         end)
     elseif event == "PLAYER_ENTERING_WORLD" then

@@ -260,8 +260,6 @@ english["Display.DismissConsumables"] = "Hide consumable reminders until next lo
 english["Display.DismissConsumablesChat"] = "Consumable reminders hidden until next loading screen."
 english["Display.LoginFirstInstall"] =
     "Thanks for installing! Type |cFFFFD100/br unlock|r to move the buff display, or use the button at the bottom of the |cFFFFD100/br|r options panel."
-english["Display.LoginLegacyConsumables"] =
-    "Consumables from previous expansions are now hidden by default. Toggle |cFFFFD100Hide legacy consumables|r in the consumable category options if you still use older flasks or runes."
 english["Display.LoginSelfOnlyOutside"] =
     "New default: in the open world, only your own class buffs on yourself are tracked. Toggle |cFFFFD100Force self-only outside dungeons and raids|r in the Settings tab to change this."
 
