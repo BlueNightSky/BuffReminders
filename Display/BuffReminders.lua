@@ -3594,6 +3594,7 @@ eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+eventFrame:RegisterEvent("GROUP_FORMED")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 eventFrame:RegisterEvent("ENCOUNTER_START")
@@ -4677,6 +4678,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
             C_Timer.After(2, InvalidateTextureCache)
         end
         BR.SecureButtons.InvalidateConsumableCache()
+        -- Instance entry can flip IsInGroup(2) without firing GROUP_ROSTER_UPDATE
+        -- (e.g. solo dungeon entry); refresh chat-request prefix here too.
+        BR.SecureButtons.RefreshChatRequestMacros()
         SeedGlowingSpells() -- Catch glows that were active before event registration
         if not inCombat then
             StartUpdates()
@@ -4749,8 +4753,13 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                 ClearDelveEntryState()
             end
         end)
-    elseif event == "GROUP_ROSTER_UPDATE" then
+    elseif event == "GROUP_ROSTER_UPDATE" or event == "GROUP_FORMED" then
         SetDirty("group")
+        -- Refresh chat-request macrotext so prefix tracks party↔raid↔instance
+        -- transitions. PreClick used to rebuild the macro on each click, but the
+        -- secure dispatcher could read a stale value before PreClick's write
+        -- propagated, sending to the wrong channel.
+        BR.SecureButtons.RefreshChatRequestMacros()
     elseif event == "PLAYER_REGEN_ENABLED" then
         inCombat = inEncounter
         BR.BuffState.SetInCombat(inCombat)
