@@ -4649,7 +4649,8 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.SetMaxExpansionLevel(GetMaxLevelForPlayerExpansion())
         BR.BuffState.SetInCombat(inCombat)
         -- Detect PvP prep phase: in a PvP instance but match not yet started.
-        -- Default is false (restricted), so reloads during active matches stay safe.
+        -- Used by the `hideInPvPMatch` visibility setting to gate buff display once
+        -- the match starts. Aura API is restricted for the whole BG/arena regardless.
         local _, instType = IsInInstance()
         local inPvPZone = instType == "pvp" or instType == "arena"
         local matchState = C_PvP.GetActiveMatchState()

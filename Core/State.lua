@@ -156,8 +156,10 @@ local inCombat = false
 local cachedContentType = nil
 local cachedInstanceType = nil -- raw WoW instanceType, stashed alongside content type
 
--- Whether we are in the PvP prep phase (before gates open). Aura API is unrestricted during prep.
--- Defaults to false (restricted) so reloads during active matches stay safe.
+-- Whether we are in the PvP prep phase (before gates open). Used by the
+-- `hideInPvPMatch` visibility setting to gate buff display once the match starts.
+-- Note: aura API is restricted for the entire BG/arena (prep included), so this
+-- does NOT affect IsRestricted() — see that function for details.
 local inPvPPrepPhase = false
 
 -- Difficulty cache (invalidated alongside content type)
@@ -1747,7 +1749,7 @@ function BuffState.Refresh(refreshMode)
     local trackingMode = db.buffTrackingMode
     local missingCountOnly = db.showMissingCountOnly
     -- Aura API is restricted in combat/encounters (inCombat set by Display layer),
-    -- during M+ keystones, and in PvP instances (except during prep phase before gates open).
+    -- during M+ keystones, and in any PvP instance (battlegrounds and arenas, including prep).
     local isAuraRestricted = BuffState.IsRestricted()
     local hideExpiring = isAuraRestricted and db.hideExpiringInCombat ~= false
 
@@ -2376,12 +2378,12 @@ function BuffState.SetPvPPrepPhase(state)
     inPvPPrepPhase = state
 end
 
----Whether the player is in a restricted context (combat, M+ keystone, or PvP match).
+---Whether the player is in a restricted context (combat, M+ keystone, or any PvP instance).
+---PvP instances are treated as restricted for their entire duration (prep included), since
+---Blizzard now gates the aura API the whole time the player is inside the BG/arena.
 ---@return boolean
 function BuffState.IsRestricted()
-    return inCombat
-        or GetCurrentDifficultyKey() == "mythicPlus"
-        or (GetCurrentContentType() == "pvp" and not inPvPPrepPhase)
+    return inCombat or GetCurrentDifficultyKey() == "mythicPlus" or GetCurrentContentType() == "pvp"
 end
 
 -- ============================================================================
