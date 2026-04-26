@@ -674,6 +674,21 @@ local function RenderCategorySection(
 
     -- Item display mode (consumable only)
     if category == "consumable" then
+        local hideConsumableLabelsHolder = Components.Checkbox(catContent, {
+            label = L["Options.HideConsumableLabels"],
+            get = function()
+                return BR.Config.Get("defaults.hideConsumableLabels", false)
+            end,
+            tooltip = {
+                title = L["Options.HideConsumableLabels.Title"],
+                desc = L["Options.HideConsumableLabels.Desc"],
+            },
+            onChange = function(checked)
+                BR.Config.Set("defaults.hideConsumableLabels", checked)
+            end,
+        })
+        catLayout:Add(hideConsumableLabelsHolder, nil, COMPONENT_GAP)
+
         local consumableTextScaleHolder = Components.Slider(catContent, {
             label = L["Options.ConsumableTextScale"],
             min = 5,

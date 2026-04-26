@@ -65,6 +65,7 @@ local addonName, BR = ...
 ---@field consumableRebuffColor? number[]
 ---@field consumableDisplayMode? "icon_only"|"sub_icons"|"expanded"
 ---@field consumableTextScale? number
+---@field hideConsumableLabels? boolean
 ---@field hideLegacyConsumables? boolean
 ---@field petDisplayMode? "generic"|"expanded"
 ---@field petLabels? boolean
@@ -452,6 +453,7 @@ local defaults = {
         soulstoneVisibility = "readyCheck",
         consumableDisplayMode = "sub_icons",
         consumableTextScale = 25,
+        hideConsumableLabels = false,
         showConsumableTooltips = false,
         hideLegacyConsumables = true,
         petDisplayMode = "generic", -- "generic" or "expanded"
@@ -2117,7 +2119,8 @@ local function ApplyConsumableOverlays(frame, item, fontSize)
     if not fontSize then
         fontSize = BR.SecureButtons.ComputeConsumableFontSize(frame:GetWidth())
     end
-    if item.statLabel then
+    local hideLabels = (BR.profile.defaults or {}).hideConsumableLabels
+    if item.statLabel and not hideLabels then
         if not frame.statLabel then
             frame.statLabel = frame:CreateFontString(nil, "OVERLAY")
             frame.statLabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -2)

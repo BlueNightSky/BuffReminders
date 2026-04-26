@@ -270,6 +270,7 @@ local DefaultSettingKeys = {
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
     consumableTextScale = "VisualsRefresh",
+    hideConsumableLabels = "VisualsRefresh",
     showConsumableTooltips = false, -- No refresh needed, read at tooltip time
     hideLegacyConsumables = "DisplayRefresh",
     -- Pet display mode
