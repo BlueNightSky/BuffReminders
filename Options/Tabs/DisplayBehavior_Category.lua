@@ -230,8 +230,10 @@ local function RenderCategorySection(
             color = "orange",
             icon = "services-icon-warning",
         })
-        catLayout:Add(banner, nil, SECTION_GAP)
+        -- Set RIGHT before Add so the banner has a determinate width; Add
+        -- then sets TOPLEFT and synchronously calls banner:FitHeight().
         banner:SetPoint("RIGHT", catContent, "RIGHT", 0, 0)
+        catLayout:Add(banner, nil, SECTION_GAP)
     end
 
     -- Icons sub-header (all categories except custom)
