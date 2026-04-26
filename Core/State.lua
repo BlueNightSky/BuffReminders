@@ -915,14 +915,15 @@ local function ModeHidesOtherClasses(trackingMode)
 end
 
 ---Resolve the active tracking mode, applying the "self-only outside instances"
----override that forces self_only in open world / PvP / scenarios.
+---override that forces self_only in open world. Instanced content (raid,
+---dungeon, scenario, PvP) keeps the user-selected mode.
 ---@param db table
 ---@return string
 local function GetEffectiveTrackingMode(db)
     local mode = db.buffTrackingMode
     if mode ~= "self_only" and db.selfOnlyOutsideInstances then
         local ct = GetCurrentContentType()
-        if ct ~= "raid" and ct ~= "dungeon" then
+        if ct ~= "raid" and ct ~= "dungeon" and ct ~= "pvp" and ct ~= "scenario" then
             return "self_only"
         end
     end

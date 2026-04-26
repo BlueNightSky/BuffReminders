@@ -263,7 +263,7 @@ english["Display.LoginFirstInstall"] =
 english["Display.LoginLegacyConsumables"] =
     "Consumables from previous expansions are now hidden by default. Toggle |cFFFFD100Hide legacy consumables|r in the consumable category options if you still use older flasks or runes."
 english["Display.LoginSelfOnlyOutside"] =
-    "New default: outside dungeons and raids, only your own class buffs on yourself are tracked. Toggle |cFFFFD100Force self-only outside dungeons and raids|r in the Settings tab to change this."
+    "New default: in the open world, only your own class buffs on yourself are tracked. Toggle |cFFFFD100Force self-only outside dungeons and raids|r in the Settings tab to change this."
 
 -- ============================================================================
 -- OPTIONS: TAB LABELS
@@ -637,7 +637,7 @@ english["Options.BuffTracking.Mode.Desc"] =
     "Controls which raid and presence buffs are shown, and whether they track the full group or only you."
 english["Options.BuffTracking.SelfOnlyOutsideInstances"] = "Force self-only outside dungeons and raids"
 english["Options.BuffTracking.SelfOnlyOutsideInstances.Desc"] =
-    "When enabled, only your own class buffs on yourself are tracked anywhere outside of dungeons and raids. The selected tracking mode is still used inside dungeons and raids."
+    "When enabled, only your own class buffs on yourself are tracked while in the open world. The selected tracking mode is still used inside dungeons, raids, scenarios, and PvP."
 
 -- ============================================================================
 -- OPTIONS: PROFILES TAB
