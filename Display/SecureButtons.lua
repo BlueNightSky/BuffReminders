@@ -165,8 +165,6 @@ local function EnsureChatVerifyFrame()
             return
         end
         -- Match by GUID first (canonical), fall back to name comparison.
-        -- Names can fail to match due to realm suffix, connected-realm formatting,
-        -- or non-ASCII characters round-tripping through different encodings.
         local playerGUID = UnitGUID("player")
         local matched = guid and playerGUID and guid == playerGUID
         if not matched then
@@ -175,15 +173,28 @@ local function EnsureChatVerifyFrame()
             matched = sender == short or sender == full
         end
         if not matched then
+            -- Saw a chat event during our 3s window but it wasn't from us.
+            -- Log it so we can see whether events are firing at all when the
+            -- user reports ChatNotSent (distinguishes "no echo" from "matcher missed").
+            print(
+                format(
+                    "|cff999999BR-debug ChatSeen-other:|r event=%s sender=%s guid=%s text=%q",
+                    tostring(event),
+                    tostring(sender),
+                    tostring(guid),
+                    tostring(text or "")
+                )
+            )
             return
         end
         lastChatAttempt.confirmed = true
         print(
             format(
-                "|cff00ccffBR-debug ChatConfirmed:|r event=%s text=%q sender=%s delay=%.2fs key=%s",
+                "|cff00ccffBR-debug ChatConfirmed:|r event=%s text=%q sender=%s guid=%s delay=%.2fs key=%s",
                 tostring(event),
                 tostring(text or ""),
                 tostring(sender),
+                tostring(guid),
                 GetTime() - lastChatAttempt.time,
                 tostring(lastChatAttempt.key)
             )
@@ -208,14 +219,21 @@ local function NoteChatAttempt(key, msg, prefix)
         if lastChatAttempt ~= attempt then
             return
         end
+        local playerGUID = UnitGUID("player")
+        local short = GetUnitName("player", false) or "?"
         print(
             format(
                 "|cffff8888BR-debug ChatNotSent:|r no echo within 2s for key=%s prefix=%q msg=%q "
+                    .. "playerGUID=%s playerName=%s "
                     .. "(macro fired but no CHAT_MSG_* came back — chat throttled, hardware-event "
-                    .. "violation, or empty macrotext at click time)",
+                    .. 'violation, or empty macrotext at click time. Try \'/run SendChatMessage("test", "'
+                    .. (prefix == "/instance " and "INSTANCE_CHAT" or prefix == "/raid " and "RAID" or prefix == "/party " and "PARTY" or "SAY")
+                    .. "\")' to see if direct chat works.)",
                 tostring(key),
                 tostring(prefix),
-                tostring(msg)
+                tostring(msg),
+                tostring(playerGUID),
+                tostring(short)
             )
         )
     end)
