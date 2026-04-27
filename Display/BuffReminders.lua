@@ -2809,7 +2809,7 @@ UpdateDisplay = function(refreshMode)
 
         local db = BR.profile
 
-        if db.showOnlyInGroup and GetNumGroupMembers() == 0 then
+        if db.showOnlyInGroup and BR.BuffState.IsAlone() then
             HideAllDisplayFrames()
             return
         end

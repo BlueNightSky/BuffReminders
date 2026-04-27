@@ -288,9 +288,11 @@ local currentWeaponEnchants = {
 ---@type {unit: string, class: string, isPlayer: boolean, name: string?}[]
 local currentValidUnits = {}
 
--- Raw GetNumGroupMembers() snapshot from the most recent BuildValidUnitCache().
--- Open-world solo reports 0; scenario solo (e.g. rituals) reports 1; real groups are 2+.
-local cachedGroupSize = 0
+-- "Are we effectively alone?" snapshot from the most recent BuildValidUnitCache().
+-- True when GetNumGroupMembers() <= 1: covers both open-world solo (reports 0) and
+-- scenario solo such as rituals (reports 1 with only the player as the lone member).
+-- Real groups (>= 2 members) set this to false.
+local cachedIsAlone = true
 
 -- Spec cache: playerName -> specId (populated by LibSpecialization callbacks for allies,
 -- and by BuildValidUnitCache for the local player via GetPlayerSpecId())
@@ -554,25 +556,21 @@ local function BuildValidUnitCache()
 
     local inRaid = IsInRaid()
     local groupSize = GetNumGroupMembers()
-    cachedGroupSize = groupSize
+    cachedIsAlone = groupSize <= 1
 
-    if groupSize == 0 then
-        -- Solo player
-        currentValidUnits[1] = AcquireUnitEntry("player", playerClass, true, playerName)
-        classMaxLevels[playerClass] = playerLevel
-        return
-    end
+    -- Open-world solo (groupSize 0) has no roster but still needs the player in
+    -- the unit cache. Treat it as a 1-unit "group of player" so dead/phased/etc.
+    -- filtering via IsValidGroupMember runs uniformly for solo and grouped paths.
+    local memberCount = groupSize == 0 and 1 or groupSize
 
-    for i = 1, groupSize do
+    for i = 1, memberCount do
         local unit
         if inRaid then
             unit = "raid" .. i
+        elseif i == 1 then
+            unit = "player"
         else
-            if i == 1 then
-                unit = "player"
-            else
-                unit = "party" .. (i - 1)
-            end
+            unit = "party" .. (i - 1)
         end
 
         if IsValidGroupMember(unit) then
@@ -1177,10 +1175,9 @@ local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, 
         return nil
     end
 
-    -- Targeted buffs require a group (you cast them on others). Open-world solo
-    -- reports 0; scenario solo (e.g. rituals) reports 1 with only the player as the
-    -- lone group member — both cases mean "no ally to target".
-    if cachedGroupSize <= 1 then
+    -- Targeted buffs require an ally to cast on. cachedIsAlone covers both
+    -- open-world solo (groupSize 0) and scenario solo (groupSize 1, player only).
+    if cachedIsAlone then
         return nil
     end
 
@@ -2333,7 +2330,7 @@ end
 ---(grouped dungeons only, excluding M+ and follower dungeons)
 ---@return boolean
 function BuffState.ShouldTriggerDungeonEntry()
-    if GetNumGroupMembers() <= 1 then
+    if BuffState.IsAlone() then
         return false
     end
     if GetCurrentContentType() ~= "dungeon" then
@@ -2407,6 +2404,15 @@ end
 ---@return boolean
 function BuffState.IsRestricted()
     return inCombat or GetCurrentDifficultyKey() == "mythicPlus" or GetCurrentContentType() == "pvp"
+end
+
+---Whether the player has no allies in the group (open-world solo or scenario solo).
+---Live check: covers both open-world solo (groupSize 0) and scenario solo such as
+---rituals (groupSize 1, player only). Internal hot paths in Refresh() should read
+---cachedIsAlone instead of calling this.
+---@return boolean
+function BuffState.IsAlone()
+    return GetNumGroupMembers() <= 1
 end
 
 -- ============================================================================
