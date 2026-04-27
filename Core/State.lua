@@ -288,6 +288,10 @@ local currentWeaponEnchants = {
 ---@type {unit: string, class: string, isPlayer: boolean, name: string?}[]
 local currentValidUnits = {}
 
+-- Raw GetNumGroupMembers() snapshot from the most recent BuildValidUnitCache().
+-- Open-world solo reports 0; scenario solo (e.g. rituals) reports 1; real groups are 2+.
+local cachedGroupSize = 0
+
 -- Spec cache: playerName -> specId (populated by LibSpecialization callbacks for allies,
 -- and by BuildValidUnitCache for the local player via GetPlayerSpecId())
 local allySpecCache = {}
@@ -550,6 +554,7 @@ local function BuildValidUnitCache()
 
     local inRaid = IsInRaid()
     local groupSize = GetNumGroupMembers()
+    cachedGroupSize = groupSize
 
     if groupSize == 0 then
         -- Solo player
@@ -1172,8 +1177,10 @@ local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, 
         return nil
     end
 
-    -- Targeted buffs require a group (you cast them on others)
-    if GetNumGroupMembers() == 0 then
+    -- Targeted buffs require a group (you cast them on others). Open-world solo
+    -- reports 0; scenario solo (e.g. rituals) reports 1 with only the player as the
+    -- lone group member — both cases mean "no ally to target".
+    if cachedGroupSize <= 1 then
         return nil
     end
 
