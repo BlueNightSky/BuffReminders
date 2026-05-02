@@ -240,13 +240,18 @@ L["Display.LoginFirstInstall"] =
     "感谢安装！输入 |cFFFFD100/br unlock|r 来移动增益显示，或者使用 |cFFFFD100/br|r 选项面板底部的按钮。"
 
 -- ============================================================================
--- OPTIONS: TAB LABELS
+-- OPTIONS: NAVIGATION LABELS
 -- ============================================================================
-L["Tab.Buffs"] = "增益"
 L["Tab.DisplayBehavior"] = "显示与行为"
-L["Tab.Settings"] = "设置"
-L["Tab.Profiles"] = "配置文件"
-L["Tab.Sounds"] = "声音提醒"
+
+-- Sidebar groups
+L["Sidebar.Buffs"] = "增益"
+L["Sidebar.Profiles"] = "配置文件"
+
+-- Page titles
+L["Page.ChatRequests"] = "聊天频道请求"
+L["Page.Profiles"] = "配置文件"
+L["Page.Sounds"] = "声音提醒"
 
 -- ============================================================================
 -- OPTIONS: GLOBAL DEFAULTS
@@ -301,9 +306,6 @@ L["Options.HidePvPMatchStart.Desc"] = "PvP比赛开始后（准备阶段结束�
 L["Options.ReadyCheckOnly"] = "仅在就位确认时显示"
 L["Options.ReadyCheckOnly.Desc"] = "仅在就位确认后的15秒内显示此类别中的增益。"
 L["Options.Visibility"] = "显示条件"
-L["Options.PerCategoryCustomization"] = "按类别自定义"
-L["Options.DetachIcon"] = "分离"
-L["Options.DetachIcon.Desc"] = "将此图标移至可独立移动的单独框体中。"
 
 -- ============================================================================
 -- OPTIONS: HEALTHSTONE
@@ -371,7 +373,6 @@ L["Options.ClickToCast.DescFull"] =
     "你可以点击增益图标来施放对应的法术（仅限非战斗状态）。只对你的角色可施放的法术有效。"
 L["Options.HoverHighlight"] = "悬停高亮"
 L["Options.HoverHighlight.Desc"] = "将鼠标悬停在可点击的增益图标上时，显示微弱的高亮效果。"
-L["Options.ChatRequests"] = "聊天频道请求"
 L["Options.RequestBuffInChat"] = "在聊天频道中请求缺失的增益"
 L["Options.RequestBuffInChat.Desc"] =
     "点击你的职业无法提供的缺失增益，可在聊天频道中发送请求。插件会自动检测当前合适的频道（副本/团队/小队/说）。每个增益有30秒的喊话冷却时间。"
@@ -486,11 +487,8 @@ L["Options.DelveFoodTimer.Desc"] =
 -- OPTIONS: LAYOUT
 -- ============================================================================
 L["Options.Layout"] = "布局"
-L["Options.Priority"] = "优先级"
-L["Options.Priority.Desc"] = "调整此类在整合框体中的顺序。数值越小越靠前。"
 L["Options.SplitFrame"] = "分离为独立框体"
 L["Options.SplitFrame.Desc"] = "将此类别中的增益显示在可独立移动的单独框体中。"
-L["Options.DisplayPriority"] = "显示优先级"
 
 -- ============================================================================
 -- OPTIONS: APPEARANCE
@@ -507,7 +505,6 @@ L["Options.MasqueNote"] = "缩放和边框设置由Masque管理。"
 -- ============================================================================
 L["Options.ShowLoginMessages"] = "显示登录信息"
 L["Options.ShowMinimapButton"] = "显示小地图按钮"
-L["Options.ShowOnlyInGroup"] = "仅在小队或团队中显示"
 
 -- Hide when section
 L["Options.HideWhen"] = "隐藏条件:"
@@ -637,7 +634,6 @@ L["CustomBuff.LineBreakHint"] = "（使用 \\n 换行）"
 L["CustomBuff.Appearance"] = "外观"
 L["CustomBuff.ShowIn"] = "显示位置"
 L["CustomBuff.ClickAction"] = "点击动作"
-L["CustomBuff.SettingsMovedNote"] = "显示条件和就位确认设置已移至每个增益的编辑菜单中。"
 
 -- Custom buff mode toggles
 L["CustomBuff.WhenActive"] = "激活时"
@@ -700,10 +696,6 @@ L["CustomBuff.Action.MacroHint"] = "例：/use item:12345\n/use 13"
 L["CustomBuff.Save"] = "保存"
 L["CustomBuff.ValidateError"] = "需要至少1个有效的法术ID"
 
--- Custom buff tooltip
-L["CustomBuff.Tooltip.Title"] = "自定义增益"
-L["CustomBuff.Tooltip.Desc"] = "右键点击以编辑或删除"
-
 -- Custom buff status
 L["CustomBuff.InvalidID"] = "无效ID"
 L["CustomBuff.NotFound"] = "未找到"
@@ -720,7 +712,6 @@ L["Options.JoinDiscord.Desc"] = "有反馈、功能请求或发现BUG？\n欢迎
 -- ============================================================================
 -- OPTIONS: CUSTOM ANCHOR FRAMES
 -- ============================================================================
-L["Options.CustomAnchorFrames"] = "自定义锚点框体"
 L["Options.CustomAnchorFrames.Desc"] =
     "在锚点下拉菜单中添加全局框体名称。（例：MyAddon_PlayerFrame）\n游戏中不存在的框体会自动跳过。"
 L["Options.Add"] = "添加"

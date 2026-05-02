@@ -254,13 +254,18 @@ L["Display.LoginSelfOnlyOutside"] =
     "新的預設：在開放世界中，只會追蹤您自己的職業增益。在「設定」標籤中切換|cFFFFD100強制在地下城與團隊副本之外只有自己|r來變更設定。"
 
 -- ============================================================================
--- OPTIONS: TAB LABELS
+-- OPTIONS: NAVIGATION LABELS
 -- ============================================================================
-L["Tab.Buffs"] = "增益"
 L["Tab.DisplayBehavior"] = "顯示與行為"
-L["Tab.Settings"] = "設置"
-L["Tab.Profiles"] = "設定檔"
-L["Tab.Sounds"] = "音效"
+
+-- Sidebar groups
+L["Sidebar.Buffs"] = "增益"
+L["Sidebar.Profiles"] = "設定檔"
+
+-- Page titles
+L["Page.ChatRequests"] = "聊天請求"
+L["Page.Profiles"] = "設定檔"
+L["Page.Sounds"] = "音效"
 
 -- ============================================================================
 -- OPTIONS: SOUND ALERTS
@@ -338,9 +343,6 @@ L["Options.HidePvPMatchStart.Desc"] = "PvP比賽開始後（準備階段結束�
 L["Options.ReadyCheckOnly"] = "僅在準備確認時顯示"
 L["Options.ReadyCheckOnly.Desc"] = "僅在準備確認後的15秒內顯示此類別中的增益。"
 L["Options.Visibility"] = "顯示條件"
-L["Options.PerCategoryCustomization"] = "按類別自定義"
-L["Options.DetachIcon"] = "分離"
-L["Options.DetachIcon.Desc"] = "將此圖示移至可獨立移動的單獨框架中。"
 
 -- ============================================================================
 -- OPTIONS: HEALTHSTONE
@@ -408,14 +410,9 @@ L["Options.ClickToCast.DescFull"] =
     "你可以點擊增益圖示來施放對應的法術（僅限非戰鬥狀態）。只對你的角色可施放的法術有效。"
 L["Options.HoverHighlight"] = "懸停高亮"
 L["Options.HoverHighlight.Desc"] = "將鼠標懸停在可點擊的增益圖示上時，顯示微弱的高亮效果。"
-L["Options.ChatRequests"] = "聊天請求"
 L["Options.RequestBuffInChat"] = "在聊天中請求缺失的增益"
 L["Options.RequestBuffInChat.Desc"] =
     "點擊您的職業無法提供的缺失增益，並在聊天中請求它。自動偵測頻道（副本/團隊/隊伍/說）。每個增益有30秒冷卻時間。"
-L["Options.CustomizeChatMessages"] = "自訂訊息"
-L["Options.ChatRequestModal.Title"] = "聊天請求訊息"
-L["Options.ChatRequestModal.Desc"] = "自訂每個增益的訊息傳送。保持空白以使用預設值。"
-L["Options.ChatRequestModal.ResetAll"] = "重置全部"
 -- Chat request messages (keyed by buff.key, sent as-is via SendChatMessage)
 -- EU/US translators: leave untranslated so chat messages stay in L.
 -- Asian translators: translate these so chat messages match your locale.
@@ -549,11 +546,8 @@ L["Options.DelveFoodTimer.Desc"] =
 -- OPTIONS: LAYOUT
 -- ============================================================================
 L["Options.Layout"] = "布局"
-L["Options.Priority"] = "優先級"
-L["Options.Priority.Desc"] = "調整此類在整合框架中的順序。數值越小越靠前。"
 L["Options.SplitFrame"] = "分離為獨立框架"
 L["Options.SplitFrame.Desc"] = "將此類別中的增益顯示在可獨立移動的單獨框架中。"
-L["Options.DisplayPriority"] = "顯示優先級"
 
 -- ============================================================================
 -- OPTIONS: APPEARANCE
@@ -570,7 +564,6 @@ L["Options.MasqueNote"] = "縮放和邊框設置由Masque管理。"
 -- ============================================================================
 L["Options.ShowLoginMessages"] = "顯示登入訊息"
 L["Options.ShowMinimapButton"] = "顯示小地圖按鈕"
-L["Options.ShowOnlyInGroup"] = "僅在小隊或團隊中顯示"
 
 -- Hide when section
 L["Options.HideWhen"] = "隱藏條件:"
@@ -695,7 +688,6 @@ L["CustomBuff.BuffTracking"] = "增益追蹤"
 L["CustomBuff.Requirements"] = "請求"
 L["CustomBuff.ShowIn"] = "顯示在"
 L["CustomBuff.ClickAction"] = "點擊動作"
-L["CustomBuff.SettingsMovedNote"] = "顯示條件和準備確認設置已移至每個增益的編輯選單中。"
 
 -- Custom buff mode toggles
 L["CustomBuff.WhenActive"] = "啟用時"
@@ -762,10 +754,6 @@ L["CustomBuff.Action.MacroHint"] = "例：/use item:12345\n/use 13"
 L["CustomBuff.Save"] = "保存"
 L["CustomBuff.ValidateError"] = "需要至少1個有效的法術ID"
 
--- Custom buff tooltip
-L["CustomBuff.Tooltip.Title"] = "自定義增益"
-L["CustomBuff.Tooltip.Desc"] = "右鍵點擊以編輯或刪除"
-
 -- Custom buff status
 L["CustomBuff.InvalidID"] = "無效ID"
 L["CustomBuff.NotFound"] = "未找到"
@@ -782,7 +770,6 @@ L["Options.JoinDiscord.Desc"] = "有反饋、功能請求或發現BUG？\n歡迎
 -- ============================================================================
 -- OPTIONS: CUSTOM ANCHOR FRAMES
 -- ============================================================================
-L["Options.CustomAnchorFrames"] = "自定義定位點框架"
 L["Options.CustomAnchorFrames.Desc"] =
     "在定位點下拉選單中添加全局框架名稱。（例：MyAddon_PlayerFrame）\n游戲中不存在的框架會自動跳過。"
 L["Options.Add"] = "添加"

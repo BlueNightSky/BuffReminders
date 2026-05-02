@@ -15,9 +15,35 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOCALES_DIR="$ROOT/Locales"
 
 # --- Collect keys -----------------------------------------------------------
-used=$(grep -rhoP 'L\["[^"]+"\]' "$ROOT" --include='*.lua' --exclude-dir=Locales --exclude-dir=Libs --exclude-dir=ignored | sed 's/L\["\(.*\)"\]/\1/' | sort -u)
+# Direct literal usage: L["Foo.Bar"]
+direct_used=$(grep -rhoP 'L\["[^"]+"\]' "$ROOT" --include='*.lua' --exclude-dir=Locales --exclude-dir=Libs --exclude-dir=ignored | sed 's/L\["\(.*\)"\]/\1/' | sort -u)
+
+# Indirect usage via convention-named role keys that are later passed to L[].
+# Source patterns like `labelKey = "Options.HideWhen.Alone"` paired with
+# `L[row.labelKey]` are common for declarative table-driven UI; harvest the
+# string literals so the keys aren't reported as unused.
+# Only treat dotted strings as full keys. Non-dotted role-key values (e.g.
+# `labelKey = "Duration"` in a Glow row) are suffixes used with the
+# concat-prefix machinery below, not standalone keys.
+indirect_used=$(grep -rhoP '(labelKey|titleKey|noteKey|tooltipTitle|tooltipDesc)\s*=\s*"[^"]+"' "$ROOT" --include='*.lua' --exclude-dir=Locales --exclude-dir=Libs --exclude-dir=ignored | sed -E 's/^[^=]+=\s*"//' | sed 's/"$//' | grep '\.' | sort -u)
+
+# Concatenation prefixes: L["Options.Glow." .. spec.labelKey]. Treat any
+# defined key starting with such a prefix as used.
+concat_prefixes=$(grep -rhoP 'L\["[^"]+"\s*\.\.' "$ROOT" --include='*.lua' --exclude-dir=Locales --exclude-dir=Libs --exclude-dir=ignored | sed -E 's/^L\["//' | sed -E 's/"[[:space:]]*\.\..*$//' | sort -u)
+
 defined=$(grep -oP 'english\["[^"]+"\]' "$LOCALES_DIR/enUS.lua" | sed 's/english\["\(.*\)"\]/\1/' | sort -u)
 enUS_count=$(echo "$defined" | wc -l)
+
+prefix_used=""
+if [ -n "$concat_prefixes" ]; then
+    while IFS= read -r prefix; do
+        [ -z "$prefix" ] && continue
+        match=$(awk -v p="$prefix" 'index($0, p) == 1' <<< "$defined" || true)
+        [ -n "$match" ] && prefix_used="$prefix_used"$'\n'"$match"
+    done <<< "$concat_prefixes"
+fi
+
+used=$(printf '%s\n%s\n%s\n' "$direct_used" "$indirect_used" "$prefix_used" | grep -v '^$' | sort -u)
 
 errors=0
 

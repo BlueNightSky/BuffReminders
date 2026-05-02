@@ -264,13 +264,9 @@ english["Display.LoginSelfOnlyOutside"] =
     "New default: in the open world, only your own class buffs on yourself are tracked. Toggle |cFFFFD100Force self-only outside dungeons and raids|r in the Settings tab to change this."
 
 -- ============================================================================
--- OPTIONS: TAB LABELS
+-- OPTIONS: NAVIGATION LABELS
 -- ============================================================================
-english["Tab.Buffs"] = "Buffs"
 english["Tab.DisplayBehavior"] = "Display/Behavior"
-english["Tab.Settings"] = "Settings"
-english["Tab.Profiles"] = "Profiles"
-english["Tab.Sounds"] = "Sounds"
 
 -- Sidebar groups
 english["Sidebar.General"] = "General"
@@ -292,7 +288,6 @@ english["Page.Sounds.Desc"] =
     "Play a sound when a tracked buff is missing. Alerts apply across all buff categories - assign one per buff."
 
 -- Per-category page section headers
-english["Section.Sounds"] = "Sounds"
 english["Section.Tracking"] = "Tracking"
 
 -- ============================================================================
@@ -371,7 +366,6 @@ english["Options.HidePvPMatchStart.Desc"] = "Hide this category once a PvP match
 english["Options.ReadyCheckOnly"] = "Show only on ready check"
 english["Options.ReadyCheckOnly.Desc"] = "Only show this category's buffs for 15 seconds after a ready check starts"
 english["Options.Visibility"] = "Visibility"
-english["Options.PerCategoryCustomization"] = "Per-Category Customization"
 
 -- ============================================================================
 -- OPTIONS: HEALTHSTONE
@@ -439,7 +433,6 @@ english["Options.ClickToCast.DescFull"] =
     "Make buff icons clickable to cast the corresponding spell (out of combat only). Only works for spells your character can cast."
 english["Options.HoverHighlight"] = "Hover highlight"
 english["Options.HoverHighlight.Desc"] = "Show a subtle highlight when hovering over clickable buff icons."
-english["Options.ChatRequests"] = "Chat Requests"
 english["Options.RequestBuffInChat"] = "Request missing buffs in chat"
 english["Options.RequestBuffInChat.Desc"] =
     "Click a missing buff your class cannot provide to request it in chat. Auto-detects channel (instance/raid/party/say). 30-second cooldown per buff."
@@ -751,7 +744,6 @@ english["CustomBuff.BuffTracking"] = "BUFF TRACKING"
 english["CustomBuff.Requirements"] = "REQUIREMENTS"
 english["CustomBuff.ShowIn"] = "SHOW IN"
 english["CustomBuff.ClickAction"] = "CLICK ACTION"
-english["CustomBuff.SettingsMovedNote"] = "Visibility and ready check settings moved to each buff's edit menu."
 
 -- Custom buff mode toggles
 english["CustomBuff.WhenActive"] = "When active"
@@ -818,10 +810,6 @@ english["CustomBuff.Action.MacroHint"] = "e.g. /use item:12345\\n/use 13"
 english["CustomBuff.Save"] = "Save"
 english["CustomBuff.ValidateError"] = "Please validate at least one spell ID"
 
--- Custom buff tooltip
-english["CustomBuff.Tooltip.Title"] = "Custom Buff"
-english["CustomBuff.Tooltip.Desc"] = "Right-click to edit or delete"
-
 -- Custom buff status
 english["CustomBuff.InvalidID"] = "Invalid ID"
 english["CustomBuff.NotFound"] = "Not found"
@@ -838,7 +826,6 @@ english["Options.JoinDiscord.Desc"] = "Got feedback, feature requests, or bug re
 -- ============================================================================
 -- OPTIONS: CUSTOM ANCHOR FRAMES
 -- ============================================================================
-english["Options.CustomAnchorFrames"] = "Custom Anchor Frames"
 english["Options.CustomAnchorFrames.Desc"] =
     "Add global frame names to the anchor dropdown (e.g. MyAddon_PlayerFrame). \nFrames that don't exist in-game are silently skipped."
 english["Options.Add"] = "Add"

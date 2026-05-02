@@ -254,13 +254,18 @@ L["Display.LoginSelfOnlyOutside"] =
     "새로운 기본값: 야외에서는 내 스스로 거는 버프만 추적합니다. 변경하려면 설정 탭에서 |cFFFFD100던전/공격대 외에선 내것만 추적|r 옵션을 설정하세요."
 
 -- ============================================================================
--- OPTIONS: TAB LABELS
+-- OPTIONS: NAVIGATION LABELS
 -- ============================================================================
-L["Tab.Buffs"] = "버프"
 L["Tab.DisplayBehavior"] = "표시/동작"
-L["Tab.Settings"] = "설정"
-L["Tab.Profiles"] = "프로필"
-L["Tab.Sounds"] = "효과음"
+
+-- Sidebar groups
+L["Sidebar.Buffs"] = "버프"
+L["Sidebar.Profiles"] = "프로필"
+
+-- Page titles
+L["Page.ChatRequests"] = "채팅 요청"
+L["Page.Profiles"] = "프로필"
+L["Page.Sounds"] = "효과음"
 
 -- ============================================================================
 -- OPTIONS: SOUND ALERTS
@@ -340,10 +345,6 @@ L["Options.HidePvPMatchStart.Desc"] =
 L["Options.ReadyCheckOnly"] = "전투 준비 시에만 표시"
 L["Options.ReadyCheckOnly.Desc"] = "전투 준비 후 15초 동안만 이 카테고리의 버프를 표시합니다."
 L["Options.Visibility"] = "표시 설정"
-L["Options.PerCategoryCustomization"] = "카테고리별 사용자 지정"
-L["Options.DetachIcon"] = "분리"
-L["Options.DetachIcon.Desc"] =
-    "이 아이콘을 독립적으로 위치를 옮길 수 있는 별도의 프레임으로 이동시킵니다."
 
 -- ============================================================================
 -- OPTIONS: HEALTHSTONE
@@ -414,15 +415,9 @@ L["Options.ClickToCast.DescFull"] =
 L["Options.HoverHighlight"] = "마우스오버 강조"
 L["Options.HoverHighlight.Desc"] =
     "클릭 가능한 버프 아이콘에 마우스를 올리면 희미한 강조 효과가 표시됩니다."
-L["Options.ChatRequests"] = "채팅 요청"
 L["Options.RequestBuffInChat"] = "없는 버프를 채팅으로 요청"
 L["Options.RequestBuffInChat.Desc"] =
     "내 직업이 걸 수 없는 누락된 버프를 클릭하면 채팅으로 요청합니다. 채널(인스턴스/공격대/파티/일반)을 자동으로 감지합니다. 버프당 30초의 쿨타임이 있습니다."
-L["Options.CustomizeChatMessages"] = "메시지 직접 설정"
-L["Options.ChatRequestModal.Title"] = "채팅창 요청 메시지"
-L["Options.ChatRequestModal.Desc"] =
-    "각 버프마다 전송되는 메시지를 직접 설정하세요. 기본값을 사용하려면 비워두세요."
-L["Options.ChatRequestModal.ResetAll"] = "모두 초기화"
 -- Chat request messages (keyed by buff.key, sent as-is via SendChatMessage)
 -- EU/US translators: leave untranslated so chat messages stay in English.
 -- Asian translators: translate these so chat messages match your locale.
@@ -560,13 +555,9 @@ L["Options.DelveFoodTimer.Desc"] =
 -- OPTIONS: LAYOUT
 -- ============================================================================
 L["Options.Layout"] = "레이아웃"
-L["Options.Priority"] = "우선순위"
-L["Options.Priority.Desc"] =
-    "통합 프레임에서 이 카테고리의 순서를 조정합니다. 낮은 값이 먼저 표시됩니다."
 L["Options.SplitFrame"] = "개별 프레임으로 분리"
 L["Options.SplitFrame.Desc"] =
     "이 카테고리의 버프를 독립적으로 이동 가능한 별도의 프레임에 표시합니다."
-L["Options.DisplayPriority"] = "표시 우선순위"
 
 -- ============================================================================
 -- OPTIONS: APPEARANCE
@@ -583,7 +574,6 @@ L["Options.MasqueNote"] = "확대 및 테두리 설정은 Masque에서 관리합
 -- ============================================================================
 L["Options.ShowLoginMessages"] = "로그인 메시지 표시"
 L["Options.ShowMinimapButton"] = "미니맵 버튼 표시"
-L["Options.ShowOnlyInGroup"] = "파티/공격대에서만 표시"
 
 -- Hide when section
 L["Options.HideWhen"] = "숨김 조건:"
@@ -713,8 +703,6 @@ L["CustomBuff.BuffTracking"] = "버프 추적"
 L["CustomBuff.Requirements"] = "필요 조건"
 L["CustomBuff.ShowIn"] = "표시 위치"
 L["CustomBuff.ClickAction"] = "클릭 동작"
-L["CustomBuff.SettingsMovedNote"] =
-    "표시와 전투 준비 설정은 각 버프의 편집 메뉴로 옮겨졌습니다."
 
 -- Custom buff mode toggles
 L["CustomBuff.WhenActive"] = "있을 때"
@@ -781,10 +769,6 @@ L["CustomBuff.Action.MacroHint"] = "예: /사용 item:12345\n/사용 13"
 L["CustomBuff.Save"] = "저장"
 L["CustomBuff.ValidateError"] = "유효한 주문 ID가 1개 이상 필요합니다"
 
--- Custom buff tooltip
-L["CustomBuff.Tooltip.Title"] = "사용자 지정 버프"
-L["CustomBuff.Tooltip.Desc"] = "우클릭으로 편집 또는 삭제"
-
 -- Custom buff status
 L["CustomBuff.InvalidID"] = "잘못된 ID"
 L["CustomBuff.NotFound"] = "찾을 수 없음"
@@ -801,7 +785,6 @@ L["Options.JoinDiscord.Desc"] = "피드백, 기능 요청, 버그 신고를 하�
 -- ============================================================================
 -- OPTIONS: CUSTOM ANCHOR FRAMES
 -- ============================================================================
-L["Options.CustomAnchorFrames"] = "사용자 지정 앵커 프레임"
 L["Options.CustomAnchorFrames.Desc"] =
     "앵커 드롭다운에 전역 프레임 이름을 추가합니다. (예: MyAddon_PlayerFrame)\n게임 내에 존재하지 않는 프레임은 자동으로 건너뜁니다."
 L["Options.Add"] = "추가"

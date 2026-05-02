@@ -47,7 +47,7 @@ local function Build(content, scrollFrame)
     local contentWidth = scrollFrame:GetContentWidth()
 
     -- Description
-    LayoutSectionNote(layout, content, L["Options.ChatRequests.Desc"] or L["Options.RequestBuffInChat.Desc"])
+    LayoutSectionNote(layout, content, L["Options.RequestBuffInChat.Desc"])
 
     -- Master toggle
     local requestBuffHolder = Components.Checkbox(content, {
