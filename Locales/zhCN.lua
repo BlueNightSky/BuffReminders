@@ -265,8 +265,8 @@ L["Options.GlowReminderIcons.Desc"] =
     "为所有显示的提示图标添加发光效果，包括缺失和即将过期的增益。"
 L["Options.GlowKind.Expiring"] = "即将过期"
 L["Options.GlowKind.Missing"] = "缺失"
-L["Options.GlowSettings.Expiring"] = "发光设置 — 即将过期"
-L["Options.GlowSettings.Missing"] = "发光设置 — 缺失"
+L["Options.GlowSettings.Expiring"] = "发光设置 - 即将过期"
+L["Options.GlowSettings.Missing"] = "发光设置 - 缺失"
 L["Options.Glow.Enabled"] = "启用"
 L["Options.Threshold"] = "阈值"
 L["Options.GlowMissingPets"] = "缺失宠物发光"
@@ -623,7 +623,7 @@ L["Options.Lock"] = "锁定"
 L["Options.Unlock"] = "解锁"
 
 -- ============================================================================
--- OPTIONS: CUSTOM BUFF MODAL
+-- OPTIONS: CUSTOM BUFF DIALOG
 -- ============================================================================
 L["CustomBuff.Edit"] = "编辑自定义增益"
 L["CustomBuff.Add"] = "添加自定义增益"
@@ -667,7 +667,7 @@ L["CustomBuff.RequireItem"] = "需要物品:"
 L["CustomBuff.RequireItem.EquippedBags"] = "已装备/背包中"
 L["CustomBuff.RequireItem.Equipped"] = "已装备"
 L["CustomBuff.RequireItem.InBags"] = "背包中"
-L["CustomBuff.RequireItem.Hint"] = "物品ID — 缺失时隐藏"
+L["CustomBuff.RequireItem.Hint"] = "物品ID - 缺失时隐藏"
 
 -- Bar glow options
 L["CustomBuff.BarGlow.WhenGlowing"] = "发光时检测"

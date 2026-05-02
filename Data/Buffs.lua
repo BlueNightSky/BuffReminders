@@ -108,7 +108,7 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field customCheck? fun(isRestricted?: boolean): boolean?
 ---@field getNextCastID? fun(): number|nil -- Returns spell ID of next spell to cast (used for dynamic icon)
 ---@field getDynamicIcon? fun(): number|nil -- Returns texture ID for dynamic display icon
----@field getPetActions? fun(): PetAction[]?  -- Override pet actions (e.g., wrong pet → Felguard only)
+---@field getPetActions? fun(): PetAction[]?  -- Override pet actions (e.g., wrong pet -> Felguard only)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 ---@field showOnInstanceEntry? boolean Only show when entering an instance (not M+), skip normal buff checks
 ---@field showWhenPresent? boolean Show when buff IS active (inverts normal "show when missing" logic)
@@ -250,7 +250,7 @@ local poisonScratch = { lethal = {}, nonLethal = {} }
 
 ---Resolve the ordered list of enabled spell IDs for a category from the user's preferences.
 ---Falls back to the default order if prefs are missing or empty (early load, fresh install).
----Writes into a shared scratch buffer — do not cache the result across calls.
+---Writes into a shared scratch buffer - do not cache the result across calls.
 ---@param category "lethal"|"nonLethal"
 ---@return number[] orderedSpellIDs
 local function GetEnabledPoisons(category)
@@ -655,7 +655,9 @@ BR.BUFF_TABLES = {
             name = L["Buff.DruidForm"],
             class = "DRUID",
             overlayText = L["Overlay.WrongForm"],
-            displayIcon = 132115, -- fallback Cat Form; getDynamicIcon picks the spec-correct icon
+            -- Runtime icon is supplied by getDynamicIcon (always set when the buff shows,
+            -- since customCheck gates display). displaySpells drives the options panel row.
+            displaySpells = { 768, 5487, 24858 }, -- Cat, Bear, Moonkin
             castSpellID = 768, -- Cat Form: baseline-known by all druids, just gates click-to-cast (clickMacro casts the right form)
             customCheck = function()
                 return BR.BuffState.IsWrongDruidForm()
@@ -733,7 +735,7 @@ BR.BUFF_TABLES = {
             clickMacro = function()
                 local castID = GetNextPoisonCastID()
                 if not castID then
-                    -- Nothing missing — fall back to soonest-expiring poison for re-application
+                    -- Nothing missing - fall back to soonest-expiring poison for re-application
                     local _, expiringID = GetPoisonExpirationInfo()
                     castID = expiringID
                 end
@@ -743,7 +745,7 @@ BR.BUFF_TABLES = {
                 return ""
             end,
         },
-        -- DK Runeforge (Main Hand) — reminder when MH enchant doesn't match configured preference
+        -- DK Runeforge (Main Hand) - reminder when MH enchant doesn't match configured preference
         {
             displayIcon = 237523, -- Runeforging icon
             key = "dkRuneMH",
@@ -789,7 +791,7 @@ BR.BUFF_TABLES = {
                 end
             end,
         },
-        -- DK Runeforge (Off Hand) — only relevant for dual-wield
+        -- DK Runeforge (Off Hand) - only relevant for dual-wield
         {
             displayIcon = 237523, -- Runeforging icon (same as MH, deduped in options)
             key = "dkRuneOH",
@@ -896,7 +898,7 @@ BR.BUFF_TABLES = {
         -- Icon fields:
         --   displayIcon     = Texture ID(s). Primary icon for Display frame + Options checkbox.
         --   displaySpells   = Spell ID(s). Icons for Options checkbox only (subset of spellID).
-        --   iconByRole      = Role→SpellID. Dynamic Display frame icon based on player role.
+        --   iconByRole      = Role->SpellID. Dynamic Display frame icon based on player role.
         -- Priority: displayIcon > displaySpells > spellID[1]
         --
         -- Shaman shields (alphabetical: Earth, Lightning, Water)
@@ -943,7 +945,9 @@ BR.BUFF_TABLES = {
             name = L["Buff.WarriorStance"],
             class = "WARRIOR",
             overlayText = L["Overlay.WrongStance"],
-            displayIcon = 132333, -- fallback; getDynamicIcon picks the spec-correct icon
+            -- Runtime icon is supplied by getDynamicIcon (always set when the buff shows,
+            -- since customCheck gates display). displaySpells drives the options panel row.
+            displaySpells = { 386164, 386208, 386196 }, -- Battle, Defensive, Berserker
             castSpellID = 386208, -- Defensive Stance: baseline-known by all warriors, just gates click-to-cast (clickMacro casts the right stance)
             customCheck = function()
                 return BR.BuffState.IsWrongWarriorStance()
@@ -1193,7 +1197,7 @@ BR.BUFF_TABLES = {
     },
 }
 
--- Derive buff key → consumable category mapping from data
+-- Derive buff key -> consumable category mapping from data
 local buffKeyToCategory = {}
 for _, buff in ipairs(BR.BUFF_TABLES.consumable) do
     if buff.consumableCategory then

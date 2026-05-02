@@ -275,8 +275,8 @@ L["Options.GlowReminderIcons.Desc"] =
     "Aggiunge un effetto bagliore alle icone promemoria. Personalizza per configurare indipendentemente i bagliori per buff in scadenza e mancanti."
 L["Options.GlowKind.Expiring"] = "In Scadenza"
 L["Options.GlowKind.Missing"] = "Mancante"
-L["Options.GlowSettings.Expiring"] = "Impostazioni Bagliore — In Scadenza"
-L["Options.GlowSettings.Missing"] = "Impostazioni Bagliore — Mancante"
+L["Options.GlowSettings.Expiring"] = "Impostazioni Bagliore - In Scadenza"
+L["Options.GlowSettings.Missing"] = "Impostazioni Bagliore - Mancante"
 L["Options.Glow.Enabled"] = "Abilitato"
 L["Options.Threshold"] = "Soglia"
 L["Options.GlowMissingPets"] = "Bagliore pet mancanti"
@@ -616,7 +616,7 @@ L["Options.Lock"] = "Blocca"
 L["Options.Unlock"] = "Sblocca"
 
 -- ============================================================================
--- OPTIONS: CUSTOM BUFF MODAL
+-- OPTIONS: CUSTOM BUFF DIALOG
 -- ============================================================================
 L["CustomBuff.Edit"] = "Modifica Buff Personalizzato"
 L["CustomBuff.Add"] = "Aggiungi Buff Personalizzato"
@@ -661,7 +661,7 @@ L["CustomBuff.RequireItem"] = "Richiedi oggetto:"
 L["CustomBuff.RequireItem.EquippedBags"] = "Equipaggiato/Borse"
 L["CustomBuff.RequireItem.Equipped"] = "Equipaggiato"
 L["CustomBuff.RequireItem.InBags"] = "Nelle borse"
-L["CustomBuff.RequireItem.Hint"] = "ID oggetto — nascondi se non trovato"
+L["CustomBuff.RequireItem.Hint"] = "ID oggetto - nascondi se non trovato"
 
 -- Bar glow options
 L["CustomBuff.BarGlow.WhenGlowing"] = "Rileva quando brilla"
