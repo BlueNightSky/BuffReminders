@@ -971,18 +971,22 @@ local function ResolveFrameTexture(frame)
     return GetBuffTexture(def.spellID, def.iconByRole, def.displayIcon)
 end
 
----Wipe the spell texture cache and re-apply icons on all existing frames.
----Called via deferred timer after init to pick up cosmetic overrides (e.g. warlock
----green fire) that aren't available yet at login time.
-local function InvalidateTextureCache()
-    wipe(spellTextureCache)
-    for _, frame in pairs(buffFrames) do
-        if frame.icon and frame.buffDef and not frame.buffDef.displayIcon then
-            local texture = ResolveFrameTexture(frame)
-            if texture then
-                frame.icon:SetTexture(texture)
-            end
-        end
+---Re-fetch the Burning Rush icon after spell data settles.
+---The warlock green-fire cosmetic override isn't applied yet at login, so
+---C_Spell.GetSpellTexture returns the orange icon initially and the green
+---variant only after data loads (see commit bdeaadb). Other buffs either have
+---stable textures from frame creation or resolve their icon dynamically per
+---render (consumables, dynamicIcon), so a broad cache wipe would briefly flash
+---the wrong icon for them.
+local function RefreshBurningRushIcon()
+    local frame = buffFrames.burningRush
+    if not (frame and frame.icon and frame.buffDef) then
+        return
+    end
+    spellTextureCache[frame.buffDef.spellID] = nil
+    local texture = ResolveFrameTexture(frame)
+    if texture then
+        frame.icon:SetTexture(texture)
     end
 end
 
@@ -4769,9 +4773,9 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                     BR.SecureButtons.UpdateActionButtons(cat)
                 end
             end
-            -- Deferred texture refresh: cosmetic overrides (e.g. warlock green fire)
-            -- aren't available yet at login, so re-fetch after spell data settles.
-            C_Timer.After(2, InvalidateTextureCache)
+            -- Refresh Burning Rush icon after spell data settles (green-fire
+            -- cosmetic override isn't applied yet at login).
+            C_Timer.After(2, RefreshBurningRushIcon)
         end
         BR.SecureButtons.InvalidateConsumableCache()
         -- Instance entry can flip IsInGroup(2) without firing GROUP_ROSTER_UPDATE
