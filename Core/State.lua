@@ -1836,7 +1836,7 @@ function BuffState.Refresh(refreshMode)
                         if useGlowDet then
                             if IsAnySpellGlowing(buff) then
                                 SetEntryText(entry, buff.overlayText, selfMissGlow)
-                                entry.iconByRole = buff.iconByRole
+                                BR.Helpers.ApplyDynamicIcon(entry, buff)
                             end
                         else
                             local shouldShow = ShouldShowSelfBuff(
@@ -1856,14 +1856,7 @@ function BuffState.Refresh(refreshMode)
                             local show = (wantPresent and shouldShow == false) or (not wantPresent and shouldShow)
                             if show then
                                 SetEntryText(entry, buff.overlayText, selfMissGlow)
-                                entry.iconByRole = buff.iconByRole
-                                if buff.getNextCastID then
-                                    local castID = buff.getNextCastID()
-                                    entry.dynamicIcon = castID and C_Spell.GetSpellTexture(castID)
-                                end
-                                if not entry.dynamicIcon and buff.getDynamicIcon then
-                                    entry.dynamicIcon = buff.getDynamicIcon()
-                                end
+                                BR.Helpers.ApplyDynamicIcon(entry, buff)
                             elseif
                                 shouldShow == false
                                 and not wantPresent
@@ -2043,7 +2036,7 @@ function BuffState.Refresh(refreshMode)
                 )
                 if shouldShow then
                     SetEntryText(entry, buff.overlayText, petMissGlow)
-                    entry.iconByRole = buff.iconByRole
+                    BR.Helpers.ApplyDynamicIcon(entry, buff)
                     -- Expanded pet actions (individual summon spell icons)
                     if buff.getPetActions then
                         local actions = buff.getPetActions()

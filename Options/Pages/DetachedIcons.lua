@@ -32,7 +32,7 @@ local ReattachIcon = BR.Helpers.ReattachIcon
 local ResetDetachedPosition = BR.Helpers.ResetDetachedPosition
 local UpdateDisplay = BR.Display.Update
 
-local ResolveBuffIcons = Helpers.ResolveBuffIcons
+local GetBuffIcons = BR.Helpers.GetBuffIcons
 local LayoutSectionNote = Helpers.LayoutSectionNote
 local LayoutSubsectionHeader = Helpers.LayoutSubsectionHeader
 local GetCategoryLabels = BR.Options.GetCategoryLabels
@@ -105,7 +105,7 @@ local function BuildCatalog()
                 tinsert(catalog, {
                     key = key,
                     name = (groupInfo and groupInfo.displayName) or buff.name or key,
-                    icons = ResolveBuffIcons(buff.displayIcon, buff.spellID),
+                    icons = GetBuffIcons(buff),
                     categoryKey = catName,
                     categoryLabel = labels[catName] or catName,
                 })

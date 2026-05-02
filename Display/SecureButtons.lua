@@ -293,11 +293,11 @@ local function GetActionSpellID(buff)
             end
         end
     end
-    -- When iconByRole is present, prefer the role-appropriate spell so the cast
-    -- matches the displayed icon (e.g., Water Shield for healers, not Lightning Shield).
-    if not buff.castSpellID and buff.iconByRole then
+    -- When icons.byRole is present, prefer the role-appropriate spell so the cast matches
+    -- the displayed icon (e.g., Water Shield for healers, not Lightning Shield).
+    if not buff.castSpellID and buff.icons and buff.icons.byRole then
         local role = BR.BuffState.GetPlayerRole()
-        local roleSpell = role and buff.iconByRole[role]
+        local roleSpell = role and buff.icons.byRole[role]
         if roleSpell and IsPlayerSpell(roleSpell) then
             return roleSpell
         end

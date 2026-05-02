@@ -108,12 +108,10 @@ BR.Options.StaticCategories = { "raid", "presence", "targeted", "self", "pet", "
 -- SHARED HELPERS
 -- ============================================================================
 
-local tinsert = table.insert
 local ceil = math.ceil
 local Helpers = BR.Options.Helpers
 local COMPONENT_GAP = BR.Options.Constants.COMPONENT_GAP
 local COL_PADDING = BR.Options.Constants.COL_PADDING
-local GetBuffTexture = BR.Helpers.GetBuffTexture
 
 -- Section header: gold text + thin gold accent line beneath, spanning the
 -- content area's width. Mirrors the sidebar group header style so page
@@ -455,30 +453,6 @@ function Helpers.LayoutSeparator(layout, parent)
     sep:SetColorTexture(0.3, 0.3, 0.3, 0.6)
     layout:Add(sep, 1, COMPONENT_GAP)
     sep:SetWidth((parent.GetWidth and parent:GetWidth() or 600) - 40)
-end
-
--- Resolve icon textures from displayIcon texture IDs or spell IDs (deduplicated).
-function Helpers.ResolveBuffIcons(displayIcon, spellIDs)
-    if displayIcon then
-        if type(displayIcon) == "table" then
-            return displayIcon
-        else
-            return { displayIcon }
-        end
-    elseif spellIDs then
-        local icons = {}
-        local seenTextures = {}
-        local spellList = type(spellIDs) == "table" and spellIDs or { spellIDs }
-        for _, spellID in ipairs(spellList) do
-            local texture = GetBuffTexture(spellID)
-            if texture and not seenTextures[texture] then
-                seenTextures[texture] = true
-                tinsert(icons, texture)
-            end
-        end
-        return #icons > 0 and icons or nil
-    end
-    return nil
 end
 
 -- ============================================================================

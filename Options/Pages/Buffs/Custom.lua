@@ -24,7 +24,7 @@ local UpdateDisplay = BR.Display.Update
 
 local LayoutSectionHeader = BR.Options.Helpers.LayoutSectionHeader
 local LayoutSectionNote = BR.Options.Helpers.LayoutSectionNote
-local ResolveBuffIcons = BR.Options.Helpers.ResolveBuffIcons
+local GetBuffIcons = BR.Helpers.GetBuffIcons
 
 local TEXCOORD_INSET = BR.TEXCOORD_INSET
 
@@ -100,11 +100,10 @@ local function FillRowBody(body, key, buff, onEdit, onDelete)
     checkbox:SetPoint("LEFT", 0, 0)
 
     -- Buff icon
-    local iconRoot = ResolveBuffIcons(nil, buff.spellID)
     local iconTex = body:CreateTexture(nil, "ARTWORK")
     iconTex:SetSize(ICON_SIZE, ICON_SIZE)
     iconTex:SetPoint("LEFT", checkbox, "RIGHT", 6, 0)
-    local tex = iconRoot and iconRoot[1]
+    local tex = GetBuffIcons(buff)[1]
     if tex then
         iconTex:SetTexture(tex)
         iconTex:SetTexCoord(TEXCOORD_INSET, 1 - TEXCOORD_INSET, TEXCOORD_INSET, 1 - TEXCOORD_INSET)

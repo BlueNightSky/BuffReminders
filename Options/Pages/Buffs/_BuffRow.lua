@@ -21,11 +21,9 @@ local Components = BR.Components
 
 local BuffGroups = BR.BuffGroups
 
-local GetBuffTexture = BR.Helpers.GetBuffTexture
+local GetBuffIcons = BR.Helpers.GetBuffIcons
 
 local UpdateDisplay = BR.Display.Update
-
-local ResolveBuffIcons = BR.Options.Helpers.ResolveBuffIcons
 
 local ITEM_HEIGHT = BR.Options.Constants.ITEM_HEIGHT
 
@@ -95,22 +93,11 @@ local function GetSettingsActions()
     }
 end
 
-local function CreateBuffRow(
-    parent,
-    x,
-    y,
-    spellIDs,
-    key,
-    displayName,
-    infoTooltip,
-    displayIcon,
-    readyCheckOnly,
-    freeConsumable
-)
+local function CreateBuffRow(parent, x, y, icons, key, displayName, infoTooltip, readyCheckOnly, freeConsumable)
     local settingsActions = GetSettingsActions()
     local holder = Components.Checkbox(parent, {
         label = displayName,
-        icons = ResolveBuffIcons(displayIcon, spellIDs),
+        icons = icons,
         infoTooltip = not readyCheckOnly and infoTooltip or nil,
         get = function()
             return BR.profile.enabledBuffs[key] ~= false
@@ -186,67 +173,28 @@ local function CreateBuffRow(
     return y - ITEM_HEIGHT
 end
 
-local function RenderBuffArray(parent, x, y, buffArray)
-    local groupSpells = {}
-    local groupDisplaySpells = {}
-    local groupIconOverrides = {}
-    local groupReadyCheckOnly = {}
-    local groupFreeConsumable = {}
+-- Merge per-buff icon lists from every member of a group, deduped, in declared order.
+local function MergeGroupIcons(group)
+    local merged = {}
+    local seen = {}
+    for _, buff in ipairs(group) do
+        for _, icon in ipairs(GetBuffIcons(buff)) do
+            if not seen[icon] then
+                seen[icon] = true
+                tinsert(merged, icon)
+            end
+        end
+    end
+    return merged
+end
 
+local function RenderBuffArray(parent, x, y, buffArray)
+    -- Bucket grouped buffs so the row factory sees one logical entry per groupId.
+    local groupMembers = {}
     for _, buff in ipairs(buffArray) do
         if buff.groupId then
-            groupSpells[buff.groupId] = groupSpells[buff.groupId] or {}
-            groupDisplaySpells[buff.groupId] = groupDisplaySpells[buff.groupId] or {}
-            if buff.spellID then
-                local spellList = type(buff.spellID) == "table" and buff.spellID or { buff.spellID }
-                for _, id in ipairs(spellList) do
-                    tinsert(groupSpells[buff.groupId], id)
-                end
-            end
-            if buff.displaySpells then
-                local displayList = type(buff.displaySpells) == "table" and buff.displaySpells or { buff.displaySpells }
-                for _, id in ipairs(displayList) do
-                    tinsert(groupDisplaySpells[buff.groupId], id)
-                end
-            end
-            if not groupIconOverrides[buff.groupId] then
-                groupIconOverrides[buff.groupId] = {}
-                groupIconOverrides[buff.groupId]._seen = {}
-            end
-            local seen = groupIconOverrides[buff.groupId]._seen
-            if buff.displayIcon then
-                local overrides = type(buff.displayIcon) == "table" and buff.displayIcon or { buff.displayIcon }
-                for _, icon in ipairs(overrides) do
-                    if not seen[icon] then
-                        seen[icon] = true
-                        tinsert(groupIconOverrides[buff.groupId], icon)
-                    end
-                end
-            elseif buff.displaySpells then
-                local displayList = type(buff.displaySpells) == "table" and buff.displaySpells or { buff.displaySpells }
-                for _, id in ipairs(displayList) do
-                    local texture = GetBuffTexture(id)
-                    if texture and not seen[texture] then
-                        seen[texture] = true
-                        tinsert(groupIconOverrides[buff.groupId], texture)
-                    end
-                end
-            elseif buff.spellID then
-                local primarySpell = type(buff.spellID) == "table" and buff.spellID[1] or buff.spellID
-                if primarySpell and primarySpell > 0 then
-                    local texture = GetBuffTexture(primarySpell)
-                    if texture and not seen[texture] then
-                        seen[texture] = true
-                        tinsert(groupIconOverrides[buff.groupId], texture)
-                    end
-                end
-            end
-            if buff.readyCheckOnly then
-                groupReadyCheckOnly[buff.groupId] = true
-            end
-            if buff.freeConsumable then
-                groupFreeConsumable[buff.groupId] = true
-            end
+            groupMembers[buff.groupId] = groupMembers[buff.groupId] or {}
+            tinsert(groupMembers[buff.groupId], buff)
         end
     end
 
@@ -255,40 +203,39 @@ local function RenderBuffArray(parent, x, y, buffArray)
         if buff.groupId then
             if not seenGroups[buff.groupId] then
                 seenGroups[buff.groupId] = true
+                local members = groupMembers[buff.groupId]
                 local groupInfo = BuffGroups[buff.groupId]
-                local displayIcon = groupIconOverrides[buff.groupId]
-                if displayIcon and #displayIcon == 0 then
-                    displayIcon = nil
-                end
-                local displaySpells = groupDisplaySpells[buff.groupId]
-                local spells = (#displaySpells > 0) and displaySpells or groupSpells[buff.groupId]
-                if #spells == 0 then
-                    spells = nil
+                local readyCheckOnly = false
+                local freeConsumable = false
+                for _, m in ipairs(members) do
+                    if m.readyCheckOnly then
+                        readyCheckOnly = true
+                    end
+                    if m.freeConsumable then
+                        freeConsumable = true
+                    end
                 end
                 y = CreateBuffRow(
                     parent,
                     x,
                     y,
-                    spells,
+                    MergeGroupIcons(members),
                     buff.groupId,
                     groupInfo and groupInfo.displayName or buff.name,
                     buff.infoTooltip,
-                    displayIcon,
-                    groupReadyCheckOnly[buff.groupId],
-                    groupFreeConsumable[buff.groupId]
+                    readyCheckOnly,
+                    freeConsumable
                 )
             end
         else
-            local displaySpells = buff.displaySpells or buff.spellID
             y = CreateBuffRow(
                 parent,
                 x,
                 y,
-                displaySpells,
+                GetBuffIcons(buff),
                 buff.key,
                 buff.name,
                 buff.infoTooltip,
-                buff.displayIcon,
                 buff.readyCheckOnly,
                 buff.freeConsumable
             )

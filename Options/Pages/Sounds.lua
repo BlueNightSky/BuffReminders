@@ -20,7 +20,7 @@ local CreateButton = BR.CreateButton
 local BUFF_TABLES = BR.BUFF_TABLES
 local BuffGroups = BR.BuffGroups
 
-local GetBuffTexture = BR.Helpers.GetBuffTexture
+local GetBuffIcons = BR.Helpers.GetBuffIcons
 local SetBuffSound = BR.Helpers.SetBuffSound
 
 local LayoutSectionNote = BR.Options.Helpers.LayoutSectionNote
@@ -41,7 +41,7 @@ local SOUND_ICON_SIZE = 20
 local ADD_BTN_HEIGHT = 22
 local LIST_TOP_GAP = 6
 
--- Build a {key -> {name, spellID}} lookup spanning every static buff array
+-- Build a {key -> {name, buff}} lookup spanning every static buff array
 -- plus the user's custom buffs. Static portion is cached at file scope; custom
 -- buffs are merged on each call since they can be added/removed at runtime.
 local cachedStaticInfo = nil
@@ -65,13 +65,13 @@ local function GetAllBuffInfo()
                         local groupInfo = BuffGroups[buff.groupId]
                         cachedStaticInfo[buff.groupId] = {
                             name = groupInfo and groupInfo.displayName or buff.name,
-                            spellID = buff.displaySpells or buff.spellID,
+                            buff = buff,
                         }
                     end
                 else
                     cachedStaticInfo[buff.key] = {
                         name = buff.name,
-                        spellID = buff.displaySpells or buff.spellID,
+                        buff = buff,
                     }
                 end
             end
@@ -88,7 +88,7 @@ local function GetAllBuffInfo()
         for key, customBuff in pairs(db.customBuffs) do
             info[key] = {
                 name = customBuff.name or (L["CustomBuff.Action.Spell"] .. " " .. tostring(customBuff.spellID)),
-                spellID = customBuff.spellID,
+                buff = customBuff,
             }
         end
     end
@@ -233,11 +233,7 @@ local function Build(content, scrollFrame)
                 row:ClearAllPoints()
                 row:SetPoint("TOPLEFT", 0, y)
 
-                local spellID = info and info.spellID
-                if type(spellID) == "table" then
-                    spellID = spellID[1]
-                end
-                local texture = spellID and GetBuffTexture(spellID)
+                local texture = info and info.buff and GetBuffIcons(info.buff)[1]
                 if texture then
                     row.icon:SetTexture(texture)
                     row.icon:SetTexCoord(TEXCOORD_INSET, 1 - TEXCOORD_INSET, TEXCOORD_INSET, 1 - TEXCOORD_INSET)
