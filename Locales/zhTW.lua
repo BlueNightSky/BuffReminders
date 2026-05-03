@@ -68,9 +68,9 @@ L["Overlay.NoShield"] = "沒有\n護盾"
 L["Overlay.NoPet"] = "沒有\n寵物"
 L["Overlay.PassivePet"] = "寵物\n被動"
 L["Overlay.WrongPet"] = "寵物\n錯誤"
-L["Overlay.NoRune"] = "沒有\n符文"
 L["Overlay.WrongStance"] = "錯誤\n姿態"
 L["Overlay.WrongForm"] = "錯誤\n形態"
+L["Overlay.NoRune"] = "沒有\n符文"
 L["Overlay.DKWrongRune"] = "符文\n錯誤"
 L["Overlay.DKWrongRuneOH"] = "副手\n符文\n錯誤"
 L["Overlay.NoFlask"] = "沒有\n精鍊"
@@ -256,16 +256,29 @@ L["Display.LoginSelfOnlyOutside"] =
 -- ============================================================================
 -- OPTIONS: NAVIGATION LABELS
 -- ============================================================================
-L["Tab.DisplayBehavior"] = "顯示與行為"
+L["Tab.DisplayBehavior"] = "顯示/行為"
 
 -- Sidebar groups
+L["Sidebar.General"] = "通用"
 L["Sidebar.Buffs"] = "增益"
+L["Sidebar.DisplayBehavior"] = "顯示與行為"
 L["Sidebar.Profiles"] = "設定檔"
 
 -- Page titles
+L["Page.General"] = "通用"
+L["Page.Defaults"] = "預設"
+L["Page.Visibility"] = "可見性"
 L["Page.ChatRequests"] = "聊天請求"
+L["Page.AnchorFrames"] = "定位框架"
 L["Page.Profiles"] = "設定檔"
+L["Page.AllBuffs"] = "所有增益"
+L["Page.DetachedIcons"] = "分離圖示"
 L["Page.Sounds"] = "音效"
+L["Page.Sounds.Desc"] =
+    "當追蹤的增益缺失時播放聲音。警報適用於所有增益類別 - 每個增益分配一個。"
+
+-- Per-category page section headers
+L["Section.Tracking"] = "追蹤"
 
 -- ============================================================================
 -- OPTIONS: SOUND ALERTS
@@ -304,8 +317,8 @@ L["Options.GlowReminderIcons.Desc"] =
     "為所有顯示的提示圖示添加發光效果，包括缺失和即將過期的增益。"
 L["Options.GlowKind.Expiring"] = "即將過期"
 L["Options.GlowKind.Missing"] = "缺失"
-L["Options.GlowSettings.Expiring"] = "發光設置 - 即將過期"
-L["Options.GlowSettings.Missing"] = "發光設置 - 缺失"
+L["Options.GlowSettings.Expiring"] = "發光設置 — 即將過期"
+L["Options.GlowSettings.Missing"] = "發光設置 — 缺失"
 L["Options.Glow.Enabled"] = "啟用"
 L["Options.Threshold"] = "閾值"
 L["Options.GlowMissingPets"] = "缺失寵物發光"
@@ -410,11 +423,15 @@ L["Options.ClickToCast.DescFull"] =
     "你可以點擊增益圖示來施放對應的法術（僅限非戰鬥狀態）。只對你的角色可施放的法術有效。"
 L["Options.HoverHighlight"] = "懸停高亮"
 L["Options.HoverHighlight.Desc"] = "將鼠標懸停在可點擊的增益圖示上時，顯示微弱的高亮效果。"
+L["Options.ChatRequests"] = "聊天請求"
 L["Options.RequestBuffInChat"] = "在聊天中請求缺失的增益"
 L["Options.RequestBuffInChat.Desc"] =
     "點擊您的職業無法提供的缺失增益，並在聊天中請求它。自動偵測頻道（副本/團隊/隊伍/說）。每個增益有30秒冷卻時間。"
+
+L["Options.ChatRequestModal.ResetAll"] = "重置全部"
+L["ChatRequests.PerBuffMessages"] = "每個增益的訊息"
 -- Chat request messages (keyed by buff.key, sent as-is via SendChatMessage)
--- EU/US translators: leave untranslated so chat messages stay in L.
+-- EU/US translators: leave untranslated so chat messages stay in English.
 -- Asian translators: translate these so chat messages match your locale.
 L["ChatRequest.intellect"] = "請補上祕法智力的增益"
 L["ChatRequest.attackPower"] = "請補上戰鬥怒吼的增益"
@@ -549,6 +566,28 @@ L["Options.Layout"] = "布局"
 L["Options.SplitFrame"] = "分離為獨立框架"
 L["Options.SplitFrame.Desc"] = "將此類別中的增益顯示在可獨立移動的單獨框架中。"
 
+-- Display Order section (Defaults page) - drives the same priority field the
+-- old per-category slider wrote, but as a single ordered list across all
+-- non-split categories.
+L["Options.DisplayOrder"] = "顯示順序"
+L["Options.DisplayOrder.Note"] =
+    "類別如何在組合框架內從上到下堆疊。分離的類別存在於它們自己的框架中不參與。"
+L["Options.DisplayOrder.SplitGroup"] = "分離 (獨立框架)"
+L["Options.DisplayOrder.SplitBadge"] = "分離"
+
+-- Detached Icons page (search-driven dual-list manager).
+L["DetachedIcons.PageNote"] =
+    "將單一增益從其類別中拉出到其自己的獨立定位框架中。分離的圖示保留自己的定位點，並且在框架解鎖時可以獨立移動。"
+L["DetachedIcons.Search"] = "搜尋:"
+L["DetachedIcons.Available"] = "可用"
+L["DetachedIcons.CurrentlyDetachedCount"] = "目前已分離 (%d)"
+L["DetachedIcons.NoneDetached"] = "沒有分離的圖示。找到下面的增益並點擊分離"
+L["DetachedIcons.NoMatches"] = "無符合的。"
+L["DetachedIcons.Detach"] = "分離"
+L["DetachedIcons.Reattach"] = "重新連接"
+L["DetachedIcons.ResetPos"] = "重置"
+L["DetachedIcons.ReattachAll"] = "全部重新連接"
+
 -- ============================================================================
 -- OPTIONS: APPEARANCE
 -- ============================================================================
@@ -567,6 +606,9 @@ L["Options.ShowMinimapButton"] = "顯示小地圖按鈕"
 
 -- Hide when section
 L["Options.HideWhen"] = "隱藏條件:"
+L["Options.HideWhen.Alone"] = "單獨時"
+L["Options.HideWhen.Alone.Title"] = "單獨時隱藏"
+L["Options.HideWhen.Alone.Desc"] = "當不在隊伍或團隊中時隱藏所有增益提醒"
 L["Options.HideWhen.Resting"] = "休息時"
 L["Options.HideWhen.Resting.Title"] = "休息時隱藏"
 L["Options.HideWhen.Resting.Desc"] = "在旅店或主城時隱藏增益提示。"
@@ -675,6 +717,7 @@ L["Options.Unlock"] = "解鎖"
 -- OPTIONS: CUSTOM BUFF MODAL
 -- ============================================================================
 L["CustomBuff.Edit"] = "編輯自定義增益"
+L["CustomBuff.EditShort"] = "編輯"
 L["CustomBuff.Add"] = "添加自定義增益"
 L["CustomBuff.AddButton"] = "+ 添加自定義增益"
 L["CustomBuff.SpellIDs"] = "法術ID:"
@@ -717,7 +760,7 @@ L["CustomBuff.RequireItem"] = "需要物品:"
 L["CustomBuff.RequireItem.EquippedBags"] = "已裝備/背包中"
 L["CustomBuff.RequireItem.Equipped"] = "已裝備"
 L["CustomBuff.RequireItem.InBags"] = "背包中"
-L["CustomBuff.RequireItem.Hint"] = "物品ID - 缺失時隱藏"
+L["CustomBuff.RequireItem.Hint"] = "物品ID — 缺失時隱藏"
 L["CustomBuff.ItemCooldown"] = "冷卻:"
 L["CustomBuff.ItemCooldown.Any"] = "任何"
 L["CustomBuff.ItemCooldown.OffCooldown"] = "關閉冷卻"
@@ -770,6 +813,7 @@ L["Options.JoinDiscord.Desc"] = "有反饋、功能請求或發現BUG？\n歡迎
 -- ============================================================================
 -- OPTIONS: CUSTOM ANCHOR FRAMES
 -- ============================================================================
+L["Options.CustomAnchorFrames"] = "自定義定位點框架"
 L["Options.CustomAnchorFrames.Desc"] =
     "在定位點下拉選單中添加全局框架名稱。（例：MyAddon_PlayerFrame）\n游戲中不存在的框架會自動跳過。"
 L["Options.Add"] = "添加"

@@ -12,6 +12,7 @@ ascii-clean:
 	@find . -type f \( -name '*.lua' -o -name '*.md' -o -name '*.sh' \) \
 		-not -path './Libs/*' \
 		-not -path './ignored/*' \
+		-not -path './Locales/*' \
 		-exec sed -i 's/—/-/g; s/…/.../g; s/→/->/g' {} +
 
 format:
