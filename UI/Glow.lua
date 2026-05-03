@@ -196,11 +196,34 @@ local GLOW_START = {
     end,
 }
 
+-- Resolve LCG stop functions at call time (matches GLOW_START's closure pattern).
+-- Direct references would be captured at file-load time; if another addon later
+-- loads a higher-minor LCG copy, LibStub mutates the shared lib table in place -
+-- LCG.PixelGlow_Start (call-time lookup) jumps to the new pool's function while
+-- a load-time-cached LCG.PixelGlow_Stop still references the old pool's upvalue,
+-- so we'd acquire from one pool and release to another ("doesn't belong to this
+-- pool" pool error). Looking up at call time keeps Start/Stop on the same lib.
 local GLOW_STOP = {
-    LCG.PixelGlow_Stop,
-    LCG.AutoCastGlow_Stop,
+    function(f, key)
+        LCG.PixelGlow_Stop(f, key)
+    end,
+    function(f, key)
+        LCG.AutoCastGlow_Stop(f, key)
+    end,
     BR.Glow.PulsingBorderStop,
-    LCG.ProcGlow_Stop,
+    function(f, key)
+        LCG.ProcGlow_Stop(f, key)
+    end,
+}
+
+-- LCG stores the acquired pool frame on its parent at this key prefix + caller's
+-- key. If a Stop call fails (e.g. surviving cross-version pool mismatch via
+-- pcall, or the frame was reclaimed externally), nil out the stored reference so
+-- the next Start treats the slot as empty and re-acquires from the live pool.
+local LCG_FRAME_KEYS = {
+    [GlowType.Pixel] = "_PixelGlow",
+    [GlowType.AutoCast] = "_AutoCastGlow",
+    [GlowType.Proc] = "_ProcGlow",
 }
 
 -- Deferred-dispatch retry: when Glow.Start is called before the host's rect has
@@ -306,7 +329,16 @@ function BR.Glow.Stop(frame, typeIndex, key)
     end
     local fn = GLOW_STOP[typeIndex]
     if fn then
-        fn(host, key)
+        -- pcall: a stale pool reference (cross-version LCG load) or an externally
+        -- reclaimed frame would otherwise raise "doesn't belong to this pool" out
+        -- of Blizzard's ObjectPoolMixin:Release. Swallow the error.
+        pcall(fn, host, key)
+        -- Belt and suspenders: clear the per-frame slot so the next Start re-acquires
+        -- from the live pool instead of reusing a now-orphaned glow frame.
+        local lcgKey = LCG_FRAME_KEYS[typeIndex]
+        if lcgKey then
+            host[lcgKey .. (key or "")] = nil
+        end
     end
 end
 
