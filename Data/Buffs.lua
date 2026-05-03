@@ -517,18 +517,7 @@ BR.BUFF_TABLES = {
     },
     ---@type TargetedBuff[]
     targeted = {
-        -- Beacons (alphabetical: Faith, Light)
-        {
-            spellID = 156910,
-            key = "beaconOfFaith",
-            name = L["Buff.BeaconOfFaith"],
-            class = "PALADIN",
-            overlayText = L["Overlay.NoFaith"],
-            groupId = "beacons",
-            requireSpecId = 65, -- Holy only
-            glowDetectable = true,
-            clickMacro = TargetedClickMacro("beaconOfFaith"),
-        },
+        -- Beacons
         {
             spellID = 53563,
             key = "beaconOfLight",
@@ -541,6 +530,17 @@ BR.BUFF_TABLES = {
             excludeSpellID = 200025, -- Hide when Beacon of Virtue is known
             icons = { textures = { 236247 } }, -- Force original icon (talents replace the texture)
             clickMacro = TargetedClickMacro("beaconOfLight"),
+        },
+        {
+            spellID = 156910,
+            key = "beaconOfFaith",
+            name = L["Buff.BeaconOfFaith"],
+            class = "PALADIN",
+            overlayText = L["Overlay.NoFaith"],
+            groupId = "beacons",
+            requireSpecId = 65, -- Holy only
+            glowDetectable = true,
+            clickMacro = TargetedClickMacro("beaconOfFaith"),
         },
         {
             spellID = 360827,
