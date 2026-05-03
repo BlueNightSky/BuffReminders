@@ -264,6 +264,8 @@ BR.CONSUMABLE_ITEMS = {
         [257750] = true, -- Laced Zoomshots (quality 2)
         [257751] = true, -- Weighted Boomshots
         [257752] = true, -- Weighted Boomshots (quality 2)
+        -- TBC (legacy)
+        [23529] = { legacy = true }, -- Adamantite Sharpening Stone
     },
 }
 
