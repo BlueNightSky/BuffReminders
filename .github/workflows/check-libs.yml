@@ -19,58 +19,7 @@ jobs:
         run: sudo apt-get install -y subversion
 
       - name: Fetch latest libraries
-        run: |
-          # CurseForge SVN libs
-          svn export --force https://repos.curseforge.com/wow/libstub/trunk /tmp/LibStub
-          svn export --force https://repos.curseforge.com/wow/callbackhandler/trunk/CallbackHandler-1.0 /tmp/CallbackHandler-1.0
-          svn export --force https://repos.curseforge.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0 /tmp/LibSharedMedia-3.0
-          svn export --force https://repos.curseforge.com/wow/ace3/trunk/AceDB-3.0 /tmp/AceDB-3.0
-          svn export --force https://repos.curseforge.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0 /tmp/LibDBIcon-1.0
-
-          # Ace3 LICENSE covers AceDB-3.0, CallbackHandler-1.0, and LibDBIcon-1.0
-          # (same Ace3 Development Team, same BSD-style notice).
-          svn export --force https://repos.curseforge.com/wow/ace3/trunk/LICENSE.txt /tmp/ace3-LICENSE.txt
-          cp /tmp/ace3-LICENSE.txt /tmp/AceDB-3.0/LICENSE.txt
-          cp /tmp/ace3-LICENSE.txt /tmp/CallbackHandler-1.0/LICENSE.txt
-          cp /tmp/ace3-LICENSE.txt /tmp/LibDBIcon-1.0/LICENSE.txt
-
-          # GitHub libs
-          git clone --depth 1 https://github.com/Stanzilla/LibCustomGlow.git /tmp/LibCustomGlow-1.0-repo
-          mkdir -p /tmp/LibCustomGlow-1.0
-          cp /tmp/LibCustomGlow-1.0-repo/LibCustomGlow-1.0.lua /tmp/LibCustomGlow-1.0/
-          cp /tmp/LibCustomGlow-1.0-repo/LICENSE /tmp/LibCustomGlow-1.0/LICENSE.txt
-
-          git clone --depth 1 https://github.com/tekkub/libdatabroker-1-1.git /tmp/LibDataBroker-1.1-repo
-          mkdir -p /tmp/LibDataBroker-1.1
-          cp /tmp/LibDataBroker-1.1-repo/LibDataBroker-1.1.lua /tmp/LibDataBroker-1.1/
-
-          git clone --depth 1 https://github.com/Adirelle/LibDualSpec-1.0.git /tmp/LibDualSpec-1.0-repo
-          mkdir -p /tmp/LibDualSpec-1.0
-          # Strip @do-not-package@ blocks (test code not meant for distribution)
-          sed '/@do-not-package@/,/@end-do-not-package@/d' /tmp/LibDualSpec-1.0-repo/LibDualSpec-1.0.lua > /tmp/LibDualSpec-1.0/LibDualSpec-1.0.lua
-
-          git clone --depth 1 https://github.com/BigWigsMods/LibSpecialization.git /tmp/LibSpecialization-repo
-          mkdir -p /tmp/LibSpecialization
-          cp /tmp/LibSpecialization-repo/LibSpecialization/LibSpecialization.lua /tmp/LibSpecialization/
-
-          git clone --depth 1 https://github.com/SafeteeWoW/LibDeflate.git /tmp/LibDeflate-repo
-          mkdir -p /tmp/LibDeflate
-          cp /tmp/LibDeflate-repo/LibDeflate.lua /tmp/LibDeflate/
-          cp /tmp/LibDeflate-repo/LICENSE.txt /tmp/LibDeflate/
-
-      - name: Verify every vendored lib has a fetch step
-        run: |
-          # Each Libs/<name>/ must have a /tmp/<name>/ populated by the fetch step.
-          # Catches "added a new lib to Libs/ but forgot to update the fetch step".
-          failed=
-          for d in Libs/*/; do
-            lib=$(basename "$d")
-            if [ ! -d "/tmp/$lib" ]; then
-              echo "::error::Libs/$lib has no fetch step in 'Fetch latest libraries'"
-              failed=1
-            fi
-          done
-          [ -z "$failed" ]
+        run: scripts/fetch-libs.sh
 
       - name: Check for updates
         id: diff
@@ -100,6 +49,7 @@ jobs:
           echo "updated=$updated" >> "$GITHUB_OUTPUT"
 
       - name: Create PR if updates found
+        id: pr
         if: steps.diff.outputs.updated != ''
         uses: peter-evans/create-pull-request@v7
         with:
@@ -112,16 +62,40 @@ jobs:
           branch: chore/update-libs
           delete-branch: true
 
-      - name: Notify Discord on failure
-        if: failure()
+      - name: Notify Discord
+        if: always()
         env:
           WEBHOOK: ${{ secrets.DISCORD_LIBS_WEBHOOK_URL }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          UPDATED: ${{ steps.diff.outputs.updated }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+          PR_OP: ${{ steps.pr.outputs.pull-request-operation }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           if [ -z "$WEBHOOK" ]; then
             echo "DISCORD_LIBS_WEBHOOK_URL secret not set; skipping notification"
             exit 0
           fi
+
+          case "$JOB_STATUS" in
+            failure)
+              content="check-libs failed: $RUN_URL"
+              ;;
+            cancelled)
+              content="check-libs cancelled: $RUN_URL"
+              ;;
+            success)
+              if [ -n "$UPDATED" ]; then
+                content="check-libs: lib-update PR ${PR_OP:-opened} for ${UPDATED} -> ${PR_URL}"
+              else
+                content="check-libs: ran clean, no lib updates this week"
+              fi
+              ;;
+            *)
+              content="check-libs finished with status '$JOB_STATUS': $RUN_URL"
+              ;;
+          esac
+
           curl -sS -H "Content-Type: application/json" \
-            -d "{\"content\": \"check-libs workflow failed: $RUN_URL\"}" \
+            -d "$(jq -nc --arg c "$content" '{content: $c}')" \
             "$WEBHOOK"
