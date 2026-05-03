@@ -27,10 +27,18 @@ jobs:
           svn export --force https://repos.curseforge.com/wow/ace3/trunk/AceDB-3.0 /tmp/AceDB-3.0
           svn export --force https://repos.curseforge.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0 /tmp/LibDBIcon-1.0
 
+          # Ace3 LICENSE covers AceDB-3.0, CallbackHandler-1.0, and LibDBIcon-1.0
+          # (same Ace3 Development Team, same BSD-style notice).
+          svn export --force https://repos.curseforge.com/wow/ace3/trunk/LICENSE.txt /tmp/ace3-LICENSE.txt
+          cp /tmp/ace3-LICENSE.txt /tmp/AceDB-3.0/LICENSE.txt
+          cp /tmp/ace3-LICENSE.txt /tmp/CallbackHandler-1.0/LICENSE.txt
+          cp /tmp/ace3-LICENSE.txt /tmp/LibDBIcon-1.0/LICENSE.txt
+
           # GitHub libs
           git clone --depth 1 https://github.com/Stanzilla/LibCustomGlow.git /tmp/LibCustomGlow-1.0-repo
           mkdir -p /tmp/LibCustomGlow-1.0
           cp /tmp/LibCustomGlow-1.0-repo/LibCustomGlow-1.0.lua /tmp/LibCustomGlow-1.0/
+          cp /tmp/LibCustomGlow-1.0-repo/LICENSE /tmp/LibCustomGlow-1.0/LICENSE.txt
 
           git clone --depth 1 https://github.com/tekkub/libdatabroker-1-1.git /tmp/LibDataBroker-1.1-repo
           mkdir -p /tmp/LibDataBroker-1.1
@@ -45,15 +53,38 @@ jobs:
           mkdir -p /tmp/LibSpecialization
           cp /tmp/LibSpecialization-repo/LibSpecialization/LibSpecialization.lua /tmp/LibSpecialization/
 
+          git clone --depth 1 https://github.com/SafeteeWoW/LibDeflate.git /tmp/LibDeflate-repo
+          mkdir -p /tmp/LibDeflate
+          cp /tmp/LibDeflate-repo/LibDeflate.lua /tmp/LibDeflate/
+          cp /tmp/LibDeflate-repo/LICENSE.txt /tmp/LibDeflate/
+
+      - name: Verify every vendored lib has a fetch step
+        run: |
+          # Each Libs/<name>/ must have a /tmp/<name>/ populated by the fetch step.
+          # Catches "added a new lib to Libs/ but forgot to update the fetch step".
+          failed=
+          for d in Libs/*/; do
+            lib=$(basename "$d")
+            if [ ! -d "/tmp/$lib" ]; then
+              echo "::error::Libs/$lib has no fetch step in 'Fetch latest libraries'"
+              failed=1
+            fi
+          done
+          [ -z "$failed" ]
+
       - name: Check for updates
         id: diff
         run: |
           updated=""
 
-          # Compare only the .lua files we actually bundle
-          for lib in LibStub CallbackHandler-1.0 LibSharedMedia-3.0 LibCustomGlow-1.0 AceDB-3.0 LibDBIcon-1.0 LibDataBroker-1.1 LibDualSpec-1.0 LibSpecialization; do
+          # Iterate every vendored lib folder and compare each file against its upstream
+          # counterpart. Files we ship without an upstream copy (e.g. our hand-shipped
+          # LGPL text for LibSharedMedia-3.0) are skipped naturally.
+          for d in Libs/*/; do
+            lib=$(basename "$d")
             changed=false
-            for bundled in Libs/$lib/*.lua; do
+            for bundled in Libs/$lib/*; do
+              [ -f "$bundled" ] || continue
               fname=$(basename "$bundled")
               if [ -f "/tmp/$lib/$fname" ] && ! diff -q "$bundled" "/tmp/$lib/$fname" > /dev/null 2>&1; then
                 cp "/tmp/$lib/$fname" "$bundled"
@@ -80,3 +111,17 @@ jobs:
             Please review the diff to make sure nothing breaking changed.
           branch: chore/update-libs
           delete-branch: true
+
+      - name: Notify Discord on failure
+        if: failure()
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_LIBS_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "DISCORD_LIBS_WEBHOOK_URL secret not set; skipping notification"
+            exit 0
+          fi
+          curl -sS -H "Content-Type: application/json" \
+            -d "{\"content\": \"check-libs workflow failed: $RUN_URL\"}" \
+            "$WEBHOOK"
