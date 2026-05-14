@@ -423,9 +423,26 @@ english["Options.ShowMissingCountOnly"] = "Show missing count only"
 english["Options.ShowMissingCountOnly.Desc"] =
     'Show only the number of missing buffs (e.g., "1") instead of the full count (e.g., "19/20")'
 english["Options.ShowBuffReminderText"] = 'Show "BUFF!" reminder text'
-english["Options.BuffTextOffsetX"] = '"BUFF!" X'
-english["Options.BuffTextOffsetY"] = '"BUFF!" Y'
 english["Options.Size"] = "Size"
+
+-- ============================================================================
+-- OPTIONS: TEXT POSITIONS
+-- ============================================================================
+english["Options.TextPositions"] = "Text"
+english["Options.TextPositions.Zone"] = "Position"
+english["Options.TextPositions.OffsetX.Short"] = "X"
+english["Options.TextPositions.OffsetY.Short"] = "Y"
+english["Options.TextPositions.StackCount"] = "Stack count"
+english["Options.TextPositions.StatLabel"] = "Stat label"
+english["Options.TextPositions.Badge"] = "Badge (H / F)"
+english["Options.TextPositions.Vertical.Above"] = "Above"
+english["Options.TextPositions.Vertical.InsideTop"] = "Top"
+english["Options.TextPositions.Vertical.InsideMiddle"] = "Center"
+english["Options.TextPositions.Vertical.InsideBottom"] = "Bottom"
+english["Options.TextPositions.Vertical.Below"] = "Below"
+english["Options.TextPositions.Align.Left"] = "Left"
+english["Options.TextPositions.Align.Center"] = "Center"
+english["Options.TextPositions.Align.Right"] = "Right"
 
 -- ============================================================================
 -- OPTIONS: CLICK TO CAST
@@ -866,8 +883,6 @@ english["Appearance.Border"] = "Border"
 english["Appearance.Spacing"] = "Spacing"
 english["Appearance.Alpha"] = "Alpha"
 english["Appearance.Text"] = "Text"
-english["Appearance.TextX"] = "Text X"
-english["Appearance.TextY"] = "Text Y"
 
 -- Slider tooltip
 english["Component.AdjustValue"] = "Adjust value"
