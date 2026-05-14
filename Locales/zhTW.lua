@@ -413,8 +413,6 @@ L["Options.ShowMissingCountOnly"] = "僅顯示缺失數量"
 L["Options.ShowMissingCountOnly.Desc"] =
     "僅顯示缺失增益的數量（例如：”1“），而不是完整的分數形式（例如：”19/20“）。"
 L["Options.ShowBuffReminderText"] = "顯示“補BUFF”提示文字"
-L["Options.BuffTextOffsetX"] = "“補BUFF” X軸"
-L["Options.BuffTextOffsetY"] = "“補BUFF” Y軸"
 L["Options.Size"] = "大小"
 
 -- ============================================================================
@@ -851,8 +849,6 @@ L["Appearance.Border"] = "邊框"
 L["Appearance.Spacing"] = "間距"
 L["Appearance.Alpha"] = "透明度"
 L["Appearance.Text"] = "文字"
-L["Appearance.TextX"] = "文字 X軸"
-L["Appearance.TextY"] = "文字 Y軸"
 
 -- Slider tooltip
 L["Component.AdjustValue"] = "調整數值"

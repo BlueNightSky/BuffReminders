@@ -260,12 +260,12 @@ local function Build(ctx, layout)
     })
     layout:Add(hideConsumableLabelsHolder, nil, COMPONENT_GAP)
 
-    local function buildPositionRow(item, labelKey, enabled)
+    local function buildPositionRow(item, label, enabled)
         local row = CreateFrame("Frame", nil, parent)
         row:SetSize(parent:GetWidth(), 26)
 
         local picker = Components.ZonePicker(row, {
-            label = L[labelKey],
+            label = label,
             labelWidth = 80,
             enabled = enabled,
             get = function()
@@ -314,9 +314,9 @@ local function Build(ctx, layout)
         layout:Add(row, 26, COMPONENT_GAP)
     end
 
-    buildPositionRow("statLabel", "Options.TextPositions.StatLabel", statLabelsShown)
-    buildPositionRow("badge", "Options.TextPositions.Badge")
-    buildPositionRow("stackCount", "Options.TextPositions.StackCount")
+    buildPositionRow("statLabel", L["Options.TextPositions.StatLabel"], statLabelsShown)
+    buildPositionRow("badge", L["Options.TextPositions.Badge"])
+    buildPositionRow("stackCount", L["Options.TextPositions.StackCount"])
 
     -- Behavior controls visibility/filtering (which consumables show at all),
     -- which is a different concern from Item Display (how each icon looks).
