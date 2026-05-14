@@ -543,6 +543,19 @@ BR.BUFF_TABLES = {
             clickMacro = TargetedClickMacro("beaconOfFaith"),
         },
         {
+            -- 408233 is the cast spell (known by the player); 410318 is the link aura applied
+            -- to both the caster and the recipient. The first ID gates IsPlayerSpellCached
+            -- and click-to-cast; the second lets the last-target scan pick up the linked ally.
+            spellID = { 408233, 410318 },
+            casterBuffId = 410318,
+            key = "bestowWeyrnstone",
+            name = L["Buff.BestowWeyrnstone"],
+            class = "EVOKER",
+            overlayText = L["Overlay.NoWeyrnstone"],
+            icons = { spells = { 408233 } }, -- Force the cast-spell icon (avoid duplicate icons from spellID list)
+            clickMacro = TargetedClickMacro("bestowWeyrnstone"),
+        },
+        {
             spellID = 360827,
             key = "blisteringScales",
             name = L["Buff.BlisteringScales"],
