@@ -144,12 +144,12 @@ english["Buff.Soulstone"] = "Soulstone"
 -- Targeted
 english["Buff.BeaconOfFaith"] = "Beacon of Faith"
 english["Buff.BeaconOfLight"] = "Beacon of Light"
-english["Buff.BestowWeyrnstone"] = "Bestow Weyrnstone"
 english["Buff.BlisteringScales"] = "Blistering Scales"
 english["Buff.EarthShield"] = "Earth Shield"
 english["Buff.SourceOfMagic"] = "Source of Magic"
 english["Buff.SymbioticRelationship"] = "Symbiotic Relationship"
 english["Buff.Timelessness"] = "Timelessness"
+english["Buff.Weyrnstone"] = "Weyrnstone"
 -- Self
 english["Buff.ArcaneFamiliar"] = "Arcane Familiar"
 english["Buff.Attunement"] = "Attunement"
