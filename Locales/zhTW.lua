@@ -416,6 +416,25 @@ L["Options.ShowBuffReminderText"] = "顯示“補BUFF”提示文字"
 L["Options.Size"] = "大小"
 
 -- ============================================================================
+-- OPTIONS: TEXT POSITIONS
+-- ============================================================================
+L["Options.TextPositions"] = "文字"
+L["Options.TextPositions.Zone"] = "位置"
+L["Options.TextPositions.OffsetX.Short"] = "X"
+L["Options.TextPositions.OffsetY.Short"] = "Y"
+L["Options.TextPositions.StackCount"] = "堆疊計數"
+L["Options.TextPositions.StatLabel"] = "屬性標籤"
+L["Options.TextPositions.Badge"] = "標誌 (H / F)"
+L["Options.TextPositions.Vertical.Above"] = "上方"
+L["Options.TextPositions.Vertical.InsideTop"] = "頂部"
+L["Options.TextPositions.Vertical.InsideMiddle"] = "中央"
+L["Options.TextPositions.Vertical.InsideBottom"] = "底部"
+L["Options.TextPositions.Vertical.Below"] = "下方"
+L["Options.TextPositions.Align.Left"] = "左側"
+L["Options.TextPositions.Align.Center"] = "中央"
+L["Options.TextPositions.Align.Right"] = "右側"
+
+-- ============================================================================
 -- OPTIONS: CLICK TO CAST
 -- ============================================================================
 L["Options.ClickToCast"] = "點擊施法"
@@ -853,6 +872,7 @@ L["Appearance.Text"] = "文字"
 -- Slider tooltip
 L["Component.AdjustValue"] = "調整數值"
 L["Component.AdjustValue.Desc"] = "點擊輸入或使用鼠標滾輪。"
+L["Component.AdjustValue.ClickHint"] = "點擊數字即可輸入具體數值"
 
 -- Direction labels
 L["Direction.Left"] = "左側"
