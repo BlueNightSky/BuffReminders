@@ -575,7 +575,7 @@ local defaults = {
             position = { point = "CENTER", x = 0, y = 180 },
             useCustomAppearance = false,
             split = false,
-            clickable = false,
+            clickable = true,
             clickableHighlight = true,
             priority = 3,
         },
@@ -3931,7 +3931,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- ====================================================================
         -- Versioned migrations - each runs exactly once, tracked by dbVersion
         -- ====================================================================
-        local DB_VERSION = 41
+        local DB_VERSION = 42
 
         local migrations = {
             -- [1] Consolidate all pre-versioning migrations (v2.8 -> v3.x)
@@ -4779,6 +4779,16 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
                             cs.textPositions = nil
                         end
                     end
+                end
+            end,
+
+            -- [42] Enable click-to-cast for targeted buffs by default.
+            -- Previous default was false, so existing users inherited "off" without
+            -- ever choosing it. Flip to true once; users who turn it back off after
+            -- this migration are respected (migrations run once per dbVersion).
+            [42] = function()
+                if db.categorySettings and db.categorySettings.targeted then
+                    db.categorySettings.targeted.clickable = true
                 end
             end,
         }
