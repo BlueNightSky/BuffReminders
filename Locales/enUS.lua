@@ -887,6 +887,7 @@ english["Appearance.Text"] = "Text"
 -- Slider tooltip
 english["Component.AdjustValue"] = "Adjust value"
 english["Component.AdjustValue.Desc"] = "Click to type or use mouse wheel"
+english["Component.AdjustValue.ClickHint"] = "Click the number to input a specific value"
 
 -- Direction labels
 english["Direction.Left"] = "Left"

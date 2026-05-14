@@ -652,38 +652,14 @@ function Components.Slider(parent, config)
         editBox:SetFocus()
         editBox:HighlightText()
     end)
-    SetupTooltip(valueBtn, L["Component.AdjustValue"], L["Component.AdjustValue.Desc"], "ANCHOR_TOP")
-
-    -- Mouse wheel support
-    holder:EnableMouseWheel(true)
-    holder:SetScript("OnMouseWheel", function(_, delta)
-        if isEnabled then
-            local newVal
-            local remainder = currentValue % step
-            if remainder == 0 then
-                -- Already aligned, move by full step
-                newVal = currentValue + (delta * step)
-            elseif delta > 0 then
-                -- Snap up to next multiple of step
-                newVal = currentValue + (step - remainder)
-            else
-                -- Snap down to previous multiple of step
-                newVal = currentValue - remainder
-            end
-            newVal = max(config.min, min(config.max, newVal))
-            currentValue = newVal
-            valueText:SetText(displayText(currentValue))
-            UpdateVisual()
-            config.onChange(floor(currentValue))
-        end
-    end)
+    SetupTooltip(valueBtn, L["Component.AdjustValue"], L["Component.AdjustValue.ClickHint"], "ANCHOR_TOP")
 
     -- Hover tooltip (on all interactive children, chained with existing scripts)
-    local wheelHint = "Use mouse wheel to adjust"
+    local clickHint = L["Component.AdjustValue.ClickHint"]
     if config.tooltip then
         local title = config.tooltip.title
         local desc = config.tooltip.desc
-        local fullDesc = desc and (desc .. "\n\n" .. wheelHint) or wheelHint
+        local fullDesc = desc and (desc .. "\n\n" .. clickHint) or clickHint
         holder:EnableMouse(true)
         local function showTip()
             ShowTooltip(holder, title, fullDesc, "ANCHOR_TOP")
@@ -701,7 +677,7 @@ function Components.Slider(parent, config)
         valueBtn:HookScript("OnLeave", hideTip)
     else
         local function showHint()
-            ShowTooltip(holder, wheelHint, nil, "ANCHOR_TOP")
+            ShowTooltip(holder, L["Component.AdjustValue"], clickHint, "ANCHOR_TOP")
         end
         thumb:HookScript("OnEnter", showHint)
         thumb:HookScript("OnLeave", HideTooltip)
