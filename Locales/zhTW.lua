@@ -202,6 +202,7 @@ L["Tooltip.MayShowExtraIcon.Desc"] =
 L["Tooltip.InstanceEntryReminder"] = "副本進本提示"
 L["Tooltip.InstanceEntryReminder.Desc"] =
     "進入地下城時會短暫顯示放置靈魂井的提示。施放法術或30秒後將消失。"
+L["BuffTooltip.ProvidedBy"] = "由 %s 提供"
 
 -- ============================================================================
 -- GLOW TYPE NAMES
@@ -474,6 +475,9 @@ L["Options.PetSpecIcon.Desc"] =
     "鼠標懸停時，寵物圖示將變為對應的專精技能（狡詐、狂野、堅韌）。"
 L["Options.ShowItemTooltips"] = "顯示物品提示訊息"
 L["Options.ShowItemTooltips.Desc"] = "將鼠標懸停在消耗品圖示上時顯示物品詳細訊息。"
+L["Options.ShowBuffTooltips"] = "顯示增益工具提示"
+L["Options.ShowBuffTooltips.Desc"] =
+    "將滑鼠懸停在團隊或職業增益圖示上時，顯示法術工具提示以及提供增益的職業。"
 L["Options.Behavior"] = "行為"
 L["Options.PetPassiveCombat"] = "僅在戰鬥中提示被動寵物"
 L["Options.PetPassiveCombat.Desc"] = "僅在戰鬥中顯示被動寵物提示。禁用時則始終顯示。"
