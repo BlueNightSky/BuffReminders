@@ -196,6 +196,7 @@ L["Tooltip.MayShowExtraIcon.Desc"] =
 L["Tooltip.InstanceEntryReminder"] = "副本进本提示"
 L["Tooltip.InstanceEntryReminder.Desc"] =
     "进入地下城时会短暂显示放置灵魂井的提示。施放法术或30秒后将消失。"
+L["BuffTooltip.ProvidedBy"] = "由%s提供"
 
 -- ============================================================================
 -- GLOW TYPE NAMES
@@ -431,6 +432,8 @@ L["Options.PetSpecIcon.Desc"] =
     "鼠标悬停时，宠物图标将变为对应的专精技能（狡诈、狂野、坚韧）。"
 L["Options.ShowItemTooltips"] = "显示物品提示信息"
 L["Options.ShowItemTooltips.Desc"] = "将鼠标悬停在消耗品图标上时显示物品详细信息。"
+L["Options.ShowBuffTooltips"] = "显示增益鼠标提示信息"
+L["Options.ShowBuffTooltips.Desc"] = "当鼠标悬停在团队增益或特殊增益图标上时，显示法术提示信息以及提供该增益的职业。"
 L["Options.Behavior"] = "行为"
 L["Options.PetPassiveCombat"] = "仅在战斗中提示被动宠物"
 L["Options.PetPassiveCombat.Desc"] = "仅在战斗中显示被动宠物提示。禁用时则始终显示。"
