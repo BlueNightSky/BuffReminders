@@ -364,6 +364,7 @@ local defaults = {
     showOnlyInGroup = false,
     hideWhileResting = false,
     hideInCombat = false,
+    hideOthersInCombat = false,
     hideExpiringInCombat = true,
     buffTrackingMode = "all",
     selfOnlyOutsideInstances = true,
