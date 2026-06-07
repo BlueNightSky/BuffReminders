@@ -936,8 +936,9 @@ end
 ---- "self-only outside instances" forces self_only in open world.
 ---- "hide others in combat" narrows "all"/"smart" to "my_buffs" while in combat,
 ---  so reminders for buffs the player can't cast disappear during a fight.
+---- "my buffs only while leveling" narrows "all"/"smart" to "my_buffs" below max level.
 ---Instanced content (raid, dungeon, scenario, PvP) keeps the user-selected mode
----for the outside-instances override; the in-combat override applies everywhere.
+---for the outside-instances override; the in-combat and leveling overrides apply everywhere.
 ---@param db table
 ---@return string
 local function GetEffectiveTrackingMode(db)
@@ -949,6 +950,9 @@ local function GetEffectiveTrackingMode(db)
         end
     end
     if inCombat and db.hideOthersInCombat and (mode == "all" or mode == "smart") then
+        return "my_buffs"
+    end
+    if playerLevel < maxExpansionLevel and db.myBuffsOnlyWhileLeveling and (mode == "all" or mode == "smart") then
         return "my_buffs"
     end
     return mode

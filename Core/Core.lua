@@ -120,6 +120,7 @@ local RootSettings = {
     buffTrackingMode = false, -- No auto-refresh, manually calls UpdateDisplay
     selfOnlyOutsideInstances = "DisplayRefresh",
     hideOthersInCombat = "DisplayRefresh",
+    myBuffsOnlyWhileLeveling = "DisplayRefresh",
     showMissingCountOnly = "DisplayRefresh",
     -- Visibility toggles (routed through Config.Set -> VisibilityRefresh)
     hideInCombat = "VisibilityRefresh",

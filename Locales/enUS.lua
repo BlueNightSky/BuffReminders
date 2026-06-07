@@ -703,6 +703,9 @@ english["Options.BuffTracking.SelfOnlyOutsideInstances.Desc"] =
 english["Options.BuffTracking.HideOthersInCombat"] = 'Use "Only my buffs, all players" in combat'
 english["Options.BuffTracking.HideOthersInCombat.Desc"] =
     "Use 'Only my buffs, all players' while in combat. Reminders for buffs from other classes (e.g. Mark of the Wild on a non-druid) stay visible out of combat so you can call them out, but disappear once the fight starts. Requires tracking mode 'All buffs, all players' or 'Smart'."
+english["Options.BuffTracking.MyBuffsWhileLeveling"] = 'Use "Only my buffs, all players" while leveling'
+english["Options.BuffTracking.MyBuffsWhileLeveling.Desc"] =
+    "Use 'Only my buffs, all players' while below max level. Reminders for buffs from other classes are hidden so you only see the ones you can cast yourself. Once you reach max level, the selected tracking mode is used. Requires tracking mode 'All buffs, all players' or 'Smart'."
 
 -- ============================================================================
 -- OPTIONS: PROFILES TAB

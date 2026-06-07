@@ -365,6 +365,7 @@ local defaults = {
     hideWhileResting = false,
     hideInCombat = false,
     hideOthersInCombat = false,
+    myBuffsOnlyWhileLeveling = true,
     hideExpiringInCombat = true,
     buffTrackingMode = "all",
     selfOnlyOutsideInstances = true,

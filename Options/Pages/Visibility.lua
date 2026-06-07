@@ -91,6 +91,9 @@ local HIDE_WHEN_ROWS = {
         labelKey = "Options.HideWhen.Leveling",
         tooltipTitle = "Options.HideWhen.Leveling.Title",
         tooltipDesc = "Options.HideWhen.Leveling.Desc",
+        extraOnChange = function()
+            Components.RefreshAll()
+        end,
     },
 }
 
@@ -212,6 +215,28 @@ local function BuildTrackingOverridesSection(content, layout)
         end,
     })
     layout:Add(hideOthersInCombatHolder, nil, COMPONENT_GAP)
+
+    local myBuffsWhileLevelingHolder = Components.Checkbox(content, {
+        label = L["Options.BuffTracking.MyBuffsWhileLeveling"],
+        tooltip = {
+            title = L["Options.BuffTracking.MyBuffsWhileLeveling"],
+            desc = L["Options.BuffTracking.MyBuffsWhileLeveling.Desc"],
+        },
+        get = function()
+            return BR.Config.Get("myBuffsOnlyWhileLeveling", true)
+        end,
+        enabled = function()
+            if BR.profile.hideWhileLeveling == true then
+                return false
+            end
+            local mode = BR.Config.Get("buffTrackingMode", "all")
+            return mode == "all" or mode == "smart"
+        end,
+        onChange = function(checked)
+            BR.Config.Set("myBuffsOnlyWhileLeveling", checked)
+        end,
+    })
+    layout:Add(myBuffsWhileLevelingHolder, nil, COMPONENT_GAP)
 end
 
 local function Build(content)
