@@ -157,7 +157,7 @@ local function BuildTrackingSection(content, layout)
             },
         },
         get = function()
-            return BR.Config.Get("buffTrackingMode", "all")
+            return BR.Config.Get("buffTrackingMode")
         end,
         tooltip = {
             title = L["Options.BuffTracking.Mode"],
@@ -183,10 +183,10 @@ local function BuildTrackingOverridesSection(content, layout)
             desc = L["Options.BuffTracking.SelfOnlyOutsideInstances.Desc"],
         },
         get = function()
-            return BR.Config.Get("selfOnlyOutsideInstances", true)
+            return BR.Config.Get("selfOnlyOutsideInstances")
         end,
         enabled = function()
-            return BR.Config.Get("buffTrackingMode", "all") ~= "self_only"
+            return BR.Config.Get("buffTrackingMode") ~= "self_only"
         end,
         onChange = function(checked)
             BR.Config.Set("selfOnlyOutsideInstances", checked)
@@ -201,13 +201,13 @@ local function BuildTrackingOverridesSection(content, layout)
             desc = L["Options.BuffTracking.HideOthersInCombat.Desc"],
         },
         get = function()
-            return BR.Config.Get("hideOthersInCombat", false)
+            return BR.Config.Get("hideOthersInCombat")
         end,
         enabled = function()
             if BR.profile.hideInCombat == true then
                 return false
             end
-            local mode = BR.Config.Get("buffTrackingMode", "all")
+            local mode = BR.Config.Get("buffTrackingMode")
             return mode == "all" or mode == "smart"
         end,
         onChange = function(checked)
@@ -223,13 +223,13 @@ local function BuildTrackingOverridesSection(content, layout)
             desc = L["Options.BuffTracking.MyBuffsWhileLeveling.Desc"],
         },
         get = function()
-            return BR.Config.Get("myBuffsOnlyWhileLeveling", true)
+            return BR.Config.Get("myBuffsOnlyWhileLeveling")
         end,
         enabled = function()
             if BR.profile.hideWhileLeveling == true then
                 return false
             end
-            local mode = BR.Config.Get("buffTrackingMode", "all")
+            local mode = BR.Config.Get("buffTrackingMode")
             return mode == "all" or mode == "smart"
         end,
         onChange = function(checked)

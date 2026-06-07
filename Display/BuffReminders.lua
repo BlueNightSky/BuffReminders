@@ -439,7 +439,9 @@ local defaults = {
         },
         healthstoneVisibility = "readyCheck",
         healthstoneThreshold = 1,
+        healthstoneLowStock = false,
         soulstoneVisibility = "readyCheck",
+        soulstoneHideCooldown = false,
         consumableDisplayMode = "sub_icons",
         consumableTextScale = 25,
         hideConsumableLabels = false,
@@ -448,6 +450,7 @@ local defaults = {
         hideLegacyConsumables = true,
         petDisplayMode = "generic", -- "generic" or "expanded"
         petLabels = true,
+        petLabelScale = 100,
         petSpecIconOnHover = true,
         petLabelClasses = {
             HUNTER = true,
