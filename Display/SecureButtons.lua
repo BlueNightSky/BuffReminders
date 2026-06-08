@@ -1358,6 +1358,11 @@ local function UpdateActionButtons(category)
                         if overlay.highlight then
                             overlay.highlight:SetShown(showHighlight)
                         end
+                    elseif def and def.chatRequestable and db.requestBuffInChat then
+                        -- Player can neither create the consumable nor has one in
+                        -- bags - ask the provider class in chat (e.g. non-warlock
+                        -- requesting a healthstone), just like raid/presence buffs.
+                        SetupChatRequestOverlay(frame, frameHighlight)
                     elseif frame.clickOverlay then
                         -- No action resolved; clear fields but don't Hide() - let
                         -- SyncSecureButtons handle visibility via _br_has_action check.
@@ -1365,6 +1370,7 @@ local function UpdateActionButtons(category)
                         frame.clickOverlay._br_clickMacroFn = nil
                         frame.clickOverlay._br_clickMacroSpellID = nil
                         frame.clickOverlay.itemID = nil
+                        ClearChatRequestState(frame.clickOverlay)
                         frame.clickOverlay:EnableMouse(false)
                     end
                     UpdateConsumableSubElements(frame, actionItems, showHighlight, frameHighlight, db)

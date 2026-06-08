@@ -40,7 +40,16 @@ local CHAT_REQUEST_BUFFS = {
     { key = "devotionAura", labelKey = "Buff.DevotionAura", spellID = 465 },
     { key = "atrophicNumbingPoison", labelKey = "Buff.AtrophicNumbingPoison", spellID = 381637 },
     { key = "soulstone", labelKey = "Buff.Soulstone", spellID = 20707 },
+    { key = "healthstone", labelKey = "Buff.Healthstone", texture = 538745 },
 }
+
+-- Re-evaluate click overlays for every category that can host a chat request:
+-- raid/presence (regular buffs) and consumable (healthstone).
+local function RefreshChatActions()
+    BR.Display.UpdateActionButtons("raid")
+    BR.Display.UpdateActionButtons("presence")
+    BR.Display.UpdateActionButtons("consumable")
+end
 
 local function Build(content, scrollFrame)
     local layout = Components.VerticalLayout(content, { x = COL_PADDING, y = -10 })
@@ -61,8 +70,7 @@ local function Build(content, scrollFrame)
         },
         onChange = function(checked)
             BR.profile.requestBuffInChat = checked
-            BR.Display.UpdateActionButtons("raid")
-            BR.Display.UpdateActionButtons("presence")
+            RefreshChatActions()
             Components.RefreshAll()
         end,
     })
@@ -109,15 +117,14 @@ local function Build(content, scrollFrame)
                 else
                     BR.profile.chatRequestMessages[key] = text
                 end
-                BR.Display.UpdateActionButtons("raid")
-                BR.Display.UpdateActionButtons("presence")
+                RefreshChatActions()
             end,
         })
         holder.editBox:SetMaxLetters(120)
         holder:SetPoint("TOPLEFT", rowsHost, "TOPLEFT", ICON_SIZE + ICON_GAP, -rowY)
         inputHolders[key] = holder
 
-        local icon = CreateBuffIcon(rowsHost, ICON_SIZE, C_Spell.GetSpellTexture(entry.spellID))
+        local icon = CreateBuffIcon(rowsHost, ICON_SIZE, entry.texture or C_Spell.GetSpellTexture(entry.spellID))
         icon:SetPoint("RIGHT", holder, "LEFT", -ICON_GAP, 0)
 
         rowY = rowY + ICON_SIZE + ROW_GAP
@@ -134,8 +141,7 @@ local function Build(content, scrollFrame)
             holder:SetValue("")
             local _ = key
         end
-        BR.Display.UpdateActionButtons("raid")
-        BR.Display.UpdateActionButtons("presence")
+        RefreshChatActions()
     end)
     layout:Add(resetBtn, nil, COMPONENT_GAP)
 

@@ -479,6 +479,7 @@ english["ChatRequest.skyfury"] = "Skyfury buff pls"
 english["ChatRequest.atrophicNumbingPoison"] = "Atrophic/Numbing Poison pls"
 english["ChatRequest.devotionAura"] = "Devotion Aura pls"
 english["ChatRequest.soulstone"] = "Soulstone pls"
+english["ChatRequest.healthstone"] = "Healthstones pls"
 
 -- ============================================================================
 -- OPTIONS: PET

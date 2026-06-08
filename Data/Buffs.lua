@@ -1188,6 +1188,8 @@ BR.BUFF_TABLES = {
             groupId = "healthstone",
             icons = { textures = { 538745 } }, -- Healthstone icon
             freeConsumable = true,
+            -- Non-warlocks (no creation spell, none in bag) click to ask a warlock in chat
+            chatRequestable = true,
             clickMacro = function()
                 local spellID = (GetNumGroupMembers() > 0 and IsInInstance()) and 29893 or 6201
                 local name = BR.GetSpellName(spellID)
