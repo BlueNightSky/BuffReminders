@@ -2583,41 +2583,45 @@ function Components.Tab(parent, config)
     local textW = MeasureTextWidth(config.label or "", "GameFontNormalSmall")
     local width = max(minWidth, textW + 16)
 
+    -- Minimal underline tab, styled to match the main options panel: no boxes or
+    -- fills - the active tab is marked by gold text + a gold underline accent
+    -- (the panel reserves gold for active/selected cues), inactive tabs are a
+    -- muted gray. Keeps dialogs in the panel's restrained, elegant family.
     local tab = CreateFrame("Button", nil, parent)
     tab:SetSize(width, height)
     tab.tabName = config.name
 
-    -- Background (highlighted when active)
-    local bg = tab:CreateTexture(nil, "BACKGROUND")
-    bg:SetPoint("TOPLEFT", 1, -1)
-    bg:SetPoint("BOTTOMRIGHT", -1, 0)
-    bg:SetColorTexture(0.2, 0.2, 0.2, 0)
-    tab.bg = bg
-
-    -- Bottom line (shows when active)
-    local bottomLine = tab:CreateTexture(nil, "BORDER")
-    bottomLine:SetHeight(2)
-    bottomLine:SetPoint("BOTTOMLEFT", 1, 0)
-    bottomLine:SetPoint("BOTTOMRIGHT", -1, 0)
-    bottomLine:SetColorTexture(0.6, 0.6, 0.6, 0)
-    tab.bottomLine = bottomLine
+    -- Underline accent, gold like the panel's active-nav bar; only shown active.
+    local underline = tab:CreateTexture(nil, "ARTWORK")
+    underline:SetHeight(2)
+    underline:SetPoint("BOTTOMLEFT", 1, 0)
+    underline:SetPoint("BOTTOMRIGHT", -1, 0)
+    underline:SetColorTexture(1, 0.82, 0, 0)
+    tab.underline = underline
 
     -- Text
     local text = tab:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    text:SetPoint("CENTER", 0, 0)
+    text:SetPoint("CENTER", 0, 1)
     text:SetWordWrap(false)
     text:SetText(config.label)
     tab.text = text
 
-    -- Hover effect
+    local ACTIVE_TEXT = { 1, 0.82, 0 }
+    local IDLE_TEXT = { 0.6, 0.6, 0.62 }
+    local HOVER_TEXT = { 0.85, 0.85, 0.85 }
+
+    -- Hover only affects the idle (non-active) state: brighten the label and hint
+    -- the underline so the tab reads as clickable without competing with active.
     tab:SetScript("OnEnter", function(self)
         if not self.isActive then
-            self.bg:SetColorTexture(0.25, 0.25, 0.25, 0.5)
+            self.text:SetTextColor(unpack(HOVER_TEXT))
+            self.underline:SetColorTexture(1, 0.82, 0, 0.25)
         end
     end)
     tab:SetScript("OnLeave", function(self)
         if not self.isActive then
-            self.bg:SetColorTexture(0.2, 0.2, 0.2, 0)
+            self.text:SetTextColor(unpack(IDLE_TEXT))
+            self.underline:SetColorTexture(1, 0.82, 0, 0)
         end
     end)
 
@@ -2625,15 +2629,17 @@ function Components.Tab(parent, config)
     function tab:SetActive(active)
         self.isActive = active
         if active then
-            self.bg:SetColorTexture(0.2, 0.2, 0.2, 0.8)
-            self.bottomLine:SetColorTexture(0.8, 0.6, 0, 1)
             self.text:SetFontObject("GameFontHighlightSmall")
+            self.text:SetTextColor(unpack(ACTIVE_TEXT))
+            self.underline:SetColorTexture(1, 0.82, 0, 1)
         else
-            self.bg:SetColorTexture(0.2, 0.2, 0.2, 0)
-            self.bottomLine:SetColorTexture(0.6, 0.6, 0.6, 0)
             self.text:SetFontObject("GameFontNormalSmall")
+            self.text:SetTextColor(unpack(IDLE_TEXT))
+            self.underline:SetColorTexture(1, 0.82, 0, 0)
         end
     end
+
+    tab:SetActive(false)
 
     return tab
 end
@@ -3777,6 +3783,9 @@ function Components.VerticalLayout(parent, config)
     local currentY = y
 
     local layout = {}
+    -- Tracks every anchored frame as { frame, x, y } so the whole stack can be
+    -- nudged after layout (see :ShiftAllBy, used to vertically center dialogs).
+    local items = {}
 
     ---Add a component at the current Y position and advance
     ---@param component table Component frame to position
@@ -3784,6 +3793,7 @@ function Components.VerticalLayout(parent, config)
     ---@param spacing? number Extra spacing after component (default 0)
     function layout:Add(component, height, spacing)
         component:SetPoint("TOPLEFT", parent, "TOPLEFT", x, currentY)
+        tinsert(items, { frame = component, x = x, y = currentY })
         -- Components with dynamic height (e.g. Banner) need to recompute now
         -- that they're anchored, before we read their height.
         if not height and component.FitHeight then
@@ -3799,6 +3809,7 @@ function Components.VerticalLayout(parent, config)
     ---@param spacing? number Extra spacing after text (default 0)
     function layout:AddText(fontString, height, spacing)
         fontString:SetPoint("TOPLEFT", parent, "TOPLEFT", x, currentY)
+        tinsert(items, { frame = fontString, x = x, y = currentY })
         currentY = currentY - height - (spacing or 0)
     end
 
@@ -3827,19 +3838,35 @@ function Components.VerticalLayout(parent, config)
     end
 
     ---Add multiple components on the same row, advancing Y by the tallest
-    ---@param items table[] Array of {component, xOffset} pairs
+    ---@param rowItems table[] Array of {component, xOffset} pairs
     ---@param spacing? number Extra spacing after row (default 0)
-    function layout:AddRow(items, spacing)
+    function layout:AddRow(rowItems, spacing)
         local maxH = 0
-        for _, item in ipairs(items) do
+        for _, item in ipairs(rowItems) do
             local comp, xOff = item[1], item[2]
             comp:SetPoint("TOPLEFT", parent, "TOPLEFT", xOff, currentY)
+            tinsert(items, { frame = comp, x = xOff, y = currentY })
             local h = (comp.GetHeight and comp:GetHeight()) or 20
             if h > maxH then
                 maxH = h
             end
         end
         currentY = currentY - maxH - (spacing or 0)
+    end
+
+    ---Re-anchor every frame added so far by `dy` (negative = down). Used to
+    ---vertically center a finished dialog body. Only re-anchors frames anchored
+    ---directly via :Add/:AddText/:AddRow - frames the caller later re-pointed to
+    ---a sibling ride along with their anchor automatically.
+    ---@param dy number Pixels to shift (added to each frame's stored Y offset)
+    function layout:ShiftAllBy(dy)
+        if dy == 0 then
+            return
+        end
+        for _, item in ipairs(items) do
+            item.frame:ClearAllPoints()
+            item.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", item.x, item.y + dy)
+        end
     end
 
     return layout

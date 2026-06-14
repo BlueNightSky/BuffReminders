@@ -160,16 +160,16 @@ local function Show(targetCategory, glowKind)
     closeBtn:SetSize(24, 24)
     closeBtn:SetPoint("TOPRIGHT", -6, -6)
 
-    -- Expiring / Missing tab toggle
+    -- Expiring / Missing tab toggle (sits below the header divider)
     local expiringTab = Components.Tab(panel, { label = L["Options.GlowKind.Expiring"] })
-    expiringTab:SetPoint("TOPLEFT", MARGIN, -32)
+    expiringTab:SetPoint("TOPLEFT", MARGIN, -42)
     expiringTab:SetActive(glowKind == "expiring")
     expiringTab:SetScript("OnClick", function()
         Show(targetCategory, "expiring")
     end)
 
     local missingTab = Components.Tab(panel, { label = L["Options.GlowKind.Missing"] })
-    missingTab:SetPoint("LEFT", expiringTab, "RIGHT", 4, 0)
+    missingTab:SetPoint("LEFT", expiringTab, "RIGHT", 10, 0)
     missingTab:SetActive(glowKind == "missing")
     missingTab:SetScript("OnClick", function()
         Show(targetCategory, "missing")
@@ -179,7 +179,7 @@ local function Show(targetCategory, glowKind)
 
     -- Content area
     local dynamicHolders = {}
-    local staticLayout = Components.VerticalLayout(panel, { x = MARGIN, y = -56 })
+    local staticLayout = Components.VerticalLayout(panel, { x = MARGIN, y = -74 })
 
     -- Enabled checkbox (per-kind enable/disable)
     local enableKey = glowKind == "missing" and "showMissingGlow" or "showExpirationGlow"
@@ -221,10 +221,29 @@ local function Show(targetCategory, glowKind)
 
     local DYNAMIC_START_Y = staticLayout:GetY()
 
-    -- Preview icon (below separator, top-right)
-    local previewFrame = CreateFrame("Frame", nil, panel)
+    -- Preview: a captioned inset pinned to the header's free right-hand column,
+    -- beside the enable/type controls. Framing it (border + caption) reads as an
+    -- intentional preview panel; keeping it up here clears the full-width sliders
+    -- that fill the dynamic region below.
+    local PREVIEW_PAD = 12
+    local previewBox = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+    previewBox:SetSize(PREVIEW_SIZE + PREVIEW_PAD * 2, PREVIEW_SIZE + PREVIEW_PAD * 2)
+    previewBox:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -MARGIN, -70)
+    previewBox:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    previewBox:SetBackdropColor(0.08, 0.08, 0.1, 1)
+    previewBox:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+
+    local previewCaption = previewBox:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    previewCaption:SetPoint("BOTTOM", previewBox, "TOP", 0, 3)
+    previewCaption:SetText(L["Options.Preview"])
+
+    local previewFrame = CreateFrame("Frame", nil, previewBox)
     previewFrame:SetSize(PREVIEW_SIZE, PREVIEW_SIZE)
-    previewFrame:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(MARGIN + 20), DYNAMIC_START_Y)
+    previewFrame:SetPoint("CENTER", previewBox, "CENTER", 0, 0)
 
     local previewIcon = previewFrame:CreateTexture(nil, "ARTWORK")
     previewIcon:SetAllPoints()

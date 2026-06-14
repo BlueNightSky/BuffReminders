@@ -308,6 +308,7 @@ english["Options.Sound.EditTitle"] = "Edit Sound Alert"
 english["Options.Sound.SelectBuff"] = "Select Buff"
 english["Options.Sound.SelectSound"] = "Select Sound"
 english["Options.Sound.Preview"] = "Preview"
+english["Options.Preview"] = "Preview"
 english["Options.Sound.Save"] = "Save"
 english["Options.Sound.NoBuffs"] = "All buffs already have sounds."
 

@@ -41,6 +41,7 @@ read_globals = {
     "C_Timer",
     "C_UnitAuras",
     "CreateFrame",
+    "CreateColor",
     "GetActionInfo",
     "GetFlyoutInfo",
     "GetFlyoutSlotInfo",
