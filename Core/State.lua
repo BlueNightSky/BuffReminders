@@ -255,6 +255,18 @@ local DRUID_EXPECTED_FORMS = {
     [103] = DRUID_CAT_FORM, -- Feral
 }
 
+-- Travel-family shapeshift form IDs (GetShapeshiftFormID): ground Travel and
+-- Mount Form both report 3, Aquatic reports 4, Flight reports 27. Every variant
+-- shares spell 783 except Mount Form (210053), so we key off the engine form
+-- category instead of the spell - it's spell-agnostic and covers any Mount Form
+-- appearance variant. None of these collide with combat forms (Cat 1, Bear 5,
+-- Moonkin 31). Used to suppress the wrong-form reminder while traveling.
+local DRUID_TRAVEL_FORM_IDS = {
+    [3] = true, -- ground Travel Form + Mount Form
+    [4] = true, -- Aquatic Form
+    [27] = true, -- Flight Form
+}
+
 -- Wrong-warrior-stance cache + derived values (all invalidated together on
 -- UPDATE_SHAPESHIFT_FORM(S), PLAYER_SPECIALIZATION_CHANGED, TRAIT_CONFIG_UPDATED,
 -- SPELLS_CHANGED, PLAYER_ENTERING_WORLD).
@@ -2701,15 +2713,24 @@ end
 
 ---Whether a Feral or Balance druid is in any form other than their spec's
 ---expected form (Cat for Feral, Moonkin for Balance). Returns false for other
----specs/classes. Cached.
+---specs/classes, and (when druidIgnoreTravelForm is enabled) while the player is
+---intentionally traveling - any travel-family form or on a mount. Cached, except
+---the travel/mount gate which is evaluated live so it reacts without cache wiring.
 ---@return boolean
 function BuffState.IsWrongDruidForm()
-    if cachedWrongDruidFormStatus ~= nil then
-        return cachedWrongDruidFormStatus
-    end
     if playerClass ~= "DRUID" then
         cachedWrongDruidFormStatus = false
         return false
+    end
+    -- Suppress while intentionally traveling: any travel-family form
+    -- (ground/aquatic/flight/Mount Form) or riding a regular/skyriding mount.
+    -- Checked before the cache and read live so the toggle and mount/dismount
+    -- take effect on the next refresh without extra cache invalidation.
+    if BR.profile.druidIgnoreTravelForm ~= false and (DRUID_TRAVEL_FORM_IDS[GetShapeshiftFormID()] or IsMounted()) then
+        return false
+    end
+    if cachedWrongDruidFormStatus ~= nil then
+        return cachedWrongDruidFormStatus
     end
     local expected = DRUID_EXPECTED_FORMS[GetPlayerSpecId()]
     if not expected then

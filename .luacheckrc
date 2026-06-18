@@ -63,6 +63,7 @@ read_globals = {
     "GetSpecializationInfoForClassID",
     "GetSpecializationRole",
     "GetShapeshiftForm",
+    "GetShapeshiftFormID",
     "GetShapeshiftFormInfo",
     "GetTime",
     "GetWeaponEnchantInfo",

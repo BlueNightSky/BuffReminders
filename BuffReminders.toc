@@ -73,6 +73,7 @@ Options\Dialogs\PetPassive.lua
 Options\Dialogs\PetSummon.lua
 Options\Dialogs\DelveFood.lua
 Options\Dialogs\Bronze.lua
+Options\Dialogs\DruidForm.lua
 Options\Pages\Defaults.lua
 Options\Pages\DetachedIcons.lua
 Options\Pages\Visibility.lua

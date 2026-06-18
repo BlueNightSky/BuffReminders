@@ -133,6 +133,7 @@ local RootSettings = {
     hideWhileLeveling = "VisibilityRefresh",
     petPassiveOnlyInCombat = "VisibilityRefresh",
     bronzeHideInCombat = "VisibilityRefresh",
+    druidIgnoreTravelForm = "DisplayRefresh", -- recompute wrong-form state, then render
     requestBuffInChat = false, -- No auto-refresh, handled manually
     chatRequestCooldown = false, -- No auto-refresh, read live in PostClick + SyncSecureButtons
 }
