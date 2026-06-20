@@ -2515,20 +2515,28 @@ function BuffState.InvalidateSpellCache()
 end
 
 local function ResolveOffHandType()
-    if cachedOffHandType == nil then
-        local offhandItemID = GetInventoryItemID("player", 17) -- INVSLOT_OFFHAND
-        if not offhandItemID then
-            cachedOffHandType = "none"
-        else
-            local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(offhandItemID)
-            if itemClassID == 2 then -- Enum.ItemClass.Weapon
-                cachedOffHandType = "weapon"
-            elseif itemClassID == 4 and itemSubClassID == 6 then -- Armor + Shield
-                cachedOffHandType = "shield"
-            else
-                cachedOffHandType = "none"
-            end
-        end
+    if cachedOffHandType ~= nil then
+        return
+    end
+    local offhandItemID = GetInventoryItemID("player", 17) -- INVSLOT_OFFHAND
+    if not offhandItemID then
+        cachedOffHandType = "none"
+        return
+    end
+    local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(offhandItemID)
+    if not itemClassID then
+        -- Item data not yet available (intermittent right after login/reload).
+        -- Leave the cache unset so the next refresh retries, rather than poisoning
+        -- it with a stale "none" for the rest of the session (which would make a
+        -- dual-wielder read as two-handed and mismatch their configured runes).
+        return
+    end
+    if itemClassID == 2 then -- Enum.ItemClass.Weapon
+        cachedOffHandType = "weapon"
+    elseif itemClassID == 4 and itemSubClassID == 6 then -- Armor + Shield
+        cachedOffHandType = "shield"
+    else
+        cachedOffHandType = "none"
     end
 end
 
