@@ -218,6 +218,11 @@ function BR.Profiles.RefreshAfterProfileChange()
         BR.Display.BuildCustomBuffArray()
     end
 
+    -- Rebuild loadout reminders if present
+    if BR.Display and BR.Display.BuildLoadoutRulesArray then
+        BR.Display.BuildLoadoutRulesArray()
+    end
+
     -- Sync direction cache before firing LayoutRefresh to prevent spurious position conversions
     if BR.Movers and BR.Movers.SyncDirectionCache then
         BR.Movers.SyncDirectionCache()

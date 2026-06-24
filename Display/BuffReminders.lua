@@ -282,6 +282,7 @@ local TargetedBuffs = BUFF_TABLES.targeted
 local SelfBuffs = BUFF_TABLES.self
 local PetBuffs = BUFF_TABLES.pet
 local CustomBuffs = BUFF_TABLES.custom
+local LoadoutRules = BUFF_TABLES.loadout
 
 -- Build buff key -> setting key mapping (resolves individual keys to groupId when grouped)
 local buffKeyToSettingKey = {}
@@ -348,6 +349,25 @@ local function BuildCustomBuffArray()
     end
 end
 
+---Rebuild BUFF_TABLES.loadout from db.loadoutReminders (preserves table identity via wipe).
+---Icons are resolved live (entry.dynamicIcon each refresh, GetRuleIcon in the list)
+---rather than cached onto the rule, so nothing derived leaks into SavedVariables.
+local function BuildLoadoutRulesArray()
+    local db = BR.profile
+    wipe(LoadoutRules)
+    if not db or not db.loadoutReminders then
+        return
+    end
+    local sortedKeys = {}
+    for k in pairs(db.loadoutReminders) do
+        sortedKeys[#sortedKeys + 1] = k
+    end
+    tsort(sortedKeys)
+    for _, k in ipairs(sortedKeys) do
+        LoadoutRules[#LoadoutRules + 1] = db.loadoutReminders[k]
+    end
+end
+
 -- Get helpers from State.lua
 local GetBuffSettingKey = function(buff)
     return BR.StateHelpers.GetBuffSettingKey(buff)
@@ -361,6 +381,9 @@ end
 local defaults = {
     locked = true,
     enabledBuffs = {},
+    -- User-defined loadout reminders (talent / loadout / equipment-set mismatch).
+    -- Keyed by generated rule key; empty by default. See Options/Dialogs/LoadoutReminder.lua.
+    loadoutReminders = {},
     showOnlyInGroup = false,
     hideWhileResting = false,
     hideInCombat = false,
@@ -531,6 +554,15 @@ local defaults = {
             pvp = true,
             hideInPvPMatch = false,
         },
+        loadout = {
+            openWorld = true,
+            dungeon = true,
+            scenario = true,
+            raid = true,
+            housing = false,
+            pvp = true,
+            hideInPvPMatch = false,
+        },
         consumable = {
             openWorld = false,
             dungeon = true,
@@ -625,6 +657,14 @@ local defaults = {
             clickableHighlight = true,
             priority = 7,
         },
+        loadout = {
+            position = { point = "CENTER", x = 0, y = -20 },
+            useCustomAppearance = false,
+            split = false,
+            clickable = true,
+            clickableHighlight = true,
+            priority = 8,
+        },
     },
 }
 
@@ -696,7 +736,7 @@ local wasMounted = IsMounted()
 -- Category frame system
 local categoryFrames = {}
 local detachedFrames = {} -- Per-icon detached container frames (shown when an icon is detached)
-local CATEGORIES = { "raid", "presence", "targeted", "self", "pet", "consumable", "custom" }
+local CATEGORIES = { "raid", "presence", "targeted", "self", "pet", "consumable", "custom", "loadout" }
 
 -- Track previously visible frame keys for selective hiding (Phase 3 optimization)
 local previouslyVisibleKeys = {} ---@type table<string, boolean>
@@ -717,6 +757,7 @@ local CATEGORY_LABELS = {
     pet = L["Category.Pet"],
     consumable = L["Category.Consumable"],
     custom = L["Category.Custom"],
+    loadout = L["Category.Loadout"],
 }
 
 -- Export for Options.lua and split modules
@@ -1300,6 +1341,13 @@ local function ShowTextFrame(frame, overlayText, shouldGlow, category, cachedGlo
     return true
 end
 
+-- Loadout reminders render the set/talent name below the icon. It's handled like
+-- the raid "BUFF!" label: created in CreateBuffFrame, positioned via the shared
+-- BELOW-center "buffReminder" text zone, and refreshed in UpdateVisuals. The width
+-- caps near the icon so multi-word names wrap (a too-long single word is truncated).
+local SUBLABEL_WIDTH_FACTOR = 1.1
+local SUBLABEL_FONT_SCALE = 0.8
+
 -- Anchor point for each growth direction (anchor is the fixed point, icons grow away from it)
 local DIRECTION_ANCHORS = {
     LEFT = "RIGHT", -- grow left: anchor on right, icons expand leftward
@@ -1580,6 +1628,21 @@ local function CreateBuffFrame(buff, category)
         if raidCs and raidCs.showBuffReminder == false then
             frame.buffText:Hide()
         end
+    end
+
+    -- Loadout reminders: the set/talent name renders below the icon, handled like
+    -- the raid "BUFF!" label (same BELOW-center text zone + UpdateVisuals refresh).
+    -- Text is set per render (the name is dynamic); position/font set here.
+    if category == "loadout" then
+        frame.subLabel = frame:CreateFontString(nil, "OVERLAY")
+        frame.subLabel:SetWordWrap(true)
+        frame.subLabel:SetJustifyH("CENTER")
+        frame.subLabel:SetWidth(iconWidth * SUBLABEL_WIDTH_FACTOR)
+        local lz, lx, ly = BR.TextPositions.Get("buffReminder")
+        BR.TextPositions.Apply(frame.subLabel, frame, lz, lx, ly)
+        frame.subLabel:SetFont(fontPath, GetFontSize(SUBLABEL_FONT_SCALE, catSettings.textSize), outlineFlag)
+        frame.subLabel:SetTextColor(textColor[1], textColor[2], textColor[3], textAlpha)
+        frame.subLabel:Hide()
     end
 
     -- Always click-through (dragging is handled by anchor handles). For raid
@@ -2006,6 +2069,7 @@ local function GenerateTestEntries()
         entry.petActions = nil
         entry.iconByRole = nil
         entry.dynamicIcon = nil
+        entry.subLabel = nil
     end
 
     local raidIndex = 1
@@ -2063,11 +2127,19 @@ local function GenerateTestEntries()
                         end
                     end
                 else
-                    -- consumable, presence, targeted, self, custom
+                    -- consumable, presence, targeted, self, custom, loadout
                     entry.displayType = "text"
                     entry.overlayText = buff.overlayText
                     entry.iconByRole = buff.icons and buff.icons.byRole
                     entry.shouldGlow = missGlowEnabled
+
+                    -- Loadout rules resolve their icon live (no persisted icons table);
+                    -- the eval loop sets dynamicIcon + subLabel in real display, so mirror
+                    -- that here or the test-mode preview shows a blank icon and no name.
+                    if category == "loadout" then
+                        entry.dynamicIcon = BR.Loadouts.GetRuleIcon(buff)
+                        entry.subLabel = buff.name
+                    end
 
                     -- Show first buff as expiring to preview expiration countdown
                     if threshold > 0 and not buff.noExpirationGlow and not expiringShown then
@@ -2552,6 +2624,18 @@ local function RenderVisibleEntry(frame, entry)
             end
         else
             ShowTextFrame(frame, entry.overlayText, entry.shouldGlow, entry.category, cachedGlow)
+        end
+    end
+
+    -- Loadout reminders: the icon shows the "what's wrong" tag; the specific
+    -- set/talent name renders below the icon via frame.subLabel (positioned/sized
+    -- in CreateBuffFrame + UpdateVisuals, like the raid BUFF! label).
+    if frame.subLabel then
+        if entry.category == "loadout" and entry.subLabel and ShouldShowText(frame.buffCategory) then
+            frame.subLabel:SetText(entry.subLabel)
+            frame.subLabel:Show()
+        else
+            frame.subLabel:Hide()
         end
     end
 
@@ -3272,6 +3356,31 @@ end
 -- Forward declaration for ReparentBuffFrames (defined after InitializeFrames)
 local ReparentBuffFrames
 
+-- Loadout reminders are fixed by a plain (insecure) click: equipping a gear set
+-- or opening the talent UI are not protected actions out of combat, so they don't
+-- need a SecureActionButton overlay like the click-to-cast categories do.
+local function WireLoadoutFrameClick(frame)
+    frame:EnableMouse(true)
+    frame:SetScript("OnMouseUp", function(self, button)
+        if button ~= "LeftButton" then
+            return
+        end
+        local db = BR.profile
+        local rule = db and db.loadoutReminders and db.loadoutReminders[self.key]
+        if rule and rule.clickToFix then
+            BR.Loadouts.ApplyFix(rule)
+        end
+    end)
+    -- Glass mouseover highlight, matching the click-to-cast overlay (no opt-in).
+    if not frame.loadoutHighlight then
+        local highlight = frame:CreateTexture(nil, "HIGHLIGHT")
+        highlight:SetAllPoints(frame.icon)
+        highlight:SetTexCoord(TEXCOORD_INSET, 1 - TEXCOORD_INSET, TEXCOORD_INSET, 1 - TEXCOORD_INSET)
+        highlight:SetColorTexture(1, 1, 1, 0.2)
+        frame.loadoutHighlight = highlight
+    end
+end
+
 -- Initialize main frame
 local function InitializeFrames()
     mainFrame = CreateFrame("Frame", "BuffRemindersFrame", UIParent)
@@ -3319,7 +3428,11 @@ local function InitializeFrames()
     -- Create buff frames for all categories (including custom, populated by BuildCustomBuffArray)
     for category, buffArray in pairs(BUFF_TABLES) do
         for _, buff in ipairs(buffArray) do
-            buffFrames[buff.key] = CreateBuffFrame(buff, category)
+            local frame = CreateBuffFrame(buff, category)
+            buffFrames[buff.key] = frame
+            if category == "loadout" then
+                WireLoadoutFrameClick(frame)
+            end
         end
     end
 
@@ -3587,6 +3700,57 @@ BR.CustomBuffs = {
     end,
 }
 
+---Create a frame for a newly added loadout rule (runtime add from the dialog).
+---@param rule LoadoutRule
+local function CreateLoadoutRuleFrameRuntime(rule)
+    if not mainFrame then
+        return
+    end
+    local frame = CreateBuffFrame(rule, "loadout")
+    buffFrames[rule.key] = frame
+    WireLoadoutFrameClick(frame)
+    tinsert(LoadoutRules, rule)
+    -- Keep the runtime array in the same key order BuildLoadoutRulesArray produces
+    -- on reload, so an added/edited rule's display order doesn't drift mid-session
+    -- (State derives sortOrder from this array's index).
+    tsort(LoadoutRules, function(a, b)
+        return a.key < b.key
+    end)
+    ResetLayoutSignatures()
+end
+
+---Tear down a loadout rule's frame and drop it from the runtime array.
+---@param key string
+local function RemoveLoadoutRuleFrame(key)
+    local frame = buffFrames[key]
+    if frame then
+        frame:Hide()
+        frame:SetParent(nil)
+        buffFrames[key] = nil
+    end
+    local db = BR.profile
+    if db.detachedIcons then
+        db.detachedIcons[key] = nil
+    end
+    if detachedFrames[key] then
+        detachedFrames[key]:Hide()
+    end
+    for i = #LoadoutRules, 1, -1 do
+        if LoadoutRules[i].key == key then
+            tremove(LoadoutRules, i)
+            break
+        end
+    end
+    ResetLayoutSignatures()
+end
+
+-- Export loadout-rule management for the options dialog/page.
+BR.LoadoutReminders = {
+    CreateRuntime = CreateLoadoutRuleFrameRuntime,
+    Remove = RemoveLoadoutRuleFrame,
+    RebuildArray = BuildLoadoutRulesArray,
+}
+
 -- Update icon sizes and text (called when settings change)
 local function UpdateVisuals()
     for _, frame in pairs(buffFrames) do
@@ -3655,6 +3819,14 @@ local function UpdateVisuals()
                 showReminder = not raidCs or raidCs.showBuffReminder ~= false
             end
             frame.buffText:SetShown(showReminder)
+        end
+        if frame.subLabel then
+            -- Loadout name label: same treatment as buffText (font / color / zone).
+            frame.subLabel:SetFont(fontPath, GetFrameFontSize(frame, SUBLABEL_FONT_SCALE), outlineFlag)
+            frame.subLabel:SetTextColor(tc[1], tc[2], tc[3], ta)
+            frame.subLabel:SetWidth(width * SUBLABEL_WIDTH_FACTOR)
+            local lz, lx, ly = BR.TextPositions.Get("buffReminder")
+            BR.TextPositions.Apply(frame.subLabel, frame, lz, lx, ly)
         end
         UpdateIconStyling(frame, catSettings)
 
@@ -3916,6 +4088,7 @@ eventFrame:RegisterEvent("UPDATE_SHAPESHIFT_FORMS")
 eventFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 eventFrame:RegisterEvent("PET_STABLE_UPDATE")
 eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+eventFrame:RegisterEvent("EQUIPMENT_SETS_CHANGED")
 eventFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
 eventFrame:RegisterEvent("UNIT_EXITED_VEHICLE")
 eventFrame:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
@@ -4022,6 +4195,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         -- Export functions for profile switch refresh
         BR.Display.DeepCopyDefault = DeepCopyDefault
         BR.Display.BuildCustomBuffArray = BuildCustomBuffArray
+        BR.Display.BuildLoadoutRulesArray = BuildLoadoutRulesArray
 
         local db = BR.profile
 
@@ -4947,6 +5121,12 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         end
         BuildCustomBuffArray()
 
+        -- Initialize loadout reminders storage and populate BUFF_TABLES.loadout
+        if not db.loadoutReminders then
+            db.loadoutReminders = {}
+        end
+        BuildLoadoutRulesArray()
+
         -- Register custom buffs in glow fallback lookup (so they work in M+/combat)
         for _, customBuff in ipairs(CustomBuffs) do
             if customBuff.glowMode ~= "disabled" then
@@ -5336,6 +5516,11 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateItemCache()
         BR.BuffState.InvalidateOffHandCache()
 
+        SetDirty()
+    elseif event == "EQUIPMENT_SETS_CHANGED" then
+        -- A saved equipment set changed (created / equipped / renamed): re-evaluate
+        -- loadout reminders. Icons may have changed too, so rebuild the rule array.
+        BuildLoadoutRulesArray()
         SetDirty()
     elseif event == "BAG_UPDATE_DELAYED" then
         BR.BuffState.InvalidateItemCache()

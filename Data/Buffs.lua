@@ -168,6 +168,32 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field expirationThreshold? number  -- Per-buff expiration threshold in minutes (0 = off)
 ---@field loadConditions? LoadConditions  -- Per-buff content visibility (nil = show everywhere)
 
+---User-defined loadout reminder: shows when the player's setup doesn't match the
+---rule's expectation for the current content. Stored in BR.profile.loadoutReminders
+---and mirrored into BR.BUFF_TABLES.loadout at runtime.
+---@class LoadoutRule
+---@field key string
+---@field name string
+---@field require "gear"|"talent"|"loadout"  -- which kind of expectation this rule checks
+---@field overlayText? string                -- text shown on the reminder icon
+---@field icon? number                        -- fileID fallback for the icon (live icon resolved via Loadouts.GetRuleIcon)
+---@field gear? { setID: number, name?: string }            -- require == "gear"
+---@field spellID? number                                    -- require == "talent" (talent spell)
+---@field specID? number                                     -- spec binding: require == "talent" or "loadout"
+---@field character? string                                  -- character binding ("Name - Realm"): require == "gear" or "loadout"
+---@field class? string                                      -- class token ("PALADIN") of the creating character; drives binding-label color
+---@field loadout? { name: string, configID?: number }       -- require == "loadout"
+---@field when? LoadoutWhen                    -- content scope + instances; nil = everywhere
+---@field clickToFix? boolean                 -- click the icon to equip the set / open the talent UI
+
+---Content scope for a loadout rule. `scope` is a player-facing content tier
+---(raid/dungeon/arena/battleground/delve); `instances` narrows to specific
+---dungeons/raids by name (nil/empty = any).
+---@class LoadoutWhen
+---@field scope? string
+---@field readyCheckOnly? boolean
+---@field instances? { id: number, mapID: number?, name: string, kind: string }[]
+
 ---Check if the player is NOT an Earthen dwarf (they have permanent Well Fed from Ingest Minerals)
 ---@return boolean
 local function IsNotEarthen()
@@ -390,7 +416,7 @@ function BR.InvalidatePoisonCache()
     poisonCache.time = -1
 end
 
----@type table<string, RaidBuff[]|PresenceBuff[]|TargetedBuff[]|SelfBuff[]|ConsumableBuff[]|CustomBuff[]>
+---@type table<string, RaidBuff[]|PresenceBuff[]|TargetedBuff[]|SelfBuff[]|ConsumableBuff[]|CustomBuff[]|LoadoutRule[]>
 BR.BUFF_TABLES = {
     ---@type RaidBuff[]
     raid = {
@@ -1126,6 +1152,10 @@ BR.BUFF_TABLES = {
     },
     ---@type CustomBuff[]
     custom = {},
+    -- User-defined loadout reminders (talent / loadout / equipment set mismatch).
+    -- Populated at runtime from BR.profile.loadoutReminders (see Display BuildLoadoutRulesArray).
+    ---@type LoadoutRule[]
+    loadout = {},
     -- Consumables are disabled in arenas and rated BGs (disabledInCompetitivePvP = true)
     -- unless explicitly allowed (e.g. healthstone). See IsInCompetitivePvP() in State.lua.
     ---@type ConsumableBuff[]

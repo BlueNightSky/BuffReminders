@@ -27,6 +27,7 @@ local _, BR = ...
 ---@field petActions PetActionList?           -- Expanded pet summon actions
 ---@field dynamicIcon number|string|nil      -- Dynamic icon texture override (e.g. next poison to cast)
 ---@field glowKindOverride "expiring"|"missing"|nil -- Override glow kind (e.g. healthstone low stock uses expiring glow)
+---@field subLabel string?                    -- Wrapping label rendered below the icon (loadout reminders: the set/talent name)
 
 -- Lua stdlib locals (avoid repeated global lookups in hot paths)
 local ceil = math.ceil
@@ -46,6 +47,13 @@ local function AsSpellList(val)
 end
 
 -- Localization (resolved once at load time)
+-- Short "what's wrong" tags shown ON a loadout reminder icon (newline so they
+-- wrap to two lines like "NO\nFLASK"); the specific name renders below the icon.
+local LOADOUT_TAGS = {
+    gear = BR.L["Loadout.Tag.Gear"],
+    talent = BR.L["Loadout.Tag.Talent"],
+    loadout = BR.L["Loadout.Tag.Loadout"],
+}
 local FMT_MINUTES = BR.L["Overlay.MinutesFormat"]
 local FMT_LESS_THAN_ONE = BR.L["Overlay.LessThanOneMinute"]
 local FMT_SECONDS = BR.L["Overlay.SecondsFormat"]
@@ -95,6 +103,7 @@ local SelfBuffs = BUFF_TABLES.self
 local PetBuffs = BUFF_TABLES.pet
 local Consumables = BUFF_TABLES.consumable
 local CustomBuffs = BUFF_TABLES.custom
+local LoadoutRules = BUFF_TABLES.loadout
 
 -- ============================================================================
 -- MODULE STATE
@@ -927,6 +936,62 @@ local function IsCustomBuffVisibleForContent(buff)
         elseif lc.levelFilter == "belowMaxLevel" and playerLevel >= maxExpansionLevel then
             return false
         end
+    end
+
+    return true
+end
+
+-- Loadout rule "scope" -> the content type its content must equal. Gear/talents
+-- lock once a key or match starts, so scope is just the content bucket (no
+-- per-difficulty granularity). "dungeon" covers every dungeon difficulty incl.
+-- Mythic+; arena/battleground both live under "pvp" and split on instance type.
+local LOADOUT_SCOPE_CONTENT = {
+    raid = "raid",
+    dungeon = "dungeon",
+    arena = "pvp",
+    battleground = "pvp",
+}
+
+---Check if a loadout rule should be visible for the current content. Rules store a
+---player-facing `scope` (raid / dungeon / arena / battleground) plus an optional
+---instance allow-list and a `readyCheckOnly` gate. Scope captures intent directly,
+---so there is no deny-list to infer.
+---@param rule LoadoutRule
+---@return boolean
+local function IsLoadoutRuleVisibleForContent(rule)
+    if inVehicle then
+        return false
+    end
+    local when = rule.when
+    if not when then
+        return true
+    end
+
+    local scope = when.scope
+    if scope then
+        local needContent = LOADOUT_SCOPE_CONTENT[scope]
+        if not needContent then
+            -- Unknown / retired scope (e.g. a pre-simplification test rule): hide
+            -- rather than show in the wrong content.
+            return false
+        end
+        if GetCurrentContentType() ~= needContent then
+            return false
+        end
+        -- Arena and battleground share the "pvp" content type; split on diff key.
+        if scope == "arena" then
+            if GetCurrentDifficultyKey() ~= "arena" then
+                return false
+            end
+        elseif scope == "battleground" then
+            if GetCurrentDifficultyKey() ~= "bg" then
+                return false
+            end
+        end
+    end
+
+    if when.readyCheckOnly and not inReadyCheck then
+        return false
     end
 
     return true
@@ -1815,6 +1880,7 @@ function BuffState.Refresh(refreshMode)
             entry.petActions = nil
             entry.dynamicIcon = nil
             entry.glowKindOverride = nil
+            entry.subLabel = nil
         end
     end
 
@@ -2318,6 +2384,27 @@ function BuffState.Refresh(refreshMode)
                     local _, remaining = UnitHasBuff("player", buff.buffIdOverride or buff.spellID)
                     TrySetEntryExpiring(entry, remaining, buff.expirationThreshold * 60, true)
                 end
+            end
+        end
+    end
+
+    -- Process loadout reminders (talent / loadout / equipment-set mismatch).
+    -- None of these checks touch the aura API, so they're valid in every context.
+    if not groupOnly then
+        local _, loadoutMissGlow = GetCategoryGlowSettings("loadout")
+        local Loadouts = BR.Loadouts
+        for i, rule in ipairs(LoadoutRules) do
+            local entry = GetOrCreateEntry(rule.key, "loadout", i)
+            if
+                IsBuffEnabled(rule.key)
+                and Loadouts.AppliesToCurrentCharacter(rule)
+                and IsLoadoutRuleVisibleForContent(rule)
+                and Loadouts.CurrentInstanceMatches(rule.when and rule.when.instances)
+                and not Loadouts.IsSatisfied(rule)
+            then
+                entry.dynamicIcon = Loadouts.GetRuleIcon(rule)
+                entry.subLabel = rule.name
+                SetEntryText(entry, LOADOUT_TAGS[rule.require] or rule.overlayText, loadoutMissGlow)
             end
         end
     end

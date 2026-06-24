@@ -13,7 +13,7 @@ BR.Options.Helpers = BR.Options.Helpers or {}
 
 BR.Options.Constants = {
     PANEL_WIDTH = 920,
-    PANEL_HEIGHT = 650,
+    PANEL_HEIGHT = 690,
     SIDEBAR_WIDTH = 188,
     SIDEBAR_X = 14,
     CONTENT_TOP_OFFSET = 64, -- Y offset from panel top to content top (below header bar)
@@ -77,6 +77,14 @@ BR.Options.Groups = {
         pages = { "defaults", "raid", "presence", "targeted", "self", "pet", "consumable", "custom" },
     },
     {
+        -- Loadout reminders are their own feature pillar (gear sets / talents /
+        -- talent loadouts - not auras), so they get a dedicated section rather
+        -- than hiding at the bottom of the buff-centric Display & Behavior group.
+        id = "loadouts",
+        titleKey = "Sidebar.Loadouts",
+        pages = { "loadout" },
+    },
+    {
         -- General pinned on top; remaining pages alphabetical by display name.
         id = "general",
         titleKey = "Sidebar.General",
@@ -98,6 +106,7 @@ BR.Options.CategoryPages = {
     pet = "pet",
     consumable = "consumable",
     custom = "custom",
+    loadout = "loadout",
 }
 
 -- Ordered list of the built-in (non-custom) categories that have entries in
@@ -504,6 +513,7 @@ local function GetCategoryLabels()
         pet = L["Category.PetReminders"],
         consumable = L["Category.Consumables"],
         custom = L["Category.CustomBuffs"],
+        loadout = L["Category.LoadoutReminders"],
     }
     return categoryLabelsCache
 end

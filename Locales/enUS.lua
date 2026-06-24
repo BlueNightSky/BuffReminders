@@ -27,6 +27,7 @@ english["Category.Self"] = "Self"
 english["Category.Pet"] = "Pet"
 english["Category.Consumable"] = "Consumable"
 english["Category.Custom"] = "Custom"
+english["Category.Loadout"] = "Loadout"
 
 -- Long form (used in Options section headers)
 english["Category.RaidBuffs"] = "Raid Buffs"
@@ -36,6 +37,7 @@ english["Category.PresenceBuffs"] = "Presence Buffs"
 english["Category.SelfBuffs"] = "Self Buffs"
 english["Category.PetReminders"] = "Pet Reminders"
 english["Category.CustomBuffs"] = "Custom Buffs"
+english["Category.LoadoutReminders"] = "Loadout Reminders"
 
 -- Category notes
 english["Category.RaidNote"] = "(for the whole group)"
@@ -45,6 +47,44 @@ english["Category.PresenceNote"] = "(at least 1 person needs)"
 english["Category.SelfNote"] = "(buffs strictly on yourself)"
 english["Category.PetNote"] = "(pet summon reminders)"
 english["Category.CustomNote"] = "(track any buff/glow by spell ID)"
+english["Category.LoadoutNote"] = "(remind me when my gear or talents don't match the content)"
+
+-- Loadout reminders
+english["Loadout.Add"] = "Add Loadout Reminder"
+english["Loadout.Edit"] = "Edit Loadout Reminder"
+english["Loadout.AddButton"] = "+ Add Loadout Reminder"
+english["Loadout.Empty"] = "No loadout reminders yet. Add one below."
+english["Loadout.Name"] = "Name"
+english["Loadout.Expect"] = "EXPECT"
+english["Loadout.Applies"] = "APPLIES TO"
+english["Loadout.Content"] = "Content"
+english["Loadout.Requirement"] = "Require"
+english["Loadout.EquipmentSet"] = "Equipment set"
+english["Loadout.TalentSpell"] = "Talent spell ID"
+english["Loadout.NoSets"] = "No equipment sets found. Create one from the character sheet (Equipment Manager) first."
+english["Loadout.NoSetSelected"] = "Select an equipment set first."
+english["Loadout.NoLoadouts"] = "No saved talent loadouts for this spec."
+english["Loadout.NoLoadoutSelected"] = "Select a talent loadout first."
+english["Loadout.InvalidSpell"] = "That spell ID doesn't exist. Use a talent's spell ID."
+english["Loadout.CombatBlocked"] = "Can't change gear or talents in combat."
+english["Loadout.Instances"] = "%d instances"
+english["Loadout.LimitRaids"] = "Only specific raids"
+english["Loadout.LimitDungeons"] = "Only specific dungeons"
+-- Content scope (you can't swap gear/talents once a key or match starts, so the
+-- rule only needs the content you're in - no per-difficulty granularity).
+english["Loadout.Scope.Raid"] = "Raid"
+english["Loadout.Scope.Dungeon"] = "Dungeon"
+english["Loadout.Scope.Arena"] = "Arena"
+english["Loadout.Scope.Battleground"] = "Battleground"
+-- Binding label: spec + class, e.g. "Protection Warrior" (reorder for your locale).
+english["Loadout.SpecClass"] = "%s %s"
+english["Loadout.Require.Gear"] = "Equipment set"
+english["Loadout.Require.Talent"] = "Talent"
+english["Loadout.Require.Loadout"] = "Talent loadout"
+-- On-icon "what's wrong" tags (newline wraps them to two lines on the icon)
+english["Loadout.Tag.Gear"] = "WRONG\nGEAR"
+english["Loadout.Tag.Talent"] = "MISSING\nTALENT"
+english["Loadout.Tag.Loadout"] = "WRONG\nBUILD"
 
 -- ============================================================================
 -- BUFF OVERLAY TEXT
@@ -277,6 +317,7 @@ english["Tab.DisplayBehavior"] = "Display/Behavior"
 english["Sidebar.General"] = "General"
 english["Sidebar.Buffs"] = "Buffs"
 english["Sidebar.DisplayBehavior"] = "Display & Behavior"
+english["Sidebar.Loadouts"] = "Gear & Talents"
 english["Sidebar.Profiles"] = "Profiles"
 
 -- Page titles
@@ -748,6 +789,7 @@ english["Options.UnknownError"] = "Unknown error"
 -- ============================================================================
 english["Dialog.Cancel"] = "Cancel"
 english["Dialog.DeleteCustomBuff"] = 'Delete custom buff "%s"?'
+english["Dialog.DeleteLoadout"] = 'Delete loadout reminder "%s"?'
 english["Dialog.ResetProfile"] =
     "Reset the active profile to defaults?\n\nThis will erase all customizations\nin the current profile and reload the UI."
 english["Dialog.Reset"] = "Reset"

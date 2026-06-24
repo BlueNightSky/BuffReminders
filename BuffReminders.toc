@@ -54,6 +54,7 @@ Data\ConsumableItems.lua
 Data\Pets.lua
 Core\ChatRequest.lua
 Core\ConsumableMemory.lua
+Core\Loadouts.lua
 Core\State.lua
 UI\Components.lua
 UI\Glow.lua
@@ -65,6 +66,7 @@ Options\Context.lua
 Options\Dialogs\Glow.lua
 Options\Dialogs\SoundAlert.lua
 Options\Dialogs\CustomBuff.lua
+Options\Dialogs\LoadoutReminder.lua
 Options\Dialogs\RoguePoison.lua
 Options\Dialogs\Runeforge.lua
 Options\Dialogs\Healthstone.lua
@@ -101,4 +103,5 @@ Options\Pages\Buffs\Self.lua
 Options\Pages\Buffs\Pet.lua
 Options\Pages\Buffs\Consumable.lua
 Options\Pages\Buffs\Custom.lua
+Options\Pages\Buffs\Loadout.lua
 Options\Frame.lua

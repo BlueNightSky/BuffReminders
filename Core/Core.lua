@@ -10,7 +10,7 @@ local _, BR = ...
 -- TYPE DEFINITIONS
 -- ============================================================================
 
----@alias CategoryName "raid"|"presence"|"targeted"|"self"|"pet"|"consumable"|"custom"
+---@alias CategoryName "raid"|"presence"|"targeted"|"self"|"pet"|"consumable"|"custom"|"loadout"
 
 ---@class CategoryPosition
 ---@field point string
@@ -295,6 +295,7 @@ local ValidCategories = {
     pet = true,
     consumable = true,
     custom = true,
+    loadout = true,
 }
 
 -- Dynamic tables (path = {root}.{anyKey})
@@ -305,6 +306,7 @@ local DynamicRoots = {
     splitCategories = "FramesReparent",
     readyCheckOnlyOverrides = "DisplayRefresh",
     detachedIcons = "FramesReparent",
+    loadoutReminders = "DisplayRefresh",
 }
 
 ---Check if a config path is valid
