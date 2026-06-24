@@ -41,6 +41,7 @@ local floor, ceil, max, min = math.floor, math.ceil, math.max, math.min
 local format = string.format
 local rad = math.rad
 local tinsert = table.insert
+local tremove = table.remove
 
 local L = BR.L
 local Components = BR.Components
@@ -3653,9 +3654,21 @@ function Components.SetEditBoxesRef(editBoxes)
 end
 
 ---Refresh all registered components (call on panel OnShow)
+---
+---Auto-prunes orphaned component frames as it goes: any holder that has been
+---SetParent(nil)'d (the teardown signal for a transient widget in a dialog or
+---re-rendered list) is dropped from the registry instead of refreshed. This is
+---a safety net behind explicit Components.Unregister calls -- a call site that
+---forgets to unregister no longer leaks a holder that fires :Refresh() forever
+---and pins its dead dialog alive. Plain refresh hooks (tables without a frame)
+---have no GetParent and are never pruned, so persistent page hooks survive.
+---Iterate in reverse so table.remove during the walk is safe.
 function Components.RefreshAll()
-    for _, component in ipairs(RefreshableComponents) do
-        if component.Refresh then
+    for i = #RefreshableComponents, 1, -1 do
+        local component = RefreshableComponents[i]
+        if component.GetParent and component:GetParent() == nil then
+            tremove(RefreshableComponents, i)
+        elseif component.Refresh then
             component:Refresh()
         end
     end
@@ -3678,7 +3691,7 @@ function Components.Unregister(holder)
     end
     for i = #RefreshableComponents, 1, -1 do
         if RefreshableComponents[i] == holder then
-            table.remove(RefreshableComponents, i)
+            tremove(RefreshableComponents, i)
             return
         end
     end

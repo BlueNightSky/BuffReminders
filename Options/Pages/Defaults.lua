@@ -49,10 +49,10 @@ local ARROW_BG_DISABLED = { 0.05, 0.05, 0.05, 0.5 }
 local ARROW_BORDER = { 0.3, 0.3, 0.3, 1 }
 local ARROW_BORDER_DISABLED = { 0.2, 0.2, 0.2, 0.6 }
 
--- All categories that have a slot in defaults.categorySettings. Used by the
--- Display Order section to enumerate categories without hardcoding the list in
--- multiple places.
-local ALL_CATEGORIES = { "raid", "presence", "targeted", "self", "pet", "consumable", "custom", "loadout" }
+-- All categories that have a slot in defaults.categorySettings, in canonical
+-- order. The Display Order section enumerates these; the list comes from
+-- BR.CATEGORY_ORDER (Core.lua) so it can't drift from the rest of the addon.
+local ALL_CATEGORIES = BR.CATEGORY_ORDER
 
 local function BuildFontOptions()
     local fontList = LSM:List("font")

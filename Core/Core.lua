@@ -285,18 +285,25 @@ local DefaultSettingKeys = {
     position = false, -- No auto-refresh, saved directly by movers
 }
 
--- Valid category names
-local ValidCategories = {
-    main = true,
-    raid = true,
-    presence = true,
-    targeted = true,
-    self = true,
-    pet = true,
-    consumable = true,
-    custom = true,
-    loadout = true,
-}
+-- Canonical buff category list (single source of truth).
+--
+-- Order here is the canonical category order used everywhere it matters:
+-- display stacking, the Defaults "Display Order" UI, the movers, and config
+-- validation. Adding a category here automatically wires it into config-path
+-- validation (ValidCategories below), the display loop (BR.CATEGORIES), the
+-- reorder UI (ALL_CATEGORIES), and the sidebar page map (CategoryPages) -- all
+-- of which derive from this list instead of repeating it. Forgetting to extend
+-- one of those parallel lists is what silently breaks live config updates, so
+-- there is exactly one list to maintain.
+BR.CATEGORY_ORDER = { "raid", "presence", "targeted", "self", "pet", "consumable", "custom", "loadout" }
+
+-- Valid category names for config paths (categorySettings.<category>.<key>).
+-- Derived from BR.CATEGORY_ORDER plus "main", the shared/global frame whose
+-- settings live under categorySettings.main but which is not a buff category.
+local ValidCategories = { main = true }
+for _, cat in ipairs(BR.CATEGORY_ORDER) do
+    ValidCategories[cat] = true
+end
 
 -- Dynamic tables (path = {root}.{anyKey})
 -- These allow any second-level key (buff names, visibility contexts, etc.)

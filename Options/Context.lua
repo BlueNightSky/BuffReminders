@@ -97,17 +97,13 @@ BR.Options.Groups = {
     },
 }
 
--- Categories that map 1:1 to sidebar pages under the "buffs" group.
-BR.Options.CategoryPages = {
-    raid = "raid",
-    presence = "presence",
-    targeted = "targeted",
-    self = "self",
-    pet = "pet",
-    consumable = "consumable",
-    custom = "custom",
-    loadout = "loadout",
-}
+-- Categories that map 1:1 to sidebar pages under the "buffs" group. Every buff
+-- category has a same-named page, so this is just an identity map derived from
+-- the canonical BR.CATEGORY_ORDER (Core.lua) rather than a hand-kept duplicate.
+BR.Options.CategoryPages = {}
+for _, cat in ipairs(BR.CATEGORY_ORDER) do
+    BR.Options.CategoryPages[cat] = cat
+end
 
 -- Ordered list of the built-in (non-custom) categories that have entries in
 -- BR.BUFF_TABLES. Iterating this is the right way to walk every static buff

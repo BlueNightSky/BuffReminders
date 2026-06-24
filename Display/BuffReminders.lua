@@ -736,7 +736,7 @@ local wasMounted = IsMounted()
 -- Category frame system
 local categoryFrames = {}
 local detachedFrames = {} -- Per-icon detached container frames (shown when an icon is detached)
-local CATEGORIES = { "raid", "presence", "targeted", "self", "pet", "consumable", "custom", "loadout" }
+local CATEGORIES = BR.CATEGORY_ORDER -- canonical list from Core.lua
 
 -- Track previously visible frame keys for selective hiding (Phase 3 optimization)
 local previouslyVisibleKeys = {} ---@type table<string, boolean>
