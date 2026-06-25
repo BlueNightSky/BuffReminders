@@ -3760,6 +3760,54 @@ function Components.ScrollableContainer(parent, config)
     return scrollFrame, content
 end
 
+-- Default chrome for BorderedList. Slightly darker than the panel bg + a thin
+-- warm-gray border picks the list area out as a contained region (matching the
+-- dropdown menu chrome and the per-page accent rail).
+local LIST_BG = { 0.05, 0.05, 0.05, 0.6 }
+local LIST_BORDER = { 0.3, 0.25, 0.1, 0.8 }
+local LIST_INSET = 2 -- inner padding between border and the scroll child
+
+---Build a bordered wrapper Frame holding a Components.ScrollableContainer.
+---Returns the wrapper (anchorable into a layout) and the scrollFrame inside.
+---Re-anchors the scrollbar flush to the list bounds since ScrollableContainer's
+---default offsets assume the parent scroll has header padding, which a flat list
+---doesn't.
+---@param parent table
+---@param config table { width, height, inset?, bgColor?, borderColor? }
+---@return table wrapper, table scrollFrame
+function Components.BorderedList(parent, config)
+    local width = config.width
+    local height = config.height
+    local inset = config.inset or LIST_INSET
+    local bgColor = config.bgColor or LIST_BG
+    local borderColor = config.borderColor or LIST_BORDER
+
+    local wrapper = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    wrapper:SetSize(width, height)
+    wrapper:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+    })
+    wrapper:SetBackdropColor(unpack(bgColor))
+    wrapper:SetBackdropBorderColor(unpack(borderColor))
+
+    local scroll = Components.ScrollableContainer(wrapper, {
+        width = width - inset * 2,
+        contentHeight = height - inset * 2,
+    })
+    scroll:SetHeight(height - inset * 2)
+    scroll:SetPoint("TOPLEFT", inset, -inset)
+
+    if scroll.ScrollBar then
+        scroll.ScrollBar:ClearAllPoints()
+        scroll.ScrollBar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", -18, 0)
+        scroll.ScrollBar:SetPoint("BOTTOMLEFT", scroll, "BOTTOMRIGHT", -18, 0)
+    end
+
+    return wrapper, scroll
+end
+
 ---Create a vertical layout helper for positioning elements
 ---@param parent table Parent frame
 ---@param config VerticalLayoutConfig Configuration table

@@ -47,12 +47,10 @@ local LIST_ROWS_VISIBLE = 11
 local LIST_HEIGHT = LIST_ROWS_VISIBLE * ROW_HEIGHT
 local LIST_TO_FOOTER_GAP = 8
 
--- Bordered wrapper around the scrollable list (matches the Detached Icons
--- chrome): slightly darker than the panel bg + thin warm-gray border picks
--- the list out as a contained region.
-local LIST_BG = { 0.05, 0.05, 0.05, 0.6 }
-local LIST_BORDER = { 0.3, 0.25, 0.1, 0.8 }
-local LIST_INSET = 2 -- inner padding between border and the scroll child
+-- Inner padding between the bordered list edge and its scroll child. Must
+-- match Components.BorderedList's default inset, since the render math below
+-- sizes content against it.
+local LIST_INSET = 2
 
 local REQUIRE_LABELS = {
     gear = "Loadout.Require.Gear",
@@ -202,37 +200,6 @@ local function FillRowBody(body, key, rule, onEdit, onDelete)
     end
 end
 
----Build a bordered wrapper Frame holding a Components.ScrollableContainer.
----Returns the wrapper (anchorable into a layout) and the scrollFrame inside.
----Re-anchors the scrollbar flush to the list bounds since the default offsets
----assume the parent scroll has header padding, which our flat list doesn't.
-local function BuildBorderedList(parent, width, height)
-    local wrapper = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    wrapper:SetSize(width, height)
-    wrapper:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    wrapper:SetBackdropColor(unpack(LIST_BG))
-    wrapper:SetBackdropBorderColor(unpack(LIST_BORDER))
-
-    local scroll = Components.ScrollableContainer(wrapper, {
-        width = width - LIST_INSET * 2,
-        contentHeight = height - LIST_INSET * 2,
-    })
-    scroll:SetHeight(height - LIST_INSET * 2)
-    scroll:SetPoint("TOPLEFT", LIST_INSET, -LIST_INSET)
-
-    if scroll.ScrollBar then
-        scroll.ScrollBar:ClearAllPoints()
-        scroll.ScrollBar:SetPoint("TOPLEFT", scroll, "TOPRIGHT", -18, 0)
-        scroll.ScrollBar:SetPoint("BOTTOMLEFT", scroll, "BOTTOMRIGHT", -18, 0)
-    end
-
-    return wrapper, scroll
-end
-
 local function Build(content, scrollFrame)
     local contentWidth = scrollFrame:GetContentWidth()
     local layout = Components.VerticalLayout(content, { x = COL_PADDING, y = -10 })
@@ -243,7 +210,10 @@ local function Build(content, scrollFrame)
     -- Fixed-height bordered list, nested under the section accent line.
     local listX = layout:GetX()
     local listWidth = contentWidth - listX - COL_PADDING
-    local listWrapper, listScroll = BuildBorderedList(content, listWidth, LIST_HEIGHT)
+    local listWrapper, listScroll = Components.BorderedList(content, {
+        width = listWidth,
+        height = LIST_HEIGHT,
+    })
     layout:Add(listWrapper, LIST_HEIGHT, LIST_TO_FOOTER_GAP)
 
     local listContent = listScroll:GetContentFrame()
