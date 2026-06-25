@@ -798,6 +798,7 @@ english["Dialog.Reload"] = "Reload"
 english["Dialog.NewProfilePrompt"] = "Enter a name for the new profile:"
 english["Dialog.Create"] = "Create"
 english["Dialog.DiscordPrompt"] = "Join the BuffReminders Discord!\nCopy the URL below (Ctrl+C):"
+english["Dialog.KofiPrompt"] = "Thank you for supporting BuffReminders!\nCopy the URL below (Ctrl+C):"
 english["Dialog.Close"] = "Close"
 
 -- ============================================================================
@@ -910,6 +911,13 @@ english["CustomBuff.Error"] = "Error:"
 english["Options.JoinDiscord"] = "Join Discord"
 english["Options.JoinDiscord.Title"] = "Click for invite link"
 english["Options.JoinDiscord.Desc"] = "Got feedback, feature requests, or bug reports?\nJoin the Discord!"
+
+-- ============================================================================
+-- OPTIONS: KO-FI
+-- ============================================================================
+english["Options.SupportKofi"] = "Support on Ko-fi"
+english["Options.SupportKofi.Title"] = "Click for the link"
+english["Options.SupportKofi.Desc"] = "Enjoying BuffReminders?\nConsider supporting development on Ko-fi!"
 
 -- ============================================================================
 -- OPTIONS: CUSTOM ANCHOR FRAMES

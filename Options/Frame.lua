@@ -125,6 +125,25 @@ StaticPopupDialogs["BUFFREMINDERS_DISCORD_URL"] = {
     preferredIndex = 3,
 }
 
+StaticPopupDialogs["BUFFREMINDERS_KOFI_URL"] = {
+    text = L["Dialog.KofiPrompt"],
+    button1 = L["Dialog.Close"],
+    hasEditBox = true,
+    editBoxWidth = 250,
+    OnShow = function(self)
+        self.EditBox:SetText("https://ko-fi.com/zerbyy")
+        self.EditBox:HighlightText()
+        self.EditBox:SetFocus()
+    end,
+    EditBoxOnEscapePressed = function(self)
+        self:GetParent():Hide()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+}
+
 -- ============================================================================
 -- SIDEBAR BUTTON FACTORY
 -- ============================================================================
@@ -215,7 +234,7 @@ local function CreateOptionsPanel()
     end)
 
     -- ====================================================================
-    -- TOP BAR: title + version + Discord
+    -- TOP BAR: title + version + Discord + Ko-fi
     -- ====================================================================
     local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", COL_PADDING, -14)
@@ -245,6 +264,28 @@ local function CreateOptionsPanel()
     end)
     discordHit:SetScript("OnLeave", function()
         discordLink:SetText("|cff7289da" .. L["Options.JoinDiscord"] .. "|r")
+        BR.HideTooltip()
+    end)
+
+    local kofiSep = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    kofiSep:SetPoint("LEFT", discordLink, "RIGHT", 6, 0)
+    kofiSep:SetText("|cff555555·|r")
+
+    local kofiLink = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    kofiLink:SetPoint("LEFT", kofiSep, "RIGHT", 6, 0)
+    kofiLink:SetText("|cffff5e5b" .. L["Options.SupportKofi"] .. "|r")
+
+    local kofiHit = CreateFrame("Button", nil, panel)
+    kofiHit:SetAllPoints(kofiLink)
+    kofiHit:SetScript("OnClick", function()
+        StaticPopup_Show("BUFFREMINDERS_KOFI_URL")
+    end)
+    kofiHit:SetScript("OnEnter", function()
+        kofiLink:SetText("|cffff8a88" .. L["Options.SupportKofi"] .. "|r")
+        BR.ShowTooltip(kofiHit, L["Options.SupportKofi.Title"], L["Options.SupportKofi.Desc"], "ANCHOR_BOTTOM")
+    end)
+    kofiHit:SetScript("OnLeave", function()
+        kofiLink:SetText("|cffff5e5b" .. L["Options.SupportKofi"] .. "|r")
         BR.HideTooltip()
     end)
 
