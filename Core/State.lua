@@ -225,6 +225,15 @@ local cachedOffHandType = nil -- nil = not yet checked, "weapon" | "shield" | "n
 ---@type table<number, boolean>
 local cachedItemOwnership = {}
 
+-- Loadout state cache: rule.key -> { satisfied, icon }. The detection calls
+-- (IsSatisfied / GetRuleIcon) are read-only WoW lookups whose answers only change
+-- on spec / talent / equipment / equipment-set events, so they're cached here and
+-- reused on the 3s fallback ticker instead of re-queried every full refresh.
+-- Invalidated on PLAYER_SPECIALIZATION_CHANGED, TRAIT_CONFIG_UPDATED,
+-- SPELLS_CHANGED, PLAYER_EQUIPMENT_CHANGED, EQUIPMENT_SETS_CHANGED.
+---@type table<string, { satisfied: boolean, icon: number|string }>
+local cachedLoadoutState = {}
+
 -- Wrong-demon-pet cache. UnitCreatureFamily can return secret-value familyIDs
 -- under 12.0.5 taint rules, so the compare is pcall-guarded - a secret value
 -- becomes "unknown" (not cached, retried) instead of crashing Refresh.
@@ -2398,16 +2407,27 @@ function BuffState.Refresh(refreshMode)
         local Loadouts = BR.Loadouts
         for i, rule in ipairs(LoadoutRules) do
             local entry = GetOrCreateEntry(rule.key, "loadout", i)
+            -- Gating predicates (enabled / binding / content / instance) stay live:
+            -- they're cheap DB/flag reads, and their spec/content/character inputs
+            -- already resolve through caches (GetCurrentSpecID -> StateHelpers cache,
+            -- GetCurrentContentType -> content cache, character key memoized once).
+            -- Only the read-only API detection (satisfied + icon) is memoized per rule.
             if
                 IsBuffEnabled(rule.key)
                 and Loadouts.AppliesToCurrentCharacter(rule)
                 and IsLoadoutRuleVisibleForContent(rule)
                 and Loadouts.CurrentInstanceMatches(rule.when and rule.when.instances)
-                and not Loadouts.IsSatisfied(rule)
             then
-                entry.dynamicIcon = Loadouts.GetRuleIcon(rule)
-                entry.subLabel = rule.name
-                SetEntryText(entry, LOADOUT_TAGS[rule.require] or rule.overlayText, loadoutMissGlow)
+                local state = cachedLoadoutState[rule.key]
+                if not state then
+                    state = { satisfied = Loadouts.IsSatisfied(rule), icon = Loadouts.GetRuleIcon(rule) }
+                    cachedLoadoutState[rule.key] = state
+                end
+                if not state.satisfied then
+                    entry.dynamicIcon = state.icon
+                    entry.subLabel = rule.name
+                    SetEntryText(entry, LOADOUT_TAGS[rule.require] or rule.overlayText, loadoutMissGlow)
+                end
             end
         end
     end
@@ -2668,6 +2688,12 @@ end
 ---Invalidate item ownership cache (call on BAG_UPDATE_DELAYED, PLAYER_EQUIPMENT_CHANGED)
 function BuffState.InvalidateItemCache()
     cachedItemOwnership = {}
+end
+
+---Invalidate loadout state cache (call on PLAYER_SPECIALIZATION_CHANGED,
+---TRAIT_CONFIG_UPDATED, SPELLS_CHANGED, PLAYER_EQUIPMENT_CHANGED, EQUIPMENT_SETS_CHANGED)
+function BuffState.InvalidateLoadoutCache()
+    cachedLoadoutState = {}
 end
 
 ---Check whether the player's current pet is not a Felguard (cached).

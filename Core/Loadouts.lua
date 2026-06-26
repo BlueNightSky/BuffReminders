@@ -63,18 +63,38 @@ local function ResolveCurrentSpecID()
 end
 
 ---Resolve the player's current spec ID (0 if none / not yet available).
+---Prefers State's cached spec (`BR.StateHelpers.GetPlayerSpecId`, invalidated on
+---PLAYER_SPECIALIZATION_CHANGED) so the per-rule refresh gating reuses one cached
+---value instead of re-querying the spec API per rule. Falls back to a live query
+---when StateHelpers isn't available yet (Loadouts loads before State).
 ---@return number
 local function GetCurrentSpecID()
+    local helpers = BR.StateHelpers
+    if helpers and helpers.GetPlayerSpecId then
+        return helpers.GetPlayerSpecId() or 0
+    end
     local ok, specID = pcall(ResolveCurrentSpecID)
     return (ok and specID) or 0
 end
 Loadouts.GetCurrentSpecID = GetCurrentSpecID
 
+-- Character identity never changes during a session, so memoize it once. Only
+-- cached after name AND realm resolve, so an early call can't poison it with "?".
+local cachedCharacterKey
+
 ---Stable identity for the current character ("Name - Realm"). Equipment / loadout
 ---rules bind to this because their IDs (setID, configID) are per-character.
 ---@return string
 function Loadouts.GetCurrentCharacterKey()
-    return (UnitName("player") or "?") .. " - " .. (GetRealmName() or "?")
+    if cachedCharacterKey then
+        return cachedCharacterKey
+    end
+    local name, realm = UnitName("player"), GetRealmName()
+    local key = (name or "?") .. " - " .. (realm or "?")
+    if name and realm then
+        cachedCharacterKey = key
+    end
+    return key
 end
 
 ---Localized spec name for a spec ID, or nil if unavailable.

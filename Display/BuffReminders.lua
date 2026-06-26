@@ -354,6 +354,9 @@ end
 ---rather than cached onto the rule, so nothing derived leaks into SavedVariables.
 local function BuildLoadoutRulesArray()
     local db = BR.profile
+    -- The rule set itself changed (reload / profile switch / set rename): the cached
+    -- per-rule satisfied/icon verdicts may now be keyed to stale definitions.
+    BR.BuffState.InvalidateLoadoutCache()
     wipe(LoadoutRules)
     if not db or not db.loadoutReminders then
         return
@@ -3703,6 +3706,9 @@ BR.CustomBuffs = {
 ---Create a frame for a newly added loadout rule (runtime add from the dialog).
 ---@param rule LoadoutRule
 local function CreateLoadoutRuleFrameRuntime(rule)
+    -- Drop any cached verdict for this key: an edited rule reuses its key but may
+    -- now require a different set/talent/loadout (invalidate before the mainFrame guard).
+    BR.BuffState.InvalidateLoadoutCache()
     if not mainFrame then
         return
     end
@@ -3722,6 +3728,7 @@ end
 ---Tear down a loadout rule's frame and drop it from the runtime array.
 ---@param key string
 local function RemoveLoadoutRuleFrame(key)
+    BR.BuffState.InvalidateLoadoutCache()
     local frame = buffFrames[key]
     if frame then
         frame:Hide()
@@ -5243,6 +5250,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateOffHandCache()
         BR.BuffState.InvalidatePetCache()
         BR.BuffState.InvalidateStanceCache()
+        BR.BuffState.InvalidateLoadoutCache()
         -- Sync flags with current state (in case of reload)
         inCombat = InCombatLockdown()
         isResting = IsResting()
@@ -5486,6 +5494,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateOffHandCache()
         BR.BuffState.InvalidatePetCache()
         BR.BuffState.InvalidateStanceCache()
+        BR.BuffState.InvalidateLoadoutCache()
 
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.InvalidateConsumableCache()
@@ -5503,6 +5512,7 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidatePetCache()
         BR.BuffState.InvalidateStanceCache()
+        BR.BuffState.InvalidateLoadoutCache()
         BR.PetHelpers.InvalidatePetActions()
         BR.SecureButtons.RefreshOverlaySpells()
         SetDirty()
@@ -5511,15 +5521,18 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3)
         BR.BuffState.InvalidateSpellCache()
         BR.BuffState.InvalidatePetCache()
         BR.BuffState.InvalidateStanceCache()
+        BR.BuffState.InvalidateLoadoutCache()
         BR.PetHelpers.InvalidatePetActions()
     elseif event == "PLAYER_EQUIPMENT_CHANGED" then
         BR.BuffState.InvalidateItemCache()
         BR.BuffState.InvalidateOffHandCache()
+        BR.BuffState.InvalidateLoadoutCache()
 
         SetDirty()
     elseif event == "EQUIPMENT_SETS_CHANGED" then
         -- A saved equipment set changed (created / equipped / renamed): re-evaluate
-        -- loadout reminders. Icons may have changed too, so rebuild the rule array.
+        -- loadout reminders. Icons may have changed too, so rebuild the rule array
+        -- (BuildLoadoutRulesArray invalidates the loadout cache).
         BuildLoadoutRulesArray()
         SetDirty()
     elseif event == "BAG_UPDATE_DELAYED" then
