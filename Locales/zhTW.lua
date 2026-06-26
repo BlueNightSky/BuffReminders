@@ -17,6 +17,7 @@ L["Category.Self"] = "自身增益"
 L["Category.Pet"] = "寵物"
 L["Category.Consumable"] = "消耗品"
 L["Category.Custom"] = "自定義"
+L["Category.Loadout"] = "天賦構建"
 
 -- Long form (used in Options section headers)
 L["Category.RaidBuffs"] = "團隊增益"
@@ -26,6 +27,7 @@ L["Category.PresenceBuffs"] = "職業增益"
 L["Category.SelfBuffs"] = "自身增益"
 L["Category.PetReminders"] = "寵物提示"
 L["Category.CustomBuffs"] = "自定義增益"
+L["Category.LoadoutReminders"] = "天賦構建提醒"
 
 -- Category notes
 L["Category.RaidNote"] = "（全小隊或團隊生效）"
@@ -35,7 +37,7 @@ L["Category.PresenceNote"] = "（至少需要一人）"
 L["Category.SelfNote"] = "（僅對自己施放的增益）"
 L["Category.PetNote"] = "（寵物召喚提示）"
 L["Category.CustomNote"] = "（按法術ID追蹤增益或高亮）"
-L["Category.LoadoutNote"] = "(remind me when my gear or talents don't match the content)"
+L["Category.LoadoutNote"] = "(當我的裝備或天賦與內容不符時提醒我)"
 
 -- Loadout reminders
 L["Loadout.Add"] = "新增天賦構建提醒"
@@ -303,6 +305,7 @@ L["Tab.DisplayBehavior"] = "顯示/行為"
 L["Sidebar.General"] = "通用"
 L["Sidebar.Buffs"] = "增益"
 L["Sidebar.DisplayBehavior"] = "顯示與行為"
+L["Sidebar.Loadouts"] = "裝備 & 天賦"
 L["Sidebar.Profiles"] = "設定檔"
 
 -- Page titles
@@ -322,9 +325,8 @@ L["Page.Sounds.Desc"] =
 L["Section.Tracking"] = "追蹤"
 L["Section.TrackingOverrides"] = "追蹤覆蓋"
 L["Section.TrackingOverrides.Desc"] =
-    "無論上面的選擇如何，都會在特定條件下自動縮小追蹤模式。"
-L["Section.TrackingOverrides.Desc"] =
     "在特定情況下縮小追蹤模式。將情況保留為“預設”以始終使用上述模式。當幾個同時適用時（例如，在練級時戰鬥），限制最嚴格的那個獲勝。"
+
 
 -- ============================================================================
 -- OPTIONS: SOUND ALERTS
@@ -781,6 +783,7 @@ L["Dialog.Reload"] = "重載"
 L["Dialog.NewProfilePrompt"] = "請輸入新設定檔的名稱："
 L["Dialog.Create"] = "創建"
 L["Dialog.DiscordPrompt"] = "加入BuffReminders的Discord頻道！\n複製下方網址以加入："
+L["Dialog.KofiPrompt"] = "感謝您對BuffReminders的支持！\n複製下方網址 (Ctrl+C):"
 L["Dialog.Close"] = "關閉"
 
 -- ============================================================================
@@ -892,6 +895,13 @@ L["CustomBuff.Error"] = "錯誤:"
 L["Options.JoinDiscord"] = "加入Discord"
 L["Options.JoinDiscord.Title"] = "點擊查看邀請鏈接"
 L["Options.JoinDiscord.Desc"] = "有反饋、功能請求或發現BUG？\n歡迎加入我們的Discord！"
+
+-- ============================================================================
+-- OPTIONS: KO-FI
+-- ============================================================================
+L["Options.SupportKofi"] = "在Ko-fi支持"
+L["Options.SupportKofi.Title"] = "點擊取得連結"
+L["Options.SupportKofi.Desc"] = "喜歡BuffReminders嗎？\n考慮在Ko-fi支持開發！"
 
 -- ============================================================================
 -- OPTIONS: CUSTOM ANCHOR FRAMES
