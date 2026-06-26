@@ -14,7 +14,7 @@ local _, BR = ...
 -- migrations at the end and bump DB_VERSION.
 --
 -- The pre-AceDB format conversion (old flat layout -> AceDB) is NOT here:
--- it must run before AceDB:New(), so it lives inline in BuffReminders.lua's
+-- it must run before AceDB:New(), so it lives inline in Display/Display.lua's
 -- ADDON_LOADED handler.
 -- ============================================================================
 
@@ -26,7 +26,7 @@ BR.Migrations = {}
 BR.Migrations.DB_VERSION = 45
 
 -- Run pending migrations against the profile `db`, using code `defaults` for
--- fallbacks. `ctx` carries the few BuffReminders.lua file-scope deps the
+-- fallbacks. `ctx` carries the few Display.lua file-scope deps the
 -- migrations reference (CATEGORIES).
 function BR.Migrations.Run(db, defaults, ctx)
     local CATEGORIES = ctx.CATEGORIES

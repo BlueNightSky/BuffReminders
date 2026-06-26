@@ -1472,7 +1472,7 @@ local function ShouldShowSelfBuff(
 end
 
 -- Icon ID for the eating channel aura (consistent across all food types)
--- Shared via BR namespace: also used by BuffReminders.lua for the display icon
+-- Shared via BR namespace: also used by Display.lua for the display icon
 BR.EATING_AURA_ICON = 133950
 local EATING_AURA_ICON = BR.EATING_AURA_ICON
 

@@ -49,6 +49,7 @@ Core\TextPositions.lua
 Core\Profiles.lua
 Core\Migrations.lua
 Data\Buffs.lua
+Data\Defaults.lua
 Data\Beneficiaries.lua
 Data\AuraWhitelist.lua
 Data\ConsumableItems.lua
@@ -59,10 +60,12 @@ Core\Loadouts.lua
 Core\State.lua
 UI\Components.lua
 UI\Glow.lua
-Display\BuffReminders.lua
+Display\Icons.lua
+Display\Display.lua
 Core\ImportExport.lua
 Display\Movers.lua
 Display\SecureButtons.lua
+Core\Bootstrap.lua
 Options\Context.lua
 Options\Dialogs\Glow.lua
 Options\Dialogs\SoundAlert.lua

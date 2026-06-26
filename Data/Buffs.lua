@@ -246,7 +246,7 @@ end
 -- Scans all poisons once per frame and stores active/missing/expiration/required counts.
 -- Priority comes from BR.profile.roguePoisonPreferences (ordered, per-entry enabled flag).
 -- The table below is the single source of truth for default poison ordering and is also
--- referenced by Display/BuffReminders.lua (defaults table) and Options/Options.lua (reset).
+-- referenced by Display/Display.lua (defaults table) and Options/Options.lua (reset).
 BR.DEFAULT_POISON_PREFERENCES = {
     lethal = {
         { spellID = 381664, enabled = true }, -- Amplifying
