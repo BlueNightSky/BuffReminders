@@ -2389,8 +2389,11 @@ function BuffState.Refresh(refreshMode)
     end
 
     -- Process loadout reminders (talent / loadout / equipment-set mismatch).
-    -- None of these checks touch the aura API, so they're valid in every context.
-    if not groupOnly then
+    -- Detection is aura-agnostic, but gear/talent swaps are blocked in every
+    -- restricted context (combat, the whole M+ keystone, PvP instances), so a
+    -- reminder there is unactionable noise -- suppress it until the player can
+    -- actually fix the loadout. (isAuraRestricted == BuffState.IsRestricted().)
+    if not groupOnly and not isAuraRestricted then
         local _, loadoutMissGlow = GetCategoryGlowSettings("loadout")
         local Loadouts = BR.Loadouts
         for i, rule in ipairs(LoadoutRules) do
