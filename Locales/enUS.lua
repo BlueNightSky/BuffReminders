@@ -305,6 +305,7 @@ english["Display.DismissConsumables"] = "Hide consumable reminders until next lo
 english["Display.DismissConsumablesChat"] = "Consumable reminders hidden until next loading screen."
 english["Display.LoginFirstInstall"] =
     "Thanks for installing! Type |cFFFFD100/br unlock|r to move the buff display, or use the button at the bottom of the |cFFFFD100/br|r options panel."
+english["Display.LoginLoadout"] = "New: loadout reminders! Set them up on the Gear & Talents page in |cFFFFD100/br|r."
 
 -- ============================================================================
 -- OPTIONS: NAVIGATION LABELS

@@ -184,6 +184,8 @@ bootstrapFrame:SetScript("OnEvent", function(_, event, arg1)
     C_Timer.After(5, function()
         if isFirstInstall then
             print("|cff00ccffBuffReminders:|r " .. L["Display.LoginFirstInstall"])
+        elseif BR.profile.showLoginMessages ~= false then
+            print("|cff00ccffBuffReminders:|r " .. L["Display.LoginLoadout"])
         end
     end)
 end)
