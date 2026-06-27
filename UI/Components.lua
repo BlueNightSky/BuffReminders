@@ -967,6 +967,7 @@ function Components.Checkbox(parent, config)
         infoBtn:SetPoint("CENTER", infoIcon, "CENTER", 0, 0)
 
         SetupTooltip(infoBtn, tooltipData.title, tooltipData.desc)
+        holder.infoIcon = infoIcon -- exposed so callers can anchor trailing widgets past it
     end
 
     -- Right-click callback (wired on all interactive children)

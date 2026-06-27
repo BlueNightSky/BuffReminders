@@ -428,6 +428,10 @@ local function Build(content)
             title = L["Options.GlowReminderIcons.Title"],
             desc = L["Options.GlowReminderIcons.Desc"],
         },
+        warningTooltip = {
+            title = L["Options.GlowReminderIcons.Title"],
+            desc = L["Options.GlowReminderIcons.CpuWarning"],
+        },
         get = function()
             local d = BR.profile.defaults
             return d and (d.showExpirationGlow ~= false or d.showMissingGlow ~= false)
@@ -442,7 +446,7 @@ local function Build(content)
     local glowSettingsBtn = CreateButton(content, L["Options.Customize"], function()
         BR.Options.Dialogs.Glow.Show()
     end)
-    glowSettingsBtn:SetPoint("LEFT", defGlowHolder.label, "RIGHT", 8, 0)
+    glowSettingsBtn:SetPoint("LEFT", defGlowHolder.infoIcon or defGlowHolder.label, "RIGHT", 8, 0)
     glowSettingsBtn:SetFrameLevel(defGlowHolder:GetFrameLevel() + 5)
 
     layout:Add(defGlowHolder, nil, COMPONENT_GAP)

@@ -306,6 +306,8 @@ english["Display.DismissConsumablesChat"] = "Consumable reminders hidden until n
 english["Display.LoginFirstInstall"] =
     "Thanks for installing! Type |cFFFFD100/br unlock|r to move the buff display, or use the button at the bottom of the |cFFFFD100/br|r options panel."
 english["Display.LoginLoadout"] = "New: loadout reminders! Set them up on the Gear & Talents page in |cFFFFD100/br|r."
+english["Display.LoginGlowDefaultChanged"] =
+    "Buff glow is now off by default to reduce CPU usage. Re-enable it any time on the Defaults page in |cFFFFD100/br|r."
 
 -- ============================================================================
 -- OPTIONS: NAVIGATION LABELS
@@ -374,6 +376,8 @@ english["Options.GlowReminderIcons"] = "Glow reminder icons"
 english["Options.GlowReminderIcons.Title"] = "Glow Reminder Icons"
 english["Options.GlowReminderIcons.Desc"] =
     "Add a glow effect to reminder icons. Customize to configure expiring and missing glows independently."
+english["Options.GlowReminderIcons.CpuWarning"] =
+    "Glow animates every frame for each icon on screen, so it uses more CPU. If an icon stays up for a long time (e.g. a buff you don't rebuff mid-fight), that cost is continuous. Disabled by default for this reason."
 english["Options.GlowKind.Expiring"] = "Expiring"
 english["Options.GlowKind.Missing"] = "Missing"
 english["Options.GlowSettings.Expiring"] = "Glow Settings - Expiring"
