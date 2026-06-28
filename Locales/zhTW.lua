@@ -295,6 +295,9 @@ L["Display.DismissConsumables"] = "在下一次載入畫面前隱藏消耗品提
 L["Display.DismissConsumablesChat"] = "在下一次載入畫面前消耗品提示將隱藏。"
 L["Display.LoginFirstInstall"] =
     "感謝安裝！輸入 |cFFFFD100/br unlock|r 來移動增益顯示，或者使用 |cFFFFD100/br|r 選項面板底部的按鈕。"
+L["Display.LoginLoadout"] = "新功能w: 天賦構建提醒！在|cFFFFD100/br|r的裝備 & 天賦頁面中設定它們。"
+L["Display.LoginGlowDefaultChanged"] =
+    "增益發光現在預設為關閉，以減少CPU使用率。隨時可在|cFFFFD100/br|r的預設頁面中重新啟用。"
 
 -- ============================================================================
 -- OPTIONS: NAVIGATION LABELS
@@ -363,6 +366,8 @@ L["Options.GlowReminderIcons"] = "提示圖示發光"
 L["Options.GlowReminderIcons.Title"] = "提示圖示發光"
 L["Options.GlowReminderIcons.Desc"] =
     "為所有顯示的提示圖示添加發光效果，包括缺失和即將過期的增益。"
+L["Options.GlowReminderIcons.CpuWarning"] =
+    "為螢幕上每個圖示的每偵發光動畫，所以這會使用較多的CPU。如果圖示長時間保持開啟狀態 (例如一個你在戰鬥中不會重上的增益)，該耗費是連續的。由於這個原因預設情況下會停用。"
 L["Options.GlowKind.Expiring"] = "即將過期"
 L["Options.GlowKind.Missing"] = "缺失"
 L["Options.GlowSettings.Expiring"] = "發光設置 — 即將過期"
