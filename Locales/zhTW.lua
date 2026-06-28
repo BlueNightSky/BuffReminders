@@ -295,7 +295,8 @@ L["Display.DismissConsumables"] = "在下一次載入畫面前隱藏消耗品提
 L["Display.DismissConsumablesChat"] = "在下一次載入畫面前消耗品提示將隱藏。"
 L["Display.LoginFirstInstall"] =
     "感謝安裝！輸入 |cFFFFD100/br unlock|r 來移動增益顯示，或者使用 |cFFFFD100/br|r 選項面板底部的按鈕。"
-L["Display.LoginLoadout"] = "新功能w: 天賦構建提醒！在|cFFFFD100/br|r的裝備 & 天賦頁面中設定它們。"
+L["Display.LoginLoadout"] =
+    "新功能w: 天賦構建提醒！在|cFFFFD100/br|r的裝備 & 天賦頁面中設定它們。"
 L["Display.LoginGlowDefaultChanged"] =
     "增益發光現在預設為關閉，以減少CPU使用率。隨時可在|cFFFFD100/br|r的預設頁面中重新啟用。"
 
