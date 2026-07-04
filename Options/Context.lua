@@ -61,6 +61,7 @@ BR.Options.Constants = {
 --   Display           - WHEN/WHERE does it show? (hide rules + tracking on the
 --                       Visibility page, lock/order/frames on the Layout page)
 --   Alerts            - HOW am I told? (sounds, chat requests)
+--   Addon Settings    - the addon itself: misc meta toggles (General) + profiles
 BR.Options.Groups = {
     {
         id = "buffs",
@@ -83,14 +84,9 @@ BR.Options.Groups = {
         pages = { "chatRequests" },
     },
     {
-        id = "general",
-        titleKey = "Sidebar.General",
-        pages = { "general" },
-    },
-    {
-        id = "profiles",
-        titleKey = "Sidebar.Profiles",
-        pages = { "profiles" },
+        id = "addonSettings",
+        titleKey = "Sidebar.AddonSettings",
+        pages = { "general", "profiles" },
     },
 }
 

@@ -317,12 +317,11 @@ english["Display.LoginGlowDefaultChanged"] =
 english["Tab.DisplayBehavior"] = "Display/Behavior"
 
 -- Sidebar groups
-english["Sidebar.General"] = "General"
+english["Sidebar.AddonSettings"] = "Addon Settings"
 english["Sidebar.BuffsReminders"] = "Buffs & Reminders"
 english["Sidebar.Appearance"] = "Appearance"
 english["Sidebar.Display"] = "Display"
 english["Sidebar.Alerts"] = "Alerts"
-english["Sidebar.Profiles"] = "Profiles"
 
 -- Page titles
 english["Page.General"] = "General"
