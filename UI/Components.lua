@@ -3316,14 +3316,14 @@ end
 
 -- Modern scrollbar colors (defined early for use by TextArea and ScrollableContainer)
 local ScrollbarColors = {
-    track = { 0.12, 0.12, 0.12, 1 },
+    -- Faint recessed rail instead of an opaque boxed track, so it reads as a
+    -- subtle groove rather than a second bordered frame competing with the panel.
+    track = { 0.1, 0.1, 0.11, 0.5 },
     thumb = { 0.3, 0.3, 0.3, 1 },
     thumbHover = { 0.45, 0.45, 0.45, 1 },
-    thumbPressed = { ACCENT_R, ACCENT_G, ACCENT_B, 0.8 },
-    border = { 0.2, 0.2, 0.2, 1 },
 }
 
--- Helper to apply modern styling to scrollbar (used by TextArea and ScrollableContainer)
+-- Helper to apply modern styling to a scrollbar (used by ScrollableContainer)
 local function ApplyModernScrollbarStyle(scrollBar)
     if not scrollBar then
         return
@@ -3346,24 +3346,17 @@ local function ApplyModernScrollbarStyle(scrollBar)
         end
     end
 
-    -- Create modern track background
-    local track = CreateFrame("Frame", nil, scrollBar, "BackdropTemplate")
-    track:SetPoint("TOPLEFT", 4, 0)
-    track:SetPoint("BOTTOMRIGHT", -4, 0)
-    track:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    track:SetBackdropColor(unpack(colors.track))
-    track:SetBackdropBorderColor(unpack(colors.border))
-    track:SetFrameLevel(scrollBar:GetFrameLevel())
+    -- Faint recessed rail (no hard border) - a thin groove, not a boxed frame.
+    local track = scrollBar:CreateTexture(nil, "BACKGROUND")
+    track:SetColorTexture(unpack(colors.track))
+    track:SetPoint("TOPLEFT", 5, 0)
+    track:SetPoint("BOTTOMRIGHT", -5, 0)
 
-    -- Style the thumb
+    -- Style the thumb (height is managed proportionally by SetupProportionalScrollbar)
     local thumb = scrollBar.ThumbTexture or scrollBar.thumbTexture
     if thumb then
         thumb:SetColorTexture(unpack(colors.thumb))
-        thumb:SetSize(8, 40)
+        thumb:SetSize(6, 40)
 
         -- Try to set up hover/press effects
         local thumbParent = thumb:GetParent()
@@ -3392,6 +3385,36 @@ local function ApplyModernScrollbarStyle(scrollBar)
         scrollDown:SetSize(1, 1)
         scrollDown:EnableMouse(false)
     end
+end
+
+-- Size a legacy scrollbar's thumb to reflect how much content there is (thumb
+-- length = viewport / content), and hide the whole bar when the page fits. Hooked
+-- to the scroll frame's range/size events so it stays correct as pages rebuild.
+local SCROLLBAR_MIN_THUMB = 24
+local SCROLLBAR_MAX_THUMB_RATIO = 0.28 -- keep the handle compact, never near-full-track
+local function SetupProportionalScrollbar(scrollFrame, scrollBar)
+    local thumb = scrollBar.ThumbTexture or scrollBar.thumbTexture
+    local function Update()
+        local viewH = scrollFrame:GetHeight() or 0
+        local range = scrollFrame:GetVerticalScrollRange() or 0
+        if range <= 1 or viewH <= 0 then
+            -- Nothing to scroll: retire the bar entirely.
+            scrollBar:Hide()
+            return
+        end
+        scrollBar:Show()
+        if thumb then
+            local trackH = scrollBar:GetHeight() or viewH
+            local contentH = viewH + range
+            local cap = floor(trackH * SCROLLBAR_MAX_THUMB_RATIO)
+            local thumbH = min(floor(trackH * viewH / contentH), cap)
+            thumb:SetHeight(max(thumbH, min(SCROLLBAR_MIN_THUMB, trackH)))
+        end
+    end
+    scrollFrame:HookScript("OnScrollRangeChanged", Update)
+    scrollFrame:HookScript("OnSizeChanged", Update)
+    scrollFrame:HookScript("OnShow", Update)
+    Update() -- sync initial state before any event fires
 end
 
 -- TextArea color constants
@@ -3847,16 +3870,27 @@ function Components.ScrollableContainer(parent, config)
         scrollFrame:SetWidth(explicitWidth)
     end
 
-    -- Position scrollbar
+    -- Scrollbar: hand-styled legacy slider (faint rail + neutral thumb, matching
+    -- the panel's square thin-edge chrome), with a proportional thumb that reflects
+    -- page length and auto-hides when the page fits.
     local scrollBar = scrollFrame.ScrollBar
     if scrollBar then
         scrollBar:ClearAllPoints()
-        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", -18, -22)
-        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", -18, 6)
-
-        -- Apply modern styling
+        scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", -18, -4)
+        scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", -18, 4)
         ApplyModernScrollbarStyle(scrollBar)
+        SetupProportionalScrollbar(scrollFrame, scrollBar)
     end
+
+    -- Fixed wheel step. The template's default steps by half the scrollbar height,
+    -- which jumps ~half a page per tick on a tall bar; a fixed step (~1.5 rows)
+    -- feels consistent regardless of page length.
+    scrollFrame:EnableMouseWheel(true)
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local maxScroll = self:GetVerticalScrollRange() or 0
+        local newScroll = max(0, min(maxScroll, self:GetVerticalScroll() - delta * 45))
+        self:SetVerticalScroll(newScroll)
+    end)
 
     -- Content frame. Width tracks the scroll frame's visible area minus the
     -- scrollbar so anchored-RIGHT children clear the scrollbar instead of
