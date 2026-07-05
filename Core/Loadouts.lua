@@ -244,6 +244,49 @@ local function IsTLXAvailable()
 end
 Loadouts.IsTLXAvailable = IsTLXAvailable
 
+-- Resolve TLEx's stored loadout list for the current class + spec. TLEx keys its DB
+-- account-wide by class token + spec INDEX (not spec ID). Returns nil when TLEx isn't
+-- installed or has nothing saved for this spec. Callers wrap this in pcall.
+local function GetTLXSpecTable()
+    ---@diagnostic disable-next-line: undefined-field
+    local db = _G.TalentLoadoutEx
+    if not db then
+        return nil
+    end
+    local _, class = UnitClass("player")
+    local specIndex = GetSpecialization and GetSpecialization()
+    if not class or not specIndex then
+        return nil
+    end
+    return db[class] and db[class][specIndex]
+end
+
+-- Hoisted body (see the file-scope note above): a refresh-path caller (GetRuleIcon)
+-- pcalls this, so keep it a named function rather than an inline closure per call.
+local function ResolveTLXLoadoutIconBody(name)
+    local specTable = GetTLXSpecTable()
+    if not specTable then
+        return nil
+    end
+    for _, data in ipairs(specTable) do
+        if data.text and data.name == name then
+            return data.icon
+        end
+    end
+    return nil
+end
+
+-- Live-resolve a TLEx loadout's icon by name (icon may be a fileID number or an
+-- atlas/path string). Returns nil when TLEx isn't installed or the name isn't found,
+-- so callers fall back to the rule's snapshotted icon / the spec icon.
+local function ResolveTLXLoadoutIcon(name)
+    if not name or not IsTLXAvailable() then
+        return nil
+    end
+    local ok, icon = pcall(ResolveTLXLoadoutIconBody, name)
+    return ok and icon or nil
+end
+
 local function ResolveTLXLoadoutActive(name)
     if not IsTLXAvailable() then
         return false
@@ -381,17 +424,7 @@ function Loadouts.ListTLXLoadouts()
         return out
     end
     pcall(function()
-        ---@diagnostic disable-next-line: undefined-field
-        local db = _G.TalentLoadoutEx
-        if not db then
-            return
-        end
-        local _, class = UnitClass("player")
-        local specIndex = GetSpecialization and GetSpecialization()
-        if not class or not specIndex then
-            return
-        end
-        local specTable = db[class] and db[class][specIndex]
+        local specTable = GetTLXSpecTable()
         if not specTable then
             return
         end
@@ -492,11 +525,16 @@ function Loadouts.GetRuleIcon(rule)
         end
         return DEFAULT_GEAR_ICON
     elseif rule.require == "loadout" then
-        -- TLEx loadouts carry their own icon (fileID or atlas/path string); use it,
-        -- but skip TLEx's "?" placeholder (INV_Misc_QuestionMark, assigned when the
-        -- user never picked one) and fall through to the spec icon instead.
+        -- TLEx loadouts carry their own icon (fileID or atlas/path string). Resolve it
+        -- live by name so an external re-icon in TalentLoadoutEx is picked up; fall back
+        -- to the rule's snapshot (TLEx uninstalled / loadout deleted). Skip TLEx's "?"
+        -- placeholder (INV_Misc_QuestionMark) and fall through to the spec icon instead.
         ---@diagnostic disable-next-line: undefined-field
         if rule.loadout and rule.loadout.source == "tlex" then
+            local live = ResolveTLXLoadoutIcon(rule.loadout.name)
+            if live and live ~= QUESTION_MARK_ICON then
+                return live
+            end
             if rule.icon and rule.icon ~= QUESTION_MARK_ICON then
                 return rule.icon
             end
