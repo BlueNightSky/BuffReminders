@@ -52,8 +52,12 @@ local C_EquipmentSet = C_EquipmentSet
 local C_ChallengeMode = C_ChallengeMode
 local C_Spell = C_Spell
 
-local DEFAULT_TALENT_ICON = 458968 -- generic "spec" book icon, used as last resort
-local DEFAULT_GEAR_ICON = 134400 -- INV_Misc_QuestionMark: safe fallback for icon-less sets
+local DEFAULT_TALENT_ICON = 133741 -- inv_misc_book_09: generic talent/loadout book icon, last resort
+local DEFAULT_GEAR_ICON = 7539422 -- ui-transmog-showequippedgear: nicer fallback for icon-less sets
+-- INV_Misc_QuestionMark: the "?" both WoW's Equipment Manager and TLEx store as a
+-- set/loadout's icon when the user never picked one. Treated as "no real icon" so
+-- we can swap in a meaningful default instead of showing the "?" on the reminder.
+local QUESTION_MARK_ICON = 134400
 
 -- Bodies are hoisted to file scope (not inline `pcall(function() ... end)`) so the
 -- refresh-path callers below don't allocate a closure per rule per refresh.
@@ -481,16 +485,22 @@ function Loadouts.GetRuleIcon(rule)
     elseif rule.require == "gear" and rule.gear and rule.gear.setID then
         -- GetEquipmentSetInfo -> name, iconFileID, ...
         local ok, _, icon = pcall(C_EquipmentSet.GetEquipmentSetInfo, rule.gear.setID)
-        if ok and icon then
+        -- Use the set's own icon, but skip the "?" placeholder the Equipment Manager
+        -- stores when no icon was picked - fall back to a nicer generic gear icon.
+        if ok and icon and icon ~= QUESTION_MARK_ICON then
             return icon
         end
-        -- Set has no icon (or was deleted): fall back to a generic gear icon.
-        return rule.icon or DEFAULT_GEAR_ICON
+        return DEFAULT_GEAR_ICON
     elseif rule.require == "loadout" then
-        -- TLEx loadouts carry their own icon (fileID or atlas/path string); use it.
+        -- TLEx loadouts carry their own icon (fileID or atlas/path string); use it,
+        -- but skip TLEx's "?" placeholder (INV_Misc_QuestionMark, assigned when the
+        -- user never picked one) and fall through to the spec icon instead.
         ---@diagnostic disable-next-line: undefined-field
         if rule.loadout and rule.loadout.source == "tlex" then
-            return rule.icon or DEFAULT_TALENT_ICON
+            if rule.icon and rule.icon ~= QUESTION_MARK_ICON then
+                return rule.icon
+            end
+            -- fall through to the spec icon below
         end
         if rule.specID then
             -- GetSpecializationInfoByID -> id, name, description, icon, ...
@@ -500,7 +510,12 @@ function Loadouts.GetRuleIcon(rule)
             end
         end
     end
-    return rule.icon or DEFAULT_TALENT_ICON
+    -- Last resort: the rule's cached icon (skip the "?" placeholder a TLEx rule may
+    -- have stored there), else the generic talent book.
+    if rule.icon and rule.icon ~= QUESTION_MARK_ICON then
+        return rule.icon
+    end
+    return DEFAULT_TALENT_ICON
 end
 
 ---Act on a clicked reminder: equip the gear set, or open the talent UI.

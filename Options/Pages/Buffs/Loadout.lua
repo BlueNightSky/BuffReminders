@@ -33,7 +33,6 @@ local ICON_SIZE = 20
 local ACTION_BUTTON_WIDTH = 60
 local ACTION_BUTTON_HEIGHT = 22
 local ACTION_BUTTON_GAP = 8
-local DEFAULT_ICON_TEXTURE = 134400
 
 local REQUIRE_LABELS = {
     gear = "Loadout.Require.Gear",
@@ -111,14 +110,9 @@ local function FillRowBody(body, key, rule, onEdit, onDelete)
     iconTex:SetSize(ICON_SIZE, ICON_SIZE)
     iconTex:SetPoint("LEFT", checkbox, "RIGHT", 6, 0)
     -- Resolve live (set/spec may have been re-iconed since save); GetRuleIcon
-    -- always returns a usable texture, falling back to rule.icon then a default.
-    local tex = BR.Loadouts.GetRuleIcon(rule)
-    if tex then
-        iconTex:SetTexture(tex)
-        iconTex:SetTexCoord(TEXCOORD_INSET, 1 - TEXCOORD_INSET, TEXCOORD_INSET, 1 - TEXCOORD_INSET)
-    else
-        iconTex:SetTexture(DEFAULT_ICON_TEXTURE)
-    end
+    -- always returns a usable texture, falling back through its per-type defaults.
+    iconTex:SetTexture(BR.Loadouts.GetRuleIcon(rule))
+    iconTex:SetTexCoord(TEXCOORD_INSET, 1 - TEXCOORD_INSET, TEXCOORD_INSET, 1 - TEXCOORD_INSET)
 
     local deleteBtn = CreateButton(body, L["Options.Delete"], onDelete)
     deleteBtn:SetSize(ACTION_BUTTON_WIDTH, ACTION_BUTTON_HEIGHT)
