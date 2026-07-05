@@ -17,6 +17,7 @@ local Components = BR.Components
 
 local COL_PADDING = BR.Options.Constants.COL_PADDING
 local PAGE_TOP_PADDING = BR.Options.Constants.PAGE_TOP_PADDING
+local SCROLLBAR_WIDTH = BR.Options.Constants.SCROLLBAR_WIDTH
 
 local TAB_CATEGORIES = BR.CATEGORY_ORDER
 local TAB_STRIP_H = 26
@@ -83,10 +84,28 @@ local function Build(content, scrollFrame)
         UpdatePageHeight()
     end
 
-    -- Tab strip
+    -- Sticky tab strip. Parented to the scroll viewport (not the scrolling
+    -- content child) so it stays pinned to the top while the tab body scrolls
+    -- underneath. An opaque mask matching the panel body hides content sliding
+    -- behind the tabs; the strip is lifted above the scroll child so it paints
+    -- on top. The content child still reserves STRIP_TOP + TAB_STRIP_H of top
+    -- padding (see BuildTabContent) so nothing starts hidden under the strip.
+    -- Right edge stops short by the scrollbar column (content is inset the same
+    -- amount) so the sticky mask never paints over the scrollbar or blocks its
+    -- clicks when the tab body overflows.
+    local strip = CreateFrame("Frame", nil, scrollFrame)
+    strip:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 0)
+    strip:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", -SCROLLBAR_WIDTH, 0)
+    strip:SetHeight(STRIP_TOP + TAB_STRIP_H)
+    strip:SetFrameLevel(content:GetFrameLevel() + 10)
+
+    local mask = strip:CreateTexture(nil, "BACKGROUND")
+    mask:SetAllPoints(strip)
+    mask:SetColorTexture(0.09, 0.09, 0.107, 1)
+
     local prev, firstTab
     for _, cat in ipairs(TAB_CATEGORIES) do
-        local tab = Components.Tab(content, {
+        local tab = Components.Tab(strip, {
             name = cat,
             label = tabLabels[cat],
             width = 40,
@@ -97,7 +116,7 @@ local function Build(content, scrollFrame)
         if prev then
             tab:SetPoint("LEFT", prev, "RIGHT", 4, 0)
         else
-            tab:SetPoint("TOPLEFT", content, "TOPLEFT", COL_PADDING, -STRIP_TOP)
+            tab:SetPoint("TOPLEFT", strip, "TOPLEFT", COL_PADDING, -STRIP_TOP)
             firstTab = tab
         end
         tabs[cat] = tab
@@ -106,7 +125,7 @@ local function Build(content, scrollFrame)
 
     -- Grounding baseline spanning the full strip width; the active tab's gold
     -- underline rides on top of it (see Components.TabBaseline).
-    Components.TabBaseline(content, firstTab, contentWidth - COL_PADDING * 2)
+    Components.TabBaseline(strip, firstTab, contentWidth - COL_PADDING * 2)
 
     Activate("raid")
 end
