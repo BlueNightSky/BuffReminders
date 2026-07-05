@@ -94,6 +94,8 @@ local function Build(ctx, layout)
             end,
         })
         layout:Add(showTooltipsHolder, nil, COMPONENT_GAP)
+
+        Helpers.LayoutSubsectionNote(layout, parent, L["Options.ClickToCast.SnoozeNote"])
     end
 
     if category == "raid" or category == "presence" then

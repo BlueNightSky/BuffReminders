@@ -300,16 +300,14 @@ english["Display.DebugEnabled"] = "Debug mode ENABLED. Run |cFFFFD100/br debug|r
 english["Display.DebugDisabled"] = "Debug mode disabled."
 english["Display.Description"] = "Track missing buffs at a glance."
 english["Display.OpenOptions"] = "Open Options"
-english["Display.SlashCommands"] = "Slash commands: /br, /br lock, /br unlock, /br test, /br minimap"
+english["Display.SlashCommands"] = "Slash commands: /br, /br lock, /br unlock, /br test, /br minimap, /br snooze"
 english["Display.MinimapLeftClick"] = "|cFFCFCFCFLeft click|r: Options"
 english["Display.MinimapRightClick"] = "|cFFCFCFCFRight click|r: Test mode"
-english["Display.DismissConsumables"] = "Hide consumable reminders until next loading screen"
 english["Display.DismissConsumablesChat"] = "Consumable reminders hidden until next loading screen."
 english["Display.LoginFirstInstall"] =
     "Thanks for installing! Type |cFFFFD100/br unlock|r to move the buff display, or use the button at the bottom of the |cFFFFD100/br|r options panel."
-english["Display.LoginLoadout"] = "New: loadout reminders! Set them up on the Gear & Talents page in |cFFFFD100/br|r."
-english["Display.LoginGlowDefaultChanged"] =
-    "Buff glow is now off by default to reduce CPU usage. Re-enable it any time on the Defaults page in |cFFFFD100/br|r."
+english["Display.LoginSnooze"] =
+    "The consumable dismiss button is now a right-click: right-click a consumable to snooze its reminders, or type |cFFFFD100/br snooze|r."
 
 -- ============================================================================
 -- OPTIONS: NAVIGATION LABELS
@@ -483,6 +481,8 @@ english["Options.TextPositions.Align.Right"] = "Right"
 english["Options.ClickToCast"] = "Click to cast"
 english["Options.ClickToCast.DescFull"] =
     "Make buff icons clickable to cast the corresponding spell (out of combat only). Only works for spells your character can cast."
+english["Options.ClickToCast.SnoozeNote"] =
+    "Right-click a consumable to snooze its reminders until the next loading screen (|cFFFFD100/br snooze|r always works)."
 english["Options.HoverHighlight"] = "Hover highlight"
 english["Options.HoverHighlight.Desc"] = "Show a subtle highlight when hovering over clickable buff icons."
 english["Options.RequestBuffInChat"] = "Request missing buffs in chat"
