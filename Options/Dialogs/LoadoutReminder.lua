@@ -34,10 +34,15 @@ local loadoutDialog = nil
 -- inserted or a match starts, so per-difficulty granularity buys nothing - the
 -- rule only needs to know which content you're in. Arena and Battleground are
 -- split out (different setups); Dungeon covers every difficulty including M+.
-local CONTENT_VALUES = { "dungeon", "raid", "arena", "battleground" }
+-- Open World and Delve exist so you can be reminded to swap back to your
+-- everyday build after content (both let you freely swap, so reminders there
+-- stay actionable).
+local CONTENT_VALUES = { "openWorld", "dungeon", "delve", "raid", "arena", "battleground" }
 local SCOPE_LABEL = {
+    openWorld = "Loadout.Scope.OpenWorld",
     raid = "Loadout.Scope.Raid",
     dungeon = "Loadout.Scope.Dungeon",
+    delve = "Loadout.Scope.Delve",
     arena = "Loadout.Scope.Arena",
     battleground = "Loadout.Scope.Battleground",
 }

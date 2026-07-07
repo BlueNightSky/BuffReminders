@@ -187,8 +187,8 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field clickToFix? boolean                 -- click the icon to equip the set / open the talent UI
 
 ---Content scope for a loadout rule. `scope` is a player-facing content tier
----(raid/dungeon/arena/battleground/delve); `instances` narrows to specific
----dungeons/raids by name (nil/empty = any).
+---(openWorld/dungeon/delve/raid/arena/battleground); `instances` narrows to
+---specific dungeons/raids by name (nil/empty = any).
 ---@class LoadoutWhen
 ---@field scope? string
 ---@field readyCheckOnly? boolean

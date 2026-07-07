@@ -41,8 +41,10 @@ local REQUIRE_LABELS = {
 }
 
 local SCOPE_LABELS = {
+    openWorld = "Loadout.Scope.OpenWorld",
     raid = "Loadout.Scope.Raid",
     dungeon = "Loadout.Scope.Dungeon",
+    delve = "Loadout.Scope.Delve",
     arena = "Loadout.Scope.Arena",
     battleground = "Loadout.Scope.Battleground",
 }

@@ -74,8 +74,10 @@ english["Loadout.LimitRaids"] = "Only specific raids"
 english["Loadout.LimitDungeons"] = "Only specific dungeons"
 -- Content scope (you can't swap gear/talents once a key or match starts, so the
 -- rule only needs the content you're in - no per-difficulty granularity).
+english["Loadout.Scope.OpenWorld"] = "Open World"
 english["Loadout.Scope.Raid"] = "Raid"
 english["Loadout.Scope.Dungeon"] = "Dungeon"
+english["Loadout.Scope.Delve"] = "Delve"
 english["Loadout.Scope.Arena"] = "Arena"
 english["Loadout.Scope.Battleground"] = "Battleground"
 -- Binding label: spec + class, e.g. "Protection Warrior" (reorder for your locale).
