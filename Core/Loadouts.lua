@@ -51,6 +51,8 @@ local C_Traits = C_Traits
 local C_EquipmentSet = C_EquipmentSet
 local C_ChallengeMode = C_ChallengeMode
 local C_Spell = C_Spell
+local C_Timer = C_Timer
+local Enum = Enum
 
 local DEFAULT_TALENT_ICON = 133741 -- inv_misc_book_09: generic talent/loadout book icon, last resort
 local DEFAULT_GEAR_ICON = 7539422 -- ui-transmog-showequippedgear: nicer fallback for icon-less sets
@@ -348,7 +350,6 @@ function Loadouts.IsSatisfied(rule)
         if rule.specID and rule.specID ~= GetCurrentSpecID() then
             return true
         end
-        ---@diagnostic disable-next-line: undefined-field
         if rule.loadout and rule.loadout.source == "tlex" then
             return Loadouts.IsTLXLoadoutActive(rule.loadout.name)
         end
@@ -529,7 +530,6 @@ function Loadouts.GetRuleIcon(rule)
         -- live by name so an external re-icon in TalentLoadoutEx is picked up; fall back
         -- to the rule's snapshot (TLEx uninstalled / loadout deleted). Skip TLEx's "?"
         -- placeholder (INV_Misc_QuestionMark) and fall through to the spec icon instead.
-        ---@diagnostic disable-next-line: undefined-field
         if rule.loadout and rule.loadout.source == "tlex" then
             local live = ResolveTLXLoadoutIcon(rule.loadout.name)
             if live and live ~= QUESTION_MARK_ICON then
@@ -556,9 +556,101 @@ function Loadouts.GetRuleIcon(rule)
     return DEFAULT_TALENT_ICON
 end
 
----Act on a clicked reminder: equip the gear set, or open the talent UI.
----Gear swaps and talent edits are blocked in combat by the client; guard early
----so the user gets a clear message instead of a silent no-op.
+-- The talent UI's loadout dropdown reflects the spec's "last selected saved config",
+-- but that stamp only sticks if applied AFTER the config actually commits. A swap that
+-- changes points returns LoadInProgress and runs the "Changing Talents" cast; stamp the
+-- selection before that commit and the talent frame re-derives the dropdown on commit,
+-- showing the OLD loadout (points change, dropdown lies - the reported bug). So for the
+-- in-progress case we defer the stamp to the next TRAIT_CONFIG_UPDATED. A generation
+-- token + timeout keeps a pending stamp from leaking onto an unrelated later commit if
+-- the cast never lands (e.g. the player is pulled into combat before it finishes).
+local dropdownSyncFrame = CreateFrame("Frame")
+local pendingSync
+local syncGen = 0
+
+local function StampLastSelected(specID, configID)
+    if C_ClassTalents.UpdateLastSelectedSavedConfigID then
+        pcall(C_ClassTalents.UpdateLastSelectedSavedConfigID, specID, configID)
+    end
+    -- Blizzard bug: an ALREADY-OPEN talent frame doesn't re-read the last-selected
+    -- config when it changes via the API, so its loadout dropdown keeps showing the
+    -- previous set until /reload. If the frame is loaded, nudge its dropdown with the
+    -- same SetSelectionID the UI uses internally (referenced live - PlayerSpellsFrame
+    -- is load-on-demand and nil until first opened; when unloaded the dropdown reads
+    -- fresh on next open, so there's nothing to fix).
+    local tab = PlayerSpellsFrame and PlayerSpellsFrame.TalentsFrame
+    local dropdown = tab and tab.LoadSystem
+    if dropdown and dropdown.SetSelectionID then
+        pcall(dropdown.SetSelectionID, dropdown, configID)
+    end
+end
+
+dropdownSyncFrame:SetScript("OnEvent", function(self)
+    self:UnregisterEvent("TRAIT_CONFIG_UPDATED")
+    local sync = pendingSync
+    pendingSync = nil
+    if sync then
+        StampLastSelected(sync.specID, sync.configID)
+    end
+end)
+
+-- Defer the dropdown stamp until the talent-change cast commits.
+local function QueueDropdownSync(specID, configID)
+    syncGen = syncGen + 1
+    local myGen = syncGen
+    pendingSync = { specID = specID, configID = configID }
+    dropdownSyncFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
+    C_Timer.After(8, function()
+        -- Only clear if still ours and unfired (a newer queue bumps syncGen).
+        if myGen == syncGen and pendingSync then
+            pendingSync = nil
+            dropdownSyncFrame:UnregisterEvent("TRAIT_CONFIG_UPDATED")
+        end
+    end)
+end
+
+-- Load a WoW named talent loadout in place. Re-resolve the configID by name for
+-- the current spec first: configIDs are per-character, so the one snapshotted on the
+-- rule can be stale on an alt sharing the loadout name. Fall back to the stored id.
+-- Returns false when nothing loadable resolves, so ApplyFix drops to opening the UI.
+---@param rule LoadoutRule
+---@return boolean
+local function LoadWoWLoadout(rule)
+    if not (C_ClassTalents and C_ClassTalents.LoadConfig) then
+        return false
+    end
+    local specID = rule.specID or GetCurrentSpecID()
+    local name = rule.loadout and rule.loadout.name
+    local configID
+    if name then
+        for _, entry in ipairs(Loadouts.ListLoadouts(specID)) do
+            if entry.name == name then
+                configID = entry.configID
+                break
+            end
+        end
+    end
+    configID = configID or (rule.loadout and rule.loadout.configID)
+    if not configID then
+        return false
+    end
+    -- Load-and-apply (autoApply = true), THEN stamp the dropdown selection - order and
+    -- timing matter for the loadout dropdown to reflect the swap (see the note above).
+    local result = C_ClassTalents.LoadConfig(configID, true)
+    if result == nil or result == Enum.LoadConfigResult.Error then
+        return false -- load didn't take; let ApplyFix open the talent UI instead
+    end
+    if result == Enum.LoadConfigResult.LoadInProgress then
+        QueueDropdownSync(specID, configID) -- stamp once the "Changing Talents" cast commits
+    else
+        StampLastSelected(specID, configID) -- Ready / NoChangesNecessary: applied synchronously
+    end
+    return true
+end
+
+---Act on a clicked reminder: equip the gear set, load the talent loadout, or open
+---the talent UI. Gear swaps and talent edits are blocked in combat by the client;
+---guard early so the user gets a clear message instead of a silent no-op.
 ---@param rule LoadoutRule
 function Loadouts.ApplyFix(rule)
     if InCombatLockdown() then
@@ -569,7 +661,15 @@ function Loadouts.ApplyFix(rule)
         pcall(C_EquipmentSet.UseEquipmentSet, rule.gear.setID)
         return
     end
-    -- talent / loadout: open the talent UI (auto-load is a later polish item)
+    -- WoW named loadout: load it in place. TLEx loadouts aren't WoW configs
+    -- (C_ClassTalents can't see them), so those fall through to opening the UI.
+    if rule.require == "loadout" and rule.loadout and rule.loadout.source ~= "tlex" then
+        local ok, loaded = pcall(LoadWoWLoadout, rule)
+        if ok and loaded then
+            return
+        end
+    end
+    -- talent / TLEx loadout / unresolved: open the talent UI so the user finishes by hand.
     pcall(function()
         if PlayerSpellsUtil and PlayerSpellsUtil.OpenToClassTalentsTab then
             PlayerSpellsUtil.OpenToClassTalentsTab()
