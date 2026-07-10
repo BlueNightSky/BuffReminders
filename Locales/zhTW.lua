@@ -64,8 +64,10 @@ L["Loadout.LimitRaids"] = "只有指定的團隊副本"
 L["Loadout.LimitDungeons"] = "只有指定的地下城"
 -- Content scope (you can't swap gear/talents once a key or match starts, so the
 -- rule only needs the content you're in - no per-difficulty granularity).
+L["Loadout.Scope.OpenWorld"] = "開放世界"
 L["Loadout.Scope.Raid"] = "團隊副本"
 L["Loadout.Scope.Dungeon"] = "地下城"
+L["Loadout.Scope.Delve"] = "探究"
 L["Loadout.Scope.Arena"] = "競技場"
 L["Loadout.Scope.Battleground"] = "戰場"
 -- Binding label: spec + class, e.g. "Protection Warrior" (reorder for your locale).
