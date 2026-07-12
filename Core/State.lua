@@ -164,27 +164,31 @@ local inCombat = false
 -- CACHED VALUES (invalidated by specific events)
 -- ============================================================================
 
--- Content type cache (invalidated on PLAYER_ENTERING_WORLD)
-local cachedContentType = nil
-local cachedInstanceType = nil -- raw WoW instanceType, stashed alongside content type
-local cachedDifficultyID = nil -- raw GetInstanceInfo difficultyID, stashed alongside content type
-local cachedInstanceName = nil -- GetInstanceInfo name, stashed alongside content type
-local cachedInstanceID = nil -- GetInstanceInfo instanceID, stashed alongside content type
-local cachedActiveChallenge = nil -- active challenge map ID, stashed alongside content type
+-- Instance/content context cache: everything derived from the current zone
+-- (GetInstanceInfo identity, content type, difficulty, PvP/legacy flags) lives
+-- in ONE table because it all shares one lifecycle. Fields populate lazily and
+-- InvalidateContentTypeCache clears the whole table with a single wipe, so a
+-- newly added derived field can never be forgotten in the invalidator.
+---@class InstanceCache
+---@field contentType string?    -- "openWorld"|"dungeon"|"scenario"|"raid"|"housing"|"pvp"
+---@field instanceType string?   -- raw WoW instanceType
+---@field difficultyID number?   -- raw GetInstanceInfo difficultyID
+---@field instanceName string?   -- GetInstanceInfo name
+---@field instanceID number?     -- GetInstanceInfo instanceID
+---@field activeChallenge number? -- active challenge map ID (keystone)
+---@field difficultyKey string?  -- mapped difficulty key (only valid keys are cached)
+---@field competitivePvP boolean? -- arena or rated BG
+---@field legacyInstance boolean? -- legacy loot mode (populated with contentType)
+local instanceCache = {}
 local GetDifficultyIDCached -- forward declaration (defined next to GetCurrentContentType)
 
 -- Whether we are in the PvP prep phase (before gates open). Used by the
 -- `hideInPvPMatch` visibility setting to gate buff display once the match starts.
+-- Deliberately NOT part of instanceCache: it's managed explicitly by
+-- SetPvPPrepPhase and must survive the cache invalidation (see that function).
 -- Note: aura API is restricted for the entire BG/arena (prep included), so this
 -- does NOT affect IsRestricted() - see that function for details.
 local inPvPPrepPhase = false
-
--- Difficulty cache (invalidated alongside content type)
-local cachedDifficultyKey = nil
-local cachedCompetitivePvP = nil -- arena or rated BG
-
--- Legacy loot cache (populated alongside content type, invalidated together)
-local cachedIsLegacyInstance = nil
 
 local DUNGEON_DIFFICULTY_KEYS = {
     [1] = "normal", -- Normal
@@ -910,22 +914,22 @@ end
 ---Get the current content type based on instance/zone (cached)
 ---@return string contentType One of "openWorld", "dungeon", "scenario", "raid", "housing", "pvp"
 local function GetCurrentContentType()
-    if cachedContentType then
-        return cachedContentType
+    if instanceCache.contentType then
+        return instanceCache.contentType
     end
 
     -- Stash the raw GetInstanceInfo identity for cheap reuse (delve check below,
     -- difficulty key, NPC-counting gate, Decor Duel check in Display, loadout
-    -- instance filters) - same lifecycle as the content type cache, cleared
-    -- together in InvalidateContentTypeCache. The identity fields freeze with the
-    -- content type: a transient nil name at populate time relies on the post-load
+    -- instance filters) - same lifecycle, cleared together in
+    -- InvalidateContentTypeCache. The identity fields freeze with the content
+    -- type: a transient nil name at populate time relies on the post-load
     -- invalidation events (PLAYER_ENTERING_WORLD / deferred ZONE_CHANGED_NEW_AREA
     -- / PLAYER_DIFFICULTY_CHANGED / CHALLENGE_MODE_*) to repopulate.
     local instName, _, difficultyID, _, _, _, _, instanceID = GetInstanceInfo()
-    cachedInstanceName = instName
-    cachedInstanceID = instanceID
-    cachedDifficultyID = difficultyID
-    cachedActiveChallenge = C_ChallengeMode and C_ChallengeMode.GetActiveChallengeMapID() or nil
+    instanceCache.instanceName = instName
+    instanceCache.instanceID = instanceID
+    instanceCache.difficultyID = difficultyID
+    instanceCache.activeChallenge = C_ChallengeMode and C_ChallengeMode.GetActiveChallengeMapID() or nil
 
     -- Check housing before instance type (housing zones may report as instanced)
     if
@@ -935,42 +939,44 @@ local function GetCurrentContentType()
             or (C_Housing.IsOnNeighborhoodMap and C_Housing.IsOnNeighborhoodMap())
         )
     then
-        cachedContentType = "housing"
-        return cachedContentType
+        instanceCache.contentType = "housing"
+        return "housing"
     end
 
     -- Delves report inInstance=false but instanceType="scenario" and difficultyID=208;
     -- check difficultyID first so they are correctly classified as scenarios.
     if difficultyID == 208 then
-        cachedContentType = "scenario"
-        return cachedContentType
+        instanceCache.contentType = "scenario"
+        return "scenario"
     end
 
     local inInstance, instanceType = IsInInstance()
-    cachedInstanceType = instanceType
+    instanceCache.instanceType = instanceType
     -- A difficultyID of 0 inside an instance is a transient loading-screen read
     -- (GetCurrentDifficultyKey relies on retrying until it resolves); leave it
     -- uncached so GetDifficultyIDCached re-reads live until real data arrives.
     -- Open world legitimately reports 0 and keeps the cached value.
     if inInstance and difficultyID == 0 then
-        cachedDifficultyID = nil
+        instanceCache.difficultyID = nil
     end
+    local contentType
     if not inInstance then
-        cachedContentType = "openWorld"
+        contentType = "openWorld"
     elseif instanceType == "raid" then
-        cachedContentType = "raid"
+        contentType = "raid"
     elseif instanceType == "scenario" then
-        cachedContentType = "scenario"
+        contentType = "scenario"
     else
         if instanceType == "arena" or instanceType == "pvp" then
-            cachedContentType = "pvp"
+            contentType = "pvp"
         else
-            cachedContentType = "dungeon"
+            contentType = "dungeon"
         end
     end
+    instanceCache.contentType = contentType
 
-    cachedIsLegacyInstance = C_Loot.IsLegacyLootModeEnabled()
-    return cachedContentType
+    instanceCache.legacyInstance = C_Loot.IsLegacyLootModeEnabled()
+    return contentType
 end
 
 ---Raw difficultyID from GetInstanceInfo, cached alongside the content type
@@ -978,16 +984,16 @@ end
 ---GetInstanceInfo itself never returns nil here).
 ---@return number
 function GetDifficultyIDCached()
-    local id = cachedDifficultyID
+    local id = instanceCache.difficultyID
     if id == nil then
-        GetCurrentContentType() -- populates cachedDifficultyID (unless transient)
-        id = cachedDifficultyID
+        GetCurrentContentType() -- populates instanceCache.difficultyID (unless transient)
+        id = instanceCache.difficultyID
         if id == nil then
             -- Content type already cached while the difficulty read was still
             -- transient: retry live until it resolves, then cache.
             id = select(3, GetInstanceInfo())
             if id ~= 0 then
-                cachedDifficultyID = id
+                instanceCache.difficultyID = id
             end
         end
     end
@@ -1000,10 +1006,10 @@ end
 ---@return number? instanceID
 ---@return number? activeChallengeMapID
 function BuffState.GetInstanceContext()
-    if cachedContentType == nil then
+    if instanceCache.contentType == nil then
         GetCurrentContentType() -- populates the instance identity fields
     end
-    return cachedInstanceName, cachedInstanceID, cachedActiveChallenge
+    return instanceCache.instanceName, instanceCache.instanceID, instanceCache.activeChallenge
 end
 
 ---Get the current difficulty key (cached)
@@ -1011,8 +1017,8 @@ end
 ---an unmapped difficultyID (e.g. 0 during a loading transition).
 ---@return string? difficultyKey or nil if not in a dungeon/raid or unknown difficulty
 local function GetCurrentDifficultyKey()
-    if cachedDifficultyKey ~= nil then
-        return cachedDifficultyKey
+    if instanceCache.difficultyKey ~= nil then
+        return instanceCache.difficultyKey
     end
     local difficultyID = GetDifficultyIDCached()
     local contentType = GetCurrentContentType()
@@ -1020,16 +1026,16 @@ local function GetCurrentDifficultyKey()
     if diffTable then
         local key = diffTable[difficultyID]
         if key then
-            cachedDifficultyKey = key
+            instanceCache.difficultyKey = key
         end
         return key
     elseif contentType == "scenario" then
         local key = difficultyID == 208 and "delves" or "others"
-        cachedDifficultyKey = key
+        instanceCache.difficultyKey = key
         return key
     elseif contentType == "pvp" then
-        local key = cachedInstanceType == "arena" and "arena" or "bg"
-        cachedDifficultyKey = key
+        local key = instanceCache.instanceType == "arena" and "arena" or "bg"
+        instanceCache.difficultyKey = key
         return key
     end
     return nil
@@ -1750,16 +1756,16 @@ end
 ---Consumables flagged disabledInCompetitivePvP are hidden here.
 ---@return boolean
 local function IsInCompetitivePvP()
-    if cachedCompetitivePvP ~= nil then
-        return cachedCompetitivePvP
+    if instanceCache.competitivePvP ~= nil then
+        return instanceCache.competitivePvP
     end
     local contentType = GetCurrentContentType()
     if contentType ~= "pvp" then
-        cachedCompetitivePvP = false
+        instanceCache.competitivePvP = false
         return false
     end
-    local result = cachedInstanceType == "arena" or C_PvP.IsRatedMap() == true
-    cachedCompetitivePvP = result
+    local result = instanceCache.instanceType == "arena" or C_PvP.IsRatedMap() == true
+    instanceCache.competitivePvP = result
     return result
 end
 
@@ -2705,10 +2711,10 @@ end
 ---Check if the current instance is legacy content (cached alongside content type)
 ---@return boolean
 function BuffState.IsLegacyInstance()
-    if cachedIsLegacyInstance == nil then
-        GetCurrentContentType() -- populates cachedIsLegacyInstance
+    if instanceCache.legacyInstance == nil then
+        GetCurrentContentType() -- populates instanceCache.legacyInstance
     end
-    return cachedIsLegacyInstance or false
+    return instanceCache.legacyInstance or false
 end
 
 ---Set whether consumable reminders are dismissed (transient, resets on instance change)
@@ -2834,15 +2840,7 @@ end
 
 ---Invalidate content type cache (call on PLAYER_ENTERING_WORLD)
 function BuffState.InvalidateContentTypeCache()
-    cachedContentType = nil
-    cachedInstanceType = nil
-    cachedDifficultyID = nil
-    cachedInstanceName = nil
-    cachedInstanceID = nil
-    cachedActiveChallenge = nil
-    cachedDifficultyKey = nil
-    cachedCompetitivePvP = nil
-    cachedIsLegacyInstance = nil
+    wipe(instanceCache)
     -- Note: inPvPPrepPhase is NOT reset here - it's managed explicitly by
     -- SetPvPPrepPhase() calls from PLAYER_ENTERING_WORLD and PVP_MATCH_STATE_CHANGED.
     -- Resetting it here would clobber the prep state when ZONE_CHANGED_NEW_AREA's
