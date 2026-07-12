@@ -3714,6 +3714,9 @@ eventFrame:RegisterEvent("EQUIPMENT_SETS_CHANGED")
 eventFrame:RegisterEvent("UNIT_ENTERED_VEHICLE")
 eventFrame:RegisterEvent("UNIT_EXITED_VEHICLE")
 eventFrame:RegisterEvent("PLAYER_DIFFICULTY_CHANGED")
+eventFrame:RegisterEvent("CHALLENGE_MODE_START")
+eventFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+eventFrame:RegisterEvent("CHALLENGE_MODE_RESET")
 eventFrame:RegisterEvent("PLAYER_UPDATE_RESTING")
 eventFrame:RegisterEvent("PLAYER_LEVEL_UP")
 eventFrame:RegisterEvent("UPDATE_EXPANSION_LEVEL")
@@ -3988,6 +3991,17 @@ eventHandlers.PLAYER_DIFFICULTY_CHANGED = function()
     BR.BuffState.InvalidateContentTypeCache()
     SetDirty()
 end
+
+-- Keystone lifecycle changes the active challenge map ID (and difficulty) without
+-- a loading screen; the cached instance context (loadout instance filters,
+-- difficulty key) must repopulate. Belt-and-suspenders alongside
+-- PLAYER_DIFFICULTY_CHANGED, which is not guaranteed to fire for every member.
+eventHandlers.CHALLENGE_MODE_START = function()
+    BR.BuffState.InvalidateContentTypeCache()
+    SetDirty()
+end
+eventHandlers.CHALLENGE_MODE_COMPLETED = eventHandlers.CHALLENGE_MODE_START
+eventHandlers.CHALLENGE_MODE_RESET = eventHandlers.CHALLENGE_MODE_START
 
 eventHandlers.PVP_MATCH_STATE_CHANGED = function()
     local state = C_PvP.GetActiveMatchState()
