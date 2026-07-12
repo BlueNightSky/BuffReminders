@@ -63,6 +63,9 @@ local BUFF_TABLES = BR.BUFF_TABLES
 local BuffBeneficiaries = BR.BuffBeneficiaries
 local SpecBeneficiaries = BR.SpecBeneficiaries
 
+-- Sticky target memory for cast-on-others buffs (Core/TargetMemory.lua)
+local TargetMemory = BR.TargetMemory
+
 -- Buffs with class-specific aura variants can resolve to a single spell ID per unit.
 -- This avoids scanning every possible variant for every raid member on each refresh.
 local UNIT_CLASS_BUFF_SPELLS = {
@@ -385,27 +388,9 @@ local function IsAuraTrackable(buff)
     return true
 end
 
--- Last target cache: runtime-only map of buffKey -> {name, class} for targeted buffs.
--- When a targeted buff is found on someone, we remember their name so the click macro
--- can re-target them automatically. Not persisted to SavedVariables.
----@type table<string, {name: string, class: string}>
-local lastTargets = {}
-
--- Reusable set for last-target pruning (avoids per-refresh allocation)
+-- Reusable set for target-memory pruning (avoids per-refresh allocation)
 ---@type table<string, true>
 local activeNames = {}
-
----Get the last known target for a targeted buff
----@param buffKey string
----@return string? name Character name (with realm) of the last known target
----@return string? class English class token (e.g. "PALADIN")
-local function GetLastTarget(buffKey)
-    local entry = lastTargets[buffKey]
-    if entry then
-        return entry.name, entry.class
-    end
-    return nil, nil
-end
 
 -- Pool of reusable unit entry tables (avoids creating new tables each refresh)
 ---@type {unit: string, class: string, isPlayer: boolean, name: string?, isPhased: boolean}[]
@@ -539,15 +524,16 @@ end
 -- UTILITY FUNCTIONS
 -- ============================================================================
 
----Check if a unit is a valid group member for buff tracking.
----Excludes: non-existent, dead/ghost, disconnected, hostile (cross-faction in open world).
+---Check if an existing unit is a valid buff target for tracking.
+---Caller must verify UnitExists first. Excludes: dead/ghost, disconnected,
+---hostile (cross-faction in open world).
 ---Phased / out-of-broadcast-range allies still pass; their phase status is exposed via
 ---the `isPhased` flag on the cached entry so counting paths can apply the
 ---"phased + missing -> skip" rule without losing existing-buff coverage.
 ---@param unit string
 ---@return boolean
-local function IsValidGroupMember(unit)
-    return UnitExists(unit) and not UnitIsDeadOrGhost(unit) and UnitIsConnected(unit) and UnitCanAssist("player", unit)
+local function IsValidBuffTarget(unit)
+    return not UnitIsDeadOrGhost(unit) and UnitIsConnected(unit) and UnitCanAssist("player", unit)
 end
 
 ---Determine whether a unit is in a different phase from the player or out of
@@ -580,6 +566,7 @@ end
 local function BuildValidUnitCache()
     RecycleUnitEntries()
     wipe(classMaxLevels)
+    wipe(activeNames)
 
     -- Keep player spec in allySpecCache so CountMissingBuff can use a single
     -- lookup path (allySpecCache[name]) for both the player and allies.
@@ -601,7 +588,7 @@ local function BuildValidUnitCache()
 
     -- Open-world solo (groupSize 0) has no roster but still needs the player in
     -- the unit cache. Treat it as a 1-unit "group of player" so dead/phased/etc.
-    -- filtering via IsValidGroupMember runs uniformly for solo and grouped paths.
+    -- filtering via IsValidBuffTarget runs uniformly for solo and grouped paths.
     local memberCount = groupSize == 0 and 1 or groupSize
 
     for i = 1, memberCount do
@@ -614,37 +601,36 @@ local function BuildValidUnitCache()
             unit = "party" .. (i - 1)
         end
 
-        if IsValidGroupMember(unit) then
-            local _, class = UnitClass(unit)
-            local isPlayer = UnitIsPlayer(unit)
+        if UnitExists(unit) then
+            -- Roster names feed target-memory pruning: collected for EVERY existing
+            -- member, dead/disconnected included - they haven't left the group, so
+            -- target memory must survive wipes and reconnects.
             local name = GetUnitName(unit, true)
-            local isPhased = IsUnitPhased(unit)
-            currentValidUnits[#currentValidUnits + 1] = AcquireUnitEntry(unit, class, isPlayer, name, isPhased)
-            -- Track max level per class (players only, for buff caster checks).
-            -- Skip phased / out-of-broadcast-range allies: they can't reliably
-            -- cast on the group right now, so they shouldn't make us track buffs
-            -- no one reachable can provide (e.g. priest outside the dungeon).
-            if isPlayer and class and not isPhased then
-                local level = UnitLevel(unit)
-                if not classMaxLevels[class] or level > classMaxLevels[class] then
-                    classMaxLevels[class] = level
+            if name then
+                activeNames[name] = true
+            end
+            if IsValidBuffTarget(unit) then
+                local _, class = UnitClass(unit)
+                local isPlayer = UnitIsPlayer(unit)
+                local isPhased = IsUnitPhased(unit)
+                currentValidUnits[#currentValidUnits + 1] = AcquireUnitEntry(unit, class, isPlayer, name, isPhased)
+                -- Track max level per class (players only, for buff caster checks).
+                -- Skip phased / out-of-broadcast-range allies: they can't reliably
+                -- cast on the group right now, so they shouldn't make us track buffs
+                -- no one reachable can provide (e.g. priest outside the dungeon).
+                if isPlayer and class and not isPhased then
+                    local level = UnitLevel(unit)
+                    if not classMaxLevels[class] or level > classMaxLevels[class] then
+                        classMaxLevels[class] = level
+                    end
                 end
             end
         end
     end
 
-    -- Prune last targets: remove entries for players no longer in the group
-    wipe(activeNames)
-    for _, data in ipairs(currentValidUnits) do
-        if data.name then
-            activeNames[data.name] = true
-        end
-    end
-    for buffKey, entry in pairs(lastTargets) do
-        if not activeNames[entry.name] then
-            lastTargets[buffKey] = nil
-        end
-    end
+    -- Prune target memory: forget targets who left the group (roster membership,
+    -- NOT buff-target validity - a dead or offline member hasn't left)
+    TargetMemory.PruneToRoster(activeNames)
 end
 
 ---Check if any group member of the given class meets the level requirement
@@ -1338,54 +1324,31 @@ local function ShouldShowTargetedBuff(spellIDs, requiredClass, beneficiaryRole, 
     if casterBuffId then
         -- Shortcut: check if the caster has this buff on themselves (combat-safe spell ID)
         local hasBuff, remaining = UnitHasBuff("player", casterBuffId)
-        -- Update last target cache by scanning group for the original buff.
-        -- Only out of combat/encounter: the target-side spell may not be on the aura whitelist,
-        -- so UnitHasBuff would return nil and incorrectly clear the cache.
-        if buffKey and not inCombat then
-            if hasBuff then
-                local foundTarget = false
-                for _, data in ipairs(currentValidUnits) do
-                    if not UnitIsUnit(data.unit, "player") then
-                        local targetHas = UnitHasBuff(data.unit, spellIDs)
-                        if targetHas and data.name then
-                            local existing = lastTargets[buffKey]
-                            if existing then
-                                existing.name = data.name
-                                existing.class = data.class
-                            else
-                                lastTargets[buffKey] = { name = data.name, class = data.class }
-                            end
-                            foundTarget = true
-                            break
-                        end
+        -- Update target memory by scanning group for the original buff, record-only-on-found:
+        -- the target-side spell may not be queryable (not on the aura whitelist in restricted
+        -- contexts like M+, or the target is phased/out of range), so a miss is ambiguous and
+        -- must NOT forget the memory. Departures are handled by roster pruning, and a retarget
+        -- overwrites on the next successful scan.
+        if buffKey and not inCombat and hasBuff then
+            for _, data in ipairs(currentValidUnits) do
+                if not UnitIsUnit(data.unit, "player") then
+                    local targetHas = UnitHasBuff(data.unit, spellIDs)
+                    if targetHas and data.name then
+                        TargetMemory.Observe(buffKey, true, data.name, data.class)
+                        break
                     end
                 end
-                if not foundTarget then
-                    lastTargets[buffKey] = nil
-                end
             end
-            -- If not active, keep old last target so macro still targets them after it falls off
         end
         return not hasBuff, remaining
     end
 
     local isActive, remaining, targetEntry = IsPlayerBuffActive(spellID, beneficiaryRole)
 
-    -- Update last target cache
+    -- Update target memory (records even in combat: this path only runs for
+    -- whitelist-safe queries, gated by IsAuraTrackable at the call site)
     if buffKey then
-        if targetEntry and targetEntry.name then
-            local existing = lastTargets[buffKey]
-            if existing then
-                existing.name = targetEntry.name
-                existing.class = targetEntry.class
-            else
-                lastTargets[buffKey] = { name = targetEntry.name, class = targetEntry.class }
-            end
-        elseif isActive then
-            -- Buff found but only on player - clear last target
-            lastTargets[buffKey] = nil
-        end
-        -- If not active at all, keep old last target so macro still targets them after it falls off
+        TargetMemory.Observe(buffKey, isActive, targetEntry and targetEntry.name, targetEntry and targetEntry.class)
     end
 
     return not isActive, remaining
@@ -2080,6 +2043,32 @@ function BuffState.Refresh(refreshMode)
                 and (readyCheckOk or instanceEntryOk)
                 and scope.show
                 and (not buff.groupOnly or #currentValidUnits > 1) -- solo = 1 entry (player only)
+            -- castOnOthers target memory (e.g. Soulstone): maintained on every refresh
+            -- the aura API allows, independent of reminder visibility - Soulstone's
+            -- display is ready-check-gated, but the click macro needs the memory kept
+            -- current all the time. The scan result is shared with the display branch
+            -- below so the buff is never scanned twice in one refresh.
+            local isOwnCaster = buff.castOnOthers and buff.class == playerClass
+            local hasBuff, minRemaining, targetEntry
+            local scanned = false
+            if
+                isOwnCaster
+                and not inCombat
+                and #currentValidUnits > 1
+                and IsBuffEnabled(buff.key)
+                and (not isAuraRestricted or IsAuraTrackable(buff))
+            then
+                -- Full-group sweep (playerOnly=false): the buff lives on the target,
+                -- so a player-only scan could never find them.
+                hasBuff, minRemaining, targetEntry = HasPresenceBuff(buff.spellID, false, true)
+                scanned = true
+                TargetMemory.Observe(
+                    buff.key,
+                    hasBuff,
+                    targetEntry and targetEntry.name,
+                    targetEntry and targetEntry.class
+                )
+            end
             if showBuff and IsBuffEnabled(buff.key) then
                 local trackable = IsAuraTrackable(buff)
                 local useGlowDet = isAuraRestricted and not trackable and buff.glowDetectable
@@ -2091,9 +2080,9 @@ function BuffState.Refresh(refreshMode)
                     else
                         -- castOnOthers: only count our own cast for the caster class so we get
                         -- the right target (and don't hide the icon because another caster covered it).
-                        local isOwnCaster = buff.castOnOthers and buff.class == playerClass
-                        local hasBuff, minRemaining, targetEntry =
-                            HasPresenceBuff(buff.spellID, scope.playerOnly, isOwnCaster)
+                        if not scanned then
+                            hasBuff, minRemaining = HasPresenceBuff(buff.spellID, scope.playerOnly, isOwnCaster)
+                        end
                         -- customCheck gates display (e.g., soulstone CD tracking for warlocks)
                         local customOk = true
                         if not hasBuff and buff.customCheck then
@@ -2106,21 +2095,6 @@ function BuffState.Refresh(refreshMode)
                             SetEntryText(entry, buff.overlayText, presMissGlow)
                         elseif not buff.noExpirationGlow and not hideExpiring then
                             TrySetEntryExpiring(entry, minRemaining, presThreshold, presExGlow)
-                        end
-                        -- Track who has castOnOthers buffs for sticky click-to-cast targeting
-                        if isOwnCaster and hasBuff and not inCombat then
-                            if targetEntry and targetEntry.name then
-                                local existing = lastTargets[buff.key]
-                                if existing then
-                                    existing.name = targetEntry.name
-                                    existing.class = targetEntry.class
-                                else
-                                    lastTargets[buff.key] = { name = targetEntry.name, class = targetEntry.class }
-                                end
-                            else
-                                lastTargets[buff.key] = nil
-                            end
-                            -- If not active, keep old last target so macro still targets them
                         end
                     end
                 end
@@ -2993,7 +2967,6 @@ BR.StateHelpers = {
     IsCategoryVisibleForContent = IsCategoryVisibleForContent,
     GetBuffSettingKey = GetBuffSettingKey,
     IsBuffEnabled = IsBuffEnabled,
-    GetLastTarget = GetLastTarget,
 }
 
 -- Export the module

@@ -317,7 +317,7 @@ local function CreateClickOverlay(frame)
             if frame.buffDef.class and frame.buffDef.class ~= playerClass then
                 return
             end
-            local name, class = BR.StateHelpers.GetLastTarget(frame.buffDef.key)
+            local name, class = BR.TargetMemory.Get(frame.buffDef.key)
             if name then
                 ShowLastTargetTooltip(overlay, name, class)
             end

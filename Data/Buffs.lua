@@ -234,7 +234,7 @@ end
 local function TargetedClickMacro(buffKey)
     return function(spellID)
         local name = BR.GetSpellName(spellID) or ""
-        local lastTarget = BR.StateHelpers and BR.StateHelpers.GetLastTarget(buffKey)
+        local lastTarget = BR.TargetMemory and BR.TargetMemory.Get(buffKey)
         if lastTarget then
             return "/cast [@" .. lastTarget .. ",help,nodead][@mouseover,help,nodead][@target,help,nodead][] " .. name
         end
@@ -542,7 +542,7 @@ BR.BUFF_TABLES = {
             clickMacro = function(spellID)
                 local name = BR.GetSpellName(spellID) or ""
                 -- Priority: sticky last target > first living healer > mouseover > target > self
-                local lastTarget = BR.StateHelpers and BR.StateHelpers.GetLastTarget("soulstone")
+                local lastTarget = BR.TargetMemory and BR.TargetMemory.Get("soulstone")
                 if lastTarget then
                     return "/cast [@"
                         .. lastTarget
