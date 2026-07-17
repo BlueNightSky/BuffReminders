@@ -78,6 +78,7 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field readyCheckOnly? boolean Only show during ready checks
 ---@field showOnInstanceEntry? boolean Also show when entering an instance (not M+)
 ---@field castOnOthers? boolean Buff exists on the target, not the caster (e.g., Soulstone)
+---@field pinnedTarget? fun(): string? User-assigned hard target name, nil when unset (e.g., Soulstone pin)
 ---@field glowDetectable? boolean Use action bar glow as fallback detection when aura API is restricted
 ---@field groupOnly? boolean Only show when in a group (hide when solo)
 ---@field suppressedByEntry? string Hide when this entry key is already visible (e.g., self buff covers it)
@@ -543,8 +544,27 @@ BR.BUFF_TABLES = {
                 end)
                 return not ok or result
             end,
+            pinnedTarget = function()
+                local db = BR.profile
+                local pinned = db.defaults and db.defaults.soulstonePinnedTarget
+                if pinned and pinned ~= "" then
+                    return pinned
+                end
+                return nil
+            end,
             clickMacro = function(spellID)
                 local name = BR.GetSpellName(spellID) or ""
+                -- Hard-assigned target: cast ONLY on them - alive (pre-emptive stone)
+                -- or dead (offers them a res). Deliberately no fallback: if the pin
+                -- is absent or out of group the click is a safe no-op, so the stone
+                -- can never silently land on the wrong person.
+                local db = BR.profile
+                local pinned = db.defaults and db.defaults.soulstonePinnedTarget
+                if pinned and pinned ~= "" then
+                    -- Re-sanitize at use: imported profiles bypass the options input,
+                    -- and this string must never break out of the macro conditional
+                    return "/cast [@" .. pinned:gsub("[%[%]\r\n]", "") .. ",help] " .. name
+                end
                 -- Priority: sticky last target > first living healer > mouseover > target > self
                 local lastTarget = BR.TargetMemory and BR.TargetMemory.Get("soulstone")
                 if lastTarget then

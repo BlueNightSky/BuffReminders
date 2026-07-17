@@ -435,6 +435,8 @@ english["Options.Healthstone.Threshold.Desc"] =
 english["Options.Soulstone.HideCooldown"] = "Hide when on cooldown (warlock)"
 english["Options.Soulstone.HideCooldown.Desc"] =
     "When enabled, warlocks won't see the soulstone reminder while the spell is on cooldown. Only applies to warlocks."
+english["Options.Soulstone.PinnedTarget"] = "Always cast on"
+english["Tooltip.PinNotInGroup"] = "(not in group)"
 
 -- ============================================================================
 -- OPTIONS: FREE CONSUMABLES
@@ -665,6 +667,7 @@ english["BuffRow.Caption.Healthstone"] = "Low-stock alert: below %d"
 english["BuffRow.Caption.HealthstoneOff"] = "Low-stock alert: off"
 english["BuffRow.Caption.SoulstoneHidden"] = "Hidden while on cooldown"
 english["BuffRow.Caption.SoulstoneShown"] = "Shown while on cooldown"
+english["BuffRow.Caption.SoulstonePinned"] = "Always cast on %s"
 english["BuffRow.Caption.BronzeHidden"] = "Hidden in combat"
 english["BuffRow.Caption.BronzeShown"] = "Shown in combat"
 english["BuffRow.Caption.TravelIgnored"] = "Travel Form ignored"

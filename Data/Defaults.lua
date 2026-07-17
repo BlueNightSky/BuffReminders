@@ -95,6 +95,7 @@ BR.defaults = {
         healthstoneLowStock = false,
         soulstoneVisibility = "readyCheck",
         soulstoneHideCooldown = false,
+        -- soulstonePinnedTarget: deliberately absent - nil means "no pin" (set via BuffPanel drawer)
         consumableDisplayMode = "sub_icons",
         consumableTextScale = 25,
         hideConsumableLabels = false,

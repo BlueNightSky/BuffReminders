@@ -382,6 +382,8 @@ local DefaultSettingKeys = {
     healthstoneThreshold = "DisplayRefresh",
     soulstoneVisibility = "DisplayRefresh",
     soulstoneHideCooldown = "DisplayRefresh",
+    soulstonePinnedTarget = false, -- nil when unset (no Defaults entry); macro rebuilds on PreClick
+
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
     consumableTextScale = "VisualsRefresh",
