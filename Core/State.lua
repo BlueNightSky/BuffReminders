@@ -105,6 +105,7 @@ local TargetedBuffs = BUFF_TABLES.targeted
 local SelfBuffs = BUFF_TABLES.self
 local PetBuffs = BUFF_TABLES.pet
 local Consumables = BUFF_TABLES.consumable
+local UtilityBuffs = BUFF_TABLES.utility
 local CustomBuffs = BUFF_TABLES.custom
 local LoadoutRules = BUFF_TABLES.loadout
 
@@ -2141,7 +2142,7 @@ function BuffState.Refresh(refreshMode)
             local settingKey = buff.groupId or buff.key
 
             if buff.showOnInstanceEntry then
-                -- Instance entry only buff (e.g., soulwell reminder) - no normal buff checks
+                -- Self buff shown only briefly on zone-in - no normal buff checks.
                 -- Gate on cheap checks first; customCheck (API call) only when everything else passes
                 if
                     inInstanceEntry
@@ -2204,6 +2205,31 @@ function BuffState.Refresh(refreshMode)
                         end
                     end
                 end
+            end
+        end
+    end
+
+    -- Process utility reminders (chores like drop-a-table / repair, not auras):
+    -- class-gated + customCheck-driven (cooldown / durability). showOnInstanceEntry
+    -- ones surface only briefly on zone-in; others show whenever customCheck says so.
+    -- Not group-dependent, so full-refresh only.
+    if not groupOnly then
+        local utilityVisible = IsCategoryVisibleForContent("utility")
+        local _, utilityMissGlow = GetCategoryGlowSettings("utility")
+        for i, buff in ipairs(UtilityBuffs) do
+            local entry = GetOrCreateEntry(buff.key, "utility", i)
+            local settingKey = buff.groupId or buff.key
+            local entryOk = not buff.showOnInstanceEntry or inInstanceEntry
+            if
+                entryOk
+                and utilityVisible
+                and (not buff.class or buff.class == playerClass)
+                and IsBuffEnabled(settingKey)
+                and PassesPreChecks(buff, nil, db, trackingMode)
+                and (not buff.customCheck or buff.customCheck(isAuraRestricted))
+            then
+                SetEntryText(entry, buff.overlayText, utilityMissGlow)
+                BR.Helpers.ApplyDynamicIcon(entry, buff)
             end
         end
     end

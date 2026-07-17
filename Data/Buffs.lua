@@ -422,7 +422,26 @@ function BR.InvalidatePoisonCache()
     poisonCache.time = -1
 end
 
----@type table<string, RaidBuff[]|PresenceBuff[]|TargetedBuff[]|SelfBuff[]|ConsumableBuff[]|CustomBuff[]|LoadoutRule[]>
+-- Utility reminders are chores (drop a table/well, repair), not auras: the utility
+-- loop in State.lua gates them on class + customCheck + showOnInstanceEntry +
+-- visibilityCondition only, and never aura-tracks or expiration-glows them. Fields
+-- are limited to what that loop, the icon resolver, and click-to-cast actually read.
+---@class UtilityBuff
+---@field key string
+---@field name string
+---@field spellID? SpellID              -- Icon resolution (and click-to-cast fallback)
+---@field groupId? string               -- Shared enable/setting key (falls back to key)
+---@field class? ClassName              -- Only show to this class
+---@field overlayText? string
+---@field icons? IconSpec
+---@field infoTooltip? TooltipText
+---@field castSpellID? number           -- Spell ID used for click-to-cast (else spellID)
+---@field noClickToCast? boolean        -- Suppress the click-to-cast overlay
+---@field showOnInstanceEntry? boolean  -- Only show briefly on dungeon entry (grouped, non-M+)
+---@field visibilityCondition? fun(): boolean?
+---@field customCheck? fun(isRestricted?: boolean): boolean?
+
+---@type table<string, RaidBuff[]|PresenceBuff[]|TargetedBuff[]|SelfBuff[]|ConsumableBuff[]|UtilityBuff[]|CustomBuff[]|LoadoutRule[]>
 BR.BUFF_TABLES = {
     ---@type RaidBuff[]
     raid = {
@@ -719,31 +738,6 @@ BR.BUFF_TABLES = {
             showWhenPresent = true,
             noClickToCast = true,
             glowDetectable = true, -- Action bar glow fallback when aura API is restricted
-        },
-        -- Soulwell reminder (warlock only, instance entry only)
-        {
-            spellID = 29893, -- Create Soulwell (used for icon resolution)
-            castSpellID = 29893, -- Click-to-cast: Create Soulwell
-            key = "soulwell",
-            name = L["Buff.CreateSoulwell"],
-            class = "WARLOCK",
-            overlayText = L["Overlay.DropWell"],
-            showOnInstanceEntry = true, -- Only shows on instance entry
-            infoTooltip = {
-                title = L["Tooltip.InstanceEntryReminder"],
-                desc = L["Tooltip.InstanceEntryReminder.Desc"],
-            },
-            customCheck = function(isRestricted)
-                -- Cooldown API returns tainted values during combat/encounters/M+
-                if isRestricted then
-                    return false
-                end
-                local ok, result = pcall(function()
-                    local info = C_Spell.GetSpellCooldown(29893)
-                    return not info or info.duration == 0
-                end)
-                return not ok or result
-            end,
         },
         -- Detected via the stance bar so it works in M+/encounters/combat where
         -- aura queries are restricted.
@@ -1327,6 +1321,34 @@ BR.BUFF_TABLES = {
                 return not BR.BuffState.IsRestricted() and BR.BuffState.HasOffHandWeapon()
             end,
             disabledInCompetitivePvP = true,
+        },
+    },
+    ---@type UtilityBuff[]
+    utility = {
+        -- Soulwell reminder (warlock only, instance entry only)
+        {
+            spellID = 29893, -- Create Soulwell (used for icon resolution)
+            castSpellID = 29893, -- Click-to-cast: Create Soulwell
+            key = "soulwell",
+            name = L["Buff.CreateSoulwell"],
+            class = "WARLOCK",
+            overlayText = L["Overlay.DropWell"],
+            showOnInstanceEntry = true, -- Only shows on instance entry
+            infoTooltip = {
+                title = L["Tooltip.InstanceEntryReminder"],
+                desc = L["Tooltip.InstanceEntryReminder.Desc"],
+            },
+            customCheck = function(isRestricted)
+                -- Cooldown API returns tainted values during combat/encounters/M+
+                if isRestricted then
+                    return false
+                end
+                local ok, result = pcall(function()
+                    local info = C_Spell.GetSpellCooldown(29893)
+                    return not info or info.duration == 0
+                end)
+                return not ok or result
+            end,
         },
     },
 }

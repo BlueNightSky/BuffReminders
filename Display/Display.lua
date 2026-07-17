@@ -139,6 +139,7 @@ local _, BR = ...
 ---@field self CategorySetting
 ---@field pet CategorySetting
 ---@field consumable CategorySetting
+---@field utility CategorySetting
 ---@field custom CategorySetting
 
 ---@class CategoryFrame: Frame
@@ -496,6 +497,7 @@ local CATEGORY_LABELS = {
     self = L["Category.Self"],
     pet = L["Category.Pet"],
     consumable = L["Category.Consumable"],
+    utility = L["Category.Utility"],
     custom = L["Category.Custom"],
     loadout = L["Category.Loadout"],
 }

@@ -10,7 +10,7 @@ local _, BR = ...
 -- TYPE DEFINITIONS
 -- ============================================================================
 
----@alias CategoryName "raid"|"presence"|"targeted"|"self"|"pet"|"consumable"|"custom"|"loadout"
+---@alias CategoryName "raid"|"presence"|"targeted"|"self"|"pet"|"consumable"|"utility"|"custom"|"loadout"
 
 ---@class CategoryPosition
 ---@field point string
@@ -413,7 +413,7 @@ local DefaultSettingKeys = {
 -- of which derive from this list instead of repeating it. Forgetting to extend
 -- one of those parallel lists is what silently breaks live config updates, so
 -- there is exactly one list to maintain.
-BR.CATEGORY_ORDER = { "raid", "presence", "targeted", "self", "pet", "consumable", "custom", "loadout" }
+BR.CATEGORY_ORDER = { "raid", "presence", "targeted", "self", "pet", "consumable", "utility", "custom", "loadout" }
 
 -- Virtual categories: user-defined entries that live in db.customBuffs /
 -- db.loadoutReminders rather than BR.BUFF_TABLES. Consumers that walk only the
