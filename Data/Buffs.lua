@@ -1276,6 +1276,37 @@ BR.BUFF_TABLES = {
                 return "/cast " .. (name or "")
             end,
         },
+        -- Mage food (healers only): remind to grab conjured food when a mage is in
+        -- the group and you're inside an instance without any in your bags. Click
+        -- asks the mage in chat (healers can't conjure their own). Its own per-buff
+        -- ready-check gate (readyCheckOnly, on by default; the drawer's Show toggle
+        -- switches it to Always) - so it opts out of the shared consumable category
+        -- ready-check filter (ignoresReadyCheckFilter) to keep that toggle the sole
+        -- control. `mageFoodContent` narrows it to dungeons or raids only.
+        {
+            itemID = { 113509 }, -- Conjured Mana Bun
+            key = "mageFood",
+            name = L["Buff.MageFood"],
+            casterClass = "MAGE",
+            overlayText = L["Overlay.NoMageFood"],
+            icons = { spells = { 190336 } }, -- Conjure Refreshment icon (the bun)
+            chatRequestable = true,
+            readyCheckOnly = true,
+            ignoresReadyCheckFilter = true,
+            visibilityCondition = function()
+                local ct = BR.StateHelpers.GetCurrentContentType()
+                if ct == "openWorld" or ct == "housing" then
+                    return false
+                end
+                local filter = BR.Config.Get("defaults.mageFoodContent", "all")
+                if filter == "dungeon" and ct ~= "dungeon" then
+                    return false
+                elseif filter == "raid" and ct ~= "raid" then
+                    return false
+                end
+                return BR.BuffState.GetPlayerRole() == "HEALER"
+            end,
+        },
         -- Weapon Buffs (oils, stones - but not for classes with imbues)
         {
             checkWeaponEnchant = true, -- Check if any weapon enchant exists
@@ -1345,6 +1376,41 @@ BR.BUFF_TABLES = {
                 end
                 local ok, result = pcall(function()
                     local info = C_Spell.GetSpellCooldown(29893)
+                    return not info or info.duration == 0
+                end)
+                return not ok or result
+            end,
+        },
+        -- Refreshment table reminder (mage only, instance entry only). Spell 190336
+        -- is smart-cast: it drops a group table in a party/instance and conjures a
+        -- personal stack when solo, so it doubles as both the icon and the click.
+        {
+            spellID = 190336, -- Conjure Refreshment (used for icon resolution)
+            castSpellID = 190336, -- Click-to-cast: smart-drops the refreshment table
+            key = "refreshmentTable",
+            name = L["Buff.RefreshmentTable"],
+            class = "MAGE",
+            overlayText = L["Overlay.DropTable"],
+            showOnInstanceEntry = true, -- Only shows on instance entry
+            infoTooltip = {
+                title = L["Tooltip.InstanceEntryReminder"],
+                desc = L["Tooltip.InstanceEntryReminder.Desc"],
+            },
+            customCheck = function(isRestricted)
+                -- Cooldown API returns tainted values during combat/encounters/M+
+                if isRestricted then
+                    return false
+                end
+                -- Only nag the mage when someone actually drinks: a healer in the
+                -- party. Mirrors the mage-food reminder that only nags healers when
+                -- a mage is present. Scanned here (post-isRestricted) so the role
+                -- read is always plain. Soulwell has no such gate - everyone wants a
+                -- healthstone, but only mana users want a table.
+                if not BR.BuffState.HasHealerInGroup() then
+                    return false
+                end
+                local ok, result = pcall(function()
+                    local info = C_Spell.GetSpellCooldown(190336)
                     return not info or info.duration == 0
                 end)
                 return not ok or result

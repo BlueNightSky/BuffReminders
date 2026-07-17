@@ -375,6 +375,7 @@ local DefaultSettingKeys = {
     showWithoutItemsOnlyOnReadyCheck = "DisplayRefresh",
     delveFoodOnly = "DisplayRefresh",
     delveFoodTimer = "DisplayRefresh",
+    mageFoodContent = "DisplayRefresh",
     freeConsumableMode = "DisplayRefresh",
     freeConsumableVisibility = "DisplayRefresh",
     healthstoneVisibility = "DisplayRefresh",

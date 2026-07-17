@@ -28,7 +28,6 @@ local STRIP_TOP = -PAGE_TOP_PADDING
 local function Build(content, scrollFrame)
     local contentWidth = scrollFrame:GetContentWidth()
 
-    -- Short labels keep nine tabs inside the content width.
     local tabLabels = {
         raid = L["Category.Raid"],
         presence = L["Category.Presence"],

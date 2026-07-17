@@ -78,7 +78,14 @@ local function MakeOverrideShowModel(key)
             return not overrides or overrides[key] ~= false
         end,
         setReadyCheck = function(checked)
-            BR.Config.Set("readyCheckOnlyOverrides." .. key, checked and nil or false)
+            -- checked -> ready-check-only (clear the override); unchecked -> always (false).
+            -- Can't fold this into `checked and nil or false`: that idiom always yields
+            -- false because the true-branch value (nil) is itself falsy.
+            local override
+            if not checked then
+                override = false
+            end
+            BR.Config.Set("readyCheckOnlyOverrides." .. key, override)
         end,
     }
 end
@@ -118,6 +125,14 @@ local SHOW_MODELS = {
         return MakeVisibilityShowModel("soulstoneVisibility")
     end,
 }
+
+-- Drawer / editor geometry (shared by the buff sections and the row builders).
+local DRAWER_W = 300
+local DRAWER_BODY_X = 14
+local DRAWER_BODY_TOP = 40
+local DRAWER_LABEL_W = 52
+local EDITOR_BODY_X = 16
+local EDITOR_BODY_TOP = 44
 
 -- ============================================================================
 -- BUFF-SPECIFIC SECTIONS
@@ -401,6 +416,39 @@ local SPECIAL_SECTIONS = {
         end,
     },
 
+    mageFood = {
+        caption = function()
+            local filter = BR.Config.Get("defaults.mageFoodContent", "all")
+            if filter == "dungeon" then
+                return L["BuffRow.Caption.MageFoodDungeon"], false
+            elseif filter == "raid" then
+                return L["BuffRow.Caption.MageFoodRaid"], false
+            end
+            return L["BuffRow.Caption.MageFoodAll"], false
+        end,
+        build = function(layout)
+            local drop = Components.Dropdown(body, {
+                label = L["BuffPanel.MageFoodContent"],
+                labelWidth = DRAWER_LABEL_W,
+                width = 178,
+                options = {
+                    { label = L["BuffPanel.MageFoodContent.All"], value = "all" },
+                    { label = L["BuffPanel.MageFoodContent.Dungeon"], value = "dungeon" },
+                    { label = L["BuffPanel.MageFoodContent.Raid"], value = "raid" },
+                },
+                get = function()
+                    return BR.Config.Get("defaults.mageFoodContent", "all")
+                end,
+                onChange = function(val)
+                    BR.Config.Set("defaults.mageFoodContent", val)
+                    Components.RefreshAll()
+                end,
+            })
+            tinsert(bodyHolders, drop)
+            layout:Add(drop, 26, COMPONENT_GAP)
+        end,
+    },
+
     dkRunes = {
         caption = RuneforgeCaption,
         build = function(layout)
@@ -438,13 +486,6 @@ local HAS_EDITOR = {
     roguePoisons = true,
     dkRunes = true,
 }
-
-local DRAWER_W = 300
-local DRAWER_BODY_X = 14
-local DRAWER_BODY_TOP = 40
-local DRAWER_LABEL_W = 52
-local EDITOR_BODY_X = 16
-local EDITOR_BODY_TOP = 44
 
 -- ---- Shared row builders (write into the active `body` surface) ---------------
 

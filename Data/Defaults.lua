@@ -81,6 +81,7 @@ BR.defaults = {
         showWithoutItemsOnlyOnReadyCheck = true,
         delveFoodOnly = true,
         delveFoodTimer = false,
+        mageFoodContent = "all", -- "all" | "dungeon" | "raid"
         freeConsumableMode = "override",
         freeConsumableVisibility = {
             openWorld = false,

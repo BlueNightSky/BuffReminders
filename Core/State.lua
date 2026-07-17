@@ -337,6 +337,9 @@ local currentValidUnits = {}
 -- scenario solo such as rituals (reports 1 with only the player as the lone member).
 -- Real groups (>= 2 members) set this to false.
 local cachedIsAlone = true
+-- Whether any group member is assigned HEALER (nil = not computed this session yet).
+-- Invalidated on GROUP_ROSTER_UPDATE / PLAYER_ROLES_ASSIGNED (see Display.lua).
+local cachedHealerInGroup = nil
 
 -- Spec cache: playerName -> specId (populated by LibSpecialization callbacks for allies,
 -- and by BuildValidUnitCache for the local player via GetPlayerSpecId())
@@ -2811,6 +2814,32 @@ function BuffState.IsAlone()
     return GetNumGroupMembers() <= 1
 end
 
+---Whether any group member is assigned the HEALER role (cached; invalidated on
+---roster / role-assignment events). The sole caller is the refreshment-table
+---reminder's customCheck, which returns on its isRestricted guard before reaching
+---here, so the UnitGroupRolesAssigned scan only ever runs out of restricted
+---contexts where roles are plain - caching adds no secret-value exposure.
+---@return boolean
+function BuffState.HasHealerInGroup()
+    if cachedHealerInGroup ~= nil then
+        return cachedHealerInGroup
+    end
+    local result = false
+    local num = GetNumGroupMembers()
+    if num > 1 then
+        local inRaid = IsInRaid()
+        for i = 1, num do
+            local unit = inRaid and ("raid" .. i) or (i == 1 and "player" or "party" .. (i - 1))
+            if UnitExists(unit) and UnitGroupRolesAssigned(unit) == "HEALER" then
+                result = true
+                break
+            end
+        end
+    end
+    cachedHealerInGroup = result
+    return result
+end
+
 ---Whether an added aura is one the addon tracks on group members. A secret
 ---spellId (non-whitelisted aura in a restricted context) reads as nil and is
 ---treated as not-tracked - fail-closed (a secret spellId cannot be a whitelisted
@@ -2897,6 +2926,11 @@ end
 function BuffState.InvalidateSpecCache()
     cachedSpecId = nil
     cachedPlayerRole = nil
+end
+
+---Invalidate group-healer cache (call on GROUP_ROSTER_UPDATE, PLAYER_ROLES_ASSIGNED)
+function BuffState.InvalidateHealerCache()
+    cachedHealerInGroup = nil
 end
 
 ---Get the player's current role (cached, invalidated on spec change)

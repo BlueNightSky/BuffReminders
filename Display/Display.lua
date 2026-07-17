@@ -3724,6 +3724,7 @@ eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("GROUP_FORMED")
+eventFrame:RegisterEvent("PLAYER_ROLES_ASSIGNED")
 eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 eventFrame:RegisterEvent("ENCOUNTER_START")
@@ -3916,6 +3917,7 @@ eventHandlers.ZONE_CHANGED_NEW_AREA = function()
 end
 
 eventHandlers.GROUP_ROSTER_UPDATE = function()
+    BR.BuffState.InvalidateHealerCache()
     SetDirty("group")
     -- Refresh chat-request macrotext so prefix tracks party↔raid↔instance
     -- transitions. PreClick used to rebuild the macro on each click, but the
@@ -3924,6 +3926,13 @@ eventHandlers.GROUP_ROSTER_UPDATE = function()
     BR.SecureButtons.RefreshChatRequestMacros()
 end
 eventHandlers.GROUP_FORMED = eventHandlers.GROUP_ROSTER_UPDATE
+
+-- Roles can change without the roster changing (someone re-assigns their role),
+-- which flips whether the refreshment-table reminder should show.
+eventHandlers.PLAYER_ROLES_ASSIGNED = function()
+    BR.BuffState.InvalidateHealerCache()
+    SetDirty("group")
+end
 
 eventHandlers.PLAYER_REGEN_ENABLED = function()
     inCombat = inEncounter
