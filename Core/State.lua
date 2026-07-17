@@ -296,21 +296,23 @@ local DRUID_TRAVEL_FORM_IDS = {
     [27] = true, -- Flight Form
 }
 
--- Wrong-warrior-stance cache + derived values (all invalidated together on
--- UPDATE_SHAPESHIFT_FORM(S), PLAYER_SPECIALIZATION_CHANGED, TRAIT_CONFIG_UPDATED,
--- SPELLS_CHANGED, PLAYER_ENTERING_WORLD).
----@type boolean|nil
-local cachedWrongStanceStatus = nil
----@type number|false|nil  -- false = computed and absent (non-warrior)
-local cachedExpectedStanceID = nil
----@type number|string|false|nil  -- false = computed and absent (unstanced)
-local cachedCurrentStanceIcon = nil
----@type boolean|nil
-local cachedShadowFormActive = nil
----@type boolean|nil
-local cachedWrongDruidFormStatus = nil
----@type number|false|nil  -- false = computed and absent (non-druid or non-feral/balance)
-local cachedExpectedDruidFormID = nil
+-- Shapeshift/stance cache: warrior wrong-stance + priest shadowform + druid
+-- wrong-form derived values, all read off the same active-stance source and all
+-- invalidated together (InvalidateStanceCache) on UPDATE_SHAPESHIFT_FORM(S),
+-- PLAYER_SPECIALIZATION_CHANGED, TRAIT_CONFIG_UPDATED, SPELLS_CHANGED,
+-- PLAYER_ENTERING_WORLD. `false` on a field = computed and absent; nil = not yet
+-- computed. `activeSpellID` memoizes GetActiveStanceSpellID so a warrior/druid
+-- refresh resolves the active stance once, not per derived value.
+---@class StanceCache
+---@field wrongStance boolean|nil
+---@field expectedStanceID number|false|nil     -- false = non-warrior
+---@field currentStanceIcon number|string|false|nil  -- false = unstanced
+---@field shadowFormActive boolean|nil
+---@field wrongDruidForm boolean|nil
+---@field expectedDruidFormID number|false|nil  -- false = non-druid or non-feral/balance
+---@field activeSpellID number|false|nil        -- false = unstanced; nil = not computed / transient
+---@type StanceCache
+local stanceCache = {}
 
 -- Weapon enchant info for current refresh cycle (set once per BuffState.Refresh())
 local currentWeaponEnchants = {
@@ -3062,15 +3064,25 @@ function BuffState.InvalidatePetCache()
     cachedWrongPetStatus = nil
 end
 
----Resolve the active stance's spell ID, or nil if unstanced/unresolved.
+---Resolve the active stance's spell ID, or nil if unstanced/unresolved (cached).
+---Unstanced (form 0) is a stable result and cached as `false`; a form set but
+---with unresolved spell data is a transient load state left uncached to retry.
 ---@return number?
 local function GetActiveStanceSpellID()
+    if stanceCache.activeSpellID ~= nil then
+        return stanceCache.activeSpellID or nil
+    end
     local active = GetShapeshiftForm()
     if not active or active == 0 then
+        stanceCache.activeSpellID = false
         return nil
     end
     local _, _, _, spellID = GetShapeshiftFormInfo(active)
-    return type(spellID) == "number" and spellID or nil
+    if type(spellID) == "number" then
+        stanceCache.activeSpellID = spellID
+        return spellID
+    end
+    return nil
 end
 
 ---Check whether a warrior's active stance does not match their spec's
@@ -3078,29 +3090,29 @@ end
 ---or in a stance that doesn't fit the current spec.
 ---@return boolean
 function BuffState.IsWrongWarriorStance()
-    if cachedWrongStanceStatus ~= nil then
-        return cachedWrongStanceStatus
+    if stanceCache.wrongStance ~= nil then
+        return stanceCache.wrongStance
     end
     if playerClass ~= "WARRIOR" then
-        cachedWrongStanceStatus = false
+        stanceCache.wrongStance = false
         return false
     end
     local expected = WARRIOR_EXPECTED_STANCES[GetPlayerSpecId()]
     if not expected then
-        cachedWrongStanceStatus = false
+        stanceCache.wrongStance = false
         return false
     end
     local activeSpellID = GetActiveStanceSpellID()
     if not activeSpellID then
         -- Unstanced (form 0) is wrong; unresolved form data leaves cache nil to retry.
         if GetShapeshiftForm() == 0 then
-            cachedWrongStanceStatus = true
+            stanceCache.wrongStance = true
             return true
         end
         return false
     end
-    cachedWrongStanceStatus = not expected[activeSpellID]
-    return cachedWrongStanceStatus
+    stanceCache.wrongStance = not expected[activeSpellID]
+    return stanceCache.wrongStance
 end
 
 ---Preferred stance spell ID for the current warrior spec (Defensive for Protection,
@@ -3108,37 +3120,37 @@ end
 ---fallback icon when unstanced. Returns nil for non-warriors. Cached.
 ---@return number?
 function BuffState.GetExpectedWarriorStanceID()
-    if cachedExpectedStanceID ~= nil then
-        return cachedExpectedStanceID or nil
+    if stanceCache.expectedStanceID ~= nil then
+        return stanceCache.expectedStanceID or nil
     end
     if playerClass ~= "WARRIOR" then
-        cachedExpectedStanceID = false
+        stanceCache.expectedStanceID = false
         return nil
     end
     local specId = GetPlayerSpecId()
     if specId == 73 then
-        cachedExpectedStanceID = STANCE_DEFENSIVE
+        stanceCache.expectedStanceID = STANCE_DEFENSIVE
     elseif specId == 72 and IsPlayerSpell(STANCE_BERSERKER) then
-        cachedExpectedStanceID = STANCE_BERSERKER
+        stanceCache.expectedStanceID = STANCE_BERSERKER
     else
-        cachedExpectedStanceID = STANCE_BATTLE
+        stanceCache.expectedStanceID = STANCE_BATTLE
     end
-    return cachedExpectedStanceID
+    return stanceCache.expectedStanceID or nil
 end
 
 ---Texture for the warrior's currently active stance, or nil if unstanced. Cached.
 ---@return number|string|nil
 function BuffState.GetCurrentWarriorStanceIcon()
-    if cachedCurrentStanceIcon ~= nil then
-        return cachedCurrentStanceIcon or nil
+    if stanceCache.currentStanceIcon ~= nil then
+        return stanceCache.currentStanceIcon or nil
     end
     local activeSpellID = GetActiveStanceSpellID()
     if not activeSpellID then
-        cachedCurrentStanceIcon = false
+        stanceCache.currentStanceIcon = false
         return nil
     end
-    cachedCurrentStanceIcon = C_Spell.GetSpellTexture(activeSpellID) or false
-    return cachedCurrentStanceIcon or nil
+    stanceCache.currentStanceIcon = C_Spell.GetSpellTexture(activeSpellID) or false
+    return stanceCache.currentStanceIcon or nil
 end
 
 ---Whether the priest is currently in Shadowform (or Voidform, which lives in
@@ -3146,11 +3158,11 @@ end
 ---the stance API is unaffected by combat/encounter/M+ aura restrictions.
 ---@return boolean
 function BuffState.IsShadowFormActive()
-    if cachedShadowFormActive ~= nil then
-        return cachedShadowFormActive
+    if stanceCache.shadowFormActive ~= nil then
+        return stanceCache.shadowFormActive
     end
     if playerClass ~= "PRIEST" then
-        cachedShadowFormActive = false
+        stanceCache.shadowFormActive = false
         return false
     end
     local activeSpellID = GetActiveStanceSpellID()
@@ -3158,13 +3170,13 @@ function BuffState.IsShadowFormActive()
         -- Form 0 = no shadowform (cache); non-zero with unresolved spell data
         -- happens transiently on load - return safe default and retry next call.
         if GetShapeshiftForm() == 0 then
-            cachedShadowFormActive = false
+            stanceCache.shadowFormActive = false
             return false
         end
         return true
     end
-    cachedShadowFormActive = activeSpellID == SHADOWFORM or activeSpellID == VOIDFORM
-    return cachedShadowFormActive
+    stanceCache.shadowFormActive = activeSpellID == SHADOWFORM or activeSpellID == VOIDFORM
+    return stanceCache.shadowFormActive
 end
 
 ---Whether a Feral or Balance druid is in any form other than their spec's
@@ -3175,7 +3187,7 @@ end
 ---@return boolean
 function BuffState.IsWrongDruidForm()
     if playerClass ~= "DRUID" then
-        cachedWrongDruidFormStatus = false
+        stanceCache.wrongDruidForm = false
         return false
     end
     -- Suppress while intentionally traveling: any travel-family form
@@ -3185,12 +3197,12 @@ function BuffState.IsWrongDruidForm()
     if BR.profile.druidIgnoreTravelForm ~= false and (DRUID_TRAVEL_FORM_IDS[GetShapeshiftFormID()] or IsMounted()) then
         return false
     end
-    if cachedWrongDruidFormStatus ~= nil then
-        return cachedWrongDruidFormStatus
+    if stanceCache.wrongDruidForm ~= nil then
+        return stanceCache.wrongDruidForm
     end
     local expected = DRUID_EXPECTED_FORMS[GetPlayerSpecId()]
     if not expected then
-        cachedWrongDruidFormStatus = false
+        stanceCache.wrongDruidForm = false
         return false
     end
     local activeSpellID = GetActiveStanceSpellID()
@@ -3198,28 +3210,28 @@ function BuffState.IsWrongDruidForm()
         -- Unshifted (form 0) is wrong; non-zero with unresolved spell data is
         -- a transient load state - return safe default and retry next call.
         if GetShapeshiftForm() == 0 then
-            cachedWrongDruidFormStatus = true
+            stanceCache.wrongDruidForm = true
             return true
         end
         return false
     end
-    cachedWrongDruidFormStatus = activeSpellID ~= expected
-    return cachedWrongDruidFormStatus
+    stanceCache.wrongDruidForm = activeSpellID ~= expected
+    return stanceCache.wrongDruidForm
 end
 
 ---Expected form spell ID for the current druid spec (Cat Form for Feral,
 ---Moonkin Form for Balance). Returns nil for non-druids and other specs. Cached.
 ---@return number?
 function BuffState.GetExpectedDruidFormID()
-    if cachedExpectedDruidFormID ~= nil then
-        return cachedExpectedDruidFormID or nil
+    if stanceCache.expectedDruidFormID ~= nil then
+        return stanceCache.expectedDruidFormID or nil
     end
     if playerClass ~= "DRUID" then
-        cachedExpectedDruidFormID = false
+        stanceCache.expectedDruidFormID = false
         return nil
     end
-    cachedExpectedDruidFormID = DRUID_EXPECTED_FORMS[GetPlayerSpecId()] or false
-    return cachedExpectedDruidFormID or nil
+    stanceCache.expectedDruidFormID = DRUID_EXPECTED_FORMS[GetPlayerSpecId()] or false
+    return stanceCache.expectedDruidFormID or nil
 end
 
 ---Invalidate all stance caches (warrior wrong-stance + priest shadowform +
@@ -3227,12 +3239,7 @@ end
 ---PLAYER_SPECIALIZATION_CHANGED, TRAIT_CONFIG_UPDATED, SPELLS_CHANGED,
 ---PLAYER_ENTERING_WORLD.
 function BuffState.InvalidateStanceCache()
-    cachedWrongStanceStatus = nil
-    cachedExpectedStanceID = nil
-    cachedCurrentStanceIcon = nil
-    cachedShadowFormActive = nil
-    cachedWrongDruidFormStatus = nil
-    cachedExpectedDruidFormID = nil
+    wipe(stanceCache)
 end
 
 -- ============================================================================
