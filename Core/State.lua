@@ -2392,6 +2392,8 @@ function BuffState.Refresh(refreshMode)
     -- Process consumable buffs
     if not groupOnly then
         local consumableVisible = IsCategoryVisibleForContent("consumable")
+        -- Delve food ignores the consumable ready-check-only filter (still respects content gates)
+        local consumableVisibleNoReadyCheck = IsCategoryVisibleForContent("consumable", true)
         local consExGlow, consMissGlow, consThreshold = GetCategoryGlowSettings("consumable")
         local delveFoodOnly = db.defaults and db.defaults.delveFoodOnly and BR.IsInDelve()
         local freeMode = db.defaults and db.defaults.freeConsumableMode or "override"
@@ -2402,6 +2404,7 @@ function BuffState.Refresh(refreshMode)
         -- Dismiss overrides all consumable visibility (transient, resets on instance change)
         if consumablesDismissed then
             consumableVisible = false
+            consumableVisibleNoReadyCheck = false
             freeVisible = false
             consumableContentVisible = false
         end
@@ -2410,13 +2413,14 @@ function BuffState.Refresh(refreshMode)
         for i, buff in ipairs(Consumables) do
             local entry = GetOrCreateEntry(buff.key, "consumable", i)
             local settingKey = buff.groupId or buff.key
+            local catVisible = buff.ignoresReadyCheckFilter and consumableVisibleNoReadyCheck or consumableVisible
 
             if buff.showOnInstanceEntry and (db.defaults and db.defaults.delveFoodTimer) then
                 -- Instance entry only consumable (e.g., delve food) - show for 30s on entry then auto-hide
                 -- Combat safety handled by Display layer clearing entry state on PLAYER_REGEN_DISABLED
                 if
                     inDelveEntry
-                    and consumableVisible
+                    and catVisible
                     and IsBuffEnabled(settingKey)
                     and PassesPreChecks(buff, nil, db, trackingMode)
                 then
@@ -2441,7 +2445,7 @@ function BuffState.Refresh(refreshMode)
                 -- Gate on cheap boolean checks first; defer IsAuraTrackable and PassesPreChecks
                 if
                     IsBuffEnabled(settingKey)
-                    and (consumableVisible or isFreeConsumable or (buff.freeConsumable and consumableContentVisible))
+                    and (catVisible or isFreeConsumable or (buff.freeConsumable and consumableContentVisible))
                     and not (competitivePvP and buff.disabledInCompetitivePvP)
                     and freeReadyCheckOk
                     and hasCaster

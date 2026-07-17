@@ -148,6 +148,7 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field permanentRuneItemIDs? number[] Item IDs that, if in bags, make this a free consumable (bypass content gates)
 ---@field showOnInstanceEntry? boolean Only show briefly when entering an instance
 ---@field disabledInCompetitivePvP? boolean Unusable in arenas and rated BGs
+---@field ignoresReadyCheckFilter? boolean Ignore the consumable category ready-check-only filter (still respects content gates)
 ---@field chatRequestable? boolean Offer "request this buff in chat" on click for players who can't provide it (e.g. non-warlock requesting a Healthstone)
 
 ---@class BuffGroup
@@ -1248,6 +1249,7 @@ BR.BUFF_TABLES = {
             noExpirationGlow = true, -- 10-min duration makes standard thresholds meaningless
             visibilityCondition = BR.IsInDelve,
             disabledInCompetitivePvP = true,
+            ignoresReadyCheckFilter = true, -- always shows in a delve, even with consumable ready-check-only on
         },
         -- Food (all expansions - any aura whose icon is 136000 counts as food)
         {
