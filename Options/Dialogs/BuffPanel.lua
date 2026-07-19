@@ -279,6 +279,41 @@ local SPECIAL_SECTIONS = {
         end,
     },
 
+    repairGear = {
+        caption = function()
+            return format(L["BuffRow.Caption.Repair"], BR.Config.Get("defaults.repairThreshold") or 20), false
+        end,
+        build = function(layout)
+            local thresholdHolder = Components.Slider(body, {
+                label = L["Options.Repair.Threshold"],
+                labelWidth = 110,
+                min = 5,
+                max = 50,
+                step = 5,
+                suffix = "%",
+                get = function()
+                    return BR.Config.Get("defaults.repairThreshold") or 20
+                end,
+                tooltip = { title = L["Options.Repair.Threshold"], desc = L["Options.Repair.Threshold.Desc"] },
+                onChange = function(val)
+                    BR.Config.Set("defaults.repairThreshold", val)
+                end,
+            })
+            tinsert(bodyHolders, thresholdHolder)
+            layout:Add(thresholdHolder, nil, COMPONENT_GAP)
+            AddSpecialCheckbox(layout, {
+                label = L["Options.RepairHideInCombat"],
+                get = function()
+                    return BR.Config.Get("defaults.repairHideInCombat") ~= false
+                end,
+                tooltip = { title = L["Options.RepairHideInCombat"], desc = L["Options.RepairHideInCombat.Desc"] },
+                onChange = function(checked)
+                    BR.Config.Set("defaults.repairHideInCombat", checked)
+                end,
+            })
+        end,
+    },
+
     soulstone = {
         caption = function()
             local pinned = BR.Config.Get("defaults.soulstonePinnedTarget")
