@@ -2255,7 +2255,7 @@ function BuffState.Refresh(refreshMode)
     if not groupOnly then
         local utilityVisible = IsCategoryVisibleForContent("utility")
         local _, utilityMissGlow = GetCategoryGlowSettings("utility")
-        local repairHiddenInCombat = inCombat and db.defaults.repairHideInCombat ~= false
+        local repairHiddenInCombat = inCombat and db.defaults and db.defaults.repairHideInCombat ~= false
         for i, buff in ipairs(UtilityBuffs) do
             local entry = GetOrCreateEntry(buff.key, "utility", i)
             local settingKey = buff.groupId or buff.key
