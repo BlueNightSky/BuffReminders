@@ -256,8 +256,7 @@ L["Tooltip.InstanceEntryReminder"] = "副本進本提示"
 L["Tooltip.InstanceEntryReminder.Desc"] =
     "進入地下城時會短暫顯示放置靈魂井的提示。施放法術或30秒後將消失。"
 L["Tooltip.Repair"] = "修理提醒"
-L["Tooltip.Repair.Desc"] =
-    "當裝備的物品耐久度低於閾值時顯示。拜訪一個商店來修理。"
+L["Tooltip.Repair.Desc"] = "當裝備的物品耐久度低於閾值時顯示。拜訪一個商店來修理。"
 L["BuffTooltip.ProvidedBy"] = "由 %s 提供"
 
 -- ============================================================================
@@ -432,8 +431,7 @@ L["Options.Healthstone.Threshold.Desc"] =
     "當治療石等於或低於此數量時顯示不足警告。\n\n|cffffcc001:|r 僅在剛好有1個時警告。\n|cffffcc002:|r 有1個或2個時警告。"
 
 L["Options.Repair.Threshold"] = "低於多少警告"
-L["Options.Repair.Threshold.Desc"] =
-    "當裝備的物品耐久度低於多少百分比時顯示修理提醒。"
+L["Options.Repair.Threshold.Desc"] = "當裝備的物品耐久度低於多少百分比時顯示修理提醒。"
 L["Options.RepairHideInCombat"] = "戰鬥中隱藏"
 L["Options.RepairHideInCombat.Desc"] =
     "在戰鬥中時隱藏修理提醒。你無法在戰鬥中拜訪商店來修理，所以它只能在非戰鬥狀態下進行。"
