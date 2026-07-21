@@ -389,6 +389,7 @@ local DefaultSettingKeys = {
 
     -- Consumable display mode
     consumableDisplayMode = "DisplayRefresh",
+    consumableBadgeOnSubIcons = "DisplayRefresh",
     consumableTextScale = "VisualsRefresh",
     hideConsumableLabels = "VisualsRefresh",
     showConsumableTooltips = false, -- No refresh needed, read at tooltip time

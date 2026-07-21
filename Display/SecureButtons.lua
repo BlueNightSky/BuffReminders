@@ -804,6 +804,7 @@ local function UpdateConsumableButtons(frame, actionItems, clickable, startIndex
         btn._br_visible = true
         btn._br_count = item.count
         btn._br_qualityAtlas = item.qualityAtlas
+        btn._br_badge = item.badge
         btn._br_needs_sync = true
     end
 
@@ -991,6 +992,7 @@ local function SyncSecureButtons()
                     end
                     if visibleCount > 0 then
                         local cFontSize = ComputeConsumableFontSize(catSettings.iconSize or 64)
+                        local showSubIconBadge = BR.Config.Get("defaults.consumableBadgeOnSubIcons") == true
                         local idx = 0
                         for _, btn in ipairs(frame.actionButtons) do
                             if btn._br_visible then
@@ -1059,6 +1061,21 @@ local function SyncSecureButtons()
                                         btn._br_qualityIcon:Show()
                                     elseif btn._br_qualityIcon then
                                         btn._br_qualityIcon:Hide()
+                                    end
+                                    -- Badge text (e.g. "H" hearty, "F" fleeting) at top-left
+                                    local bc = showSubIconBadge and btn._br_badge and BADGE_COLORS[btn._br_badge]
+                                    if bc then
+                                        if not btn._br_badgeLabel then
+                                            btn._br_badgeLabel = btn:CreateFontString(nil, "OVERLAY", nil, 7)
+                                        end
+                                        btn._br_badgeLabel:ClearAllPoints()
+                                        btn._br_badgeLabel:SetPoint("TOPLEFT", btn, "TOPLEFT", 1, -1)
+                                        btn._br_badgeLabel:SetFont(fontPath, cFontSize, outlineFlag)
+                                        btn._br_badgeLabel:SetTextColor(bc.r, bc.g, bc.b, 1)
+                                        btn._br_badgeLabel:SetText(btn._br_badge)
+                                        btn._br_badgeLabel:Show()
+                                    elseif btn._br_badgeLabel then
+                                        btn._br_badgeLabel:Hide()
                                     end
                                     btn._br_needs_sync = false
                                 end

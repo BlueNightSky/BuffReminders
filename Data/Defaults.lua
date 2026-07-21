@@ -104,6 +104,7 @@ BR.defaults = {
         -- soulstonePinnedTarget: deliberately absent - nil means "no pin" (set via BuffPanel drawer)
         consumableDisplayMode = "sub_icons",
         consumableTextScale = 25,
+        consumableBadgeOnSubIcons = false,
         hideConsumableLabels = false,
         showConsumableTooltips = false,
         showBuffTooltips = false,
