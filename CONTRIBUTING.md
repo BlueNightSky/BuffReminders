@@ -21,7 +21,7 @@ Run `make` before committing.
 
 ## Commit Messages
 
-This project uses [Conventional Commits](https://www.conventionalcommits.org/) - `type(scope): description`, no gitmoji, no body. Scope is optional (the area touched, e.g. `options`, `state`, `loadouts`).
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) with [gitmoji](https://gitmoji.dev/) - `type(scope): emoji description`, no body. Pick the gitmoji from the official list, not a random emoji. Scope is optional (the area touched, e.g. `options`, `state`, `loadouts`).
 
 **Commits are the changelog.** Release notes are generated automatically from your commits (via [git-cliff](https://github.com/orhun/git-cliff)) and published to the GitHub release, CurseForge, Wago, and Discord - there is no hand-written changelog. Your commit subject is what users read, so write it as a clear, user-readable summary, and choose the type by **user impact**:
 
@@ -40,11 +40,11 @@ Breaking changes: add `!` before the colon (`feat(api)!: ...`) or a `BREAKING CH
 ### Examples
 
 ```
-feat: add consumable display mode preview to options panel
-fix: refresh spells and overlays on spec swap and talent changes
-perf: cache weapon enchant lookups in the refresh path
-i18n(zhTW): update localization
-refactor: decouple sub-icon display from click-to-cast setting
+feat: ✨ add consumable display mode preview to options panel
+fix: 🐛 refresh spells and overlays on spec swap and talent changes
+perf: ⚡️ cache weapon enchant lookups in the refresh path
+i18n(zhTW): 🌐 update localization
+refactor: ♻️ decouple sub-icon display from click-to-cast setting
 ```
 
 ## Code Patterns
