@@ -9,7 +9,6 @@ local _, BR = ...
 -- migration and no per-profile seeding needed for new off-by-default buffs.
 
 BR.defaults = {
-    locked = true,
     enabledBuffs = {},
     -- User-defined loadout reminders (talent / loadout / equipment-set mismatch).
     -- Keyed by generated rule key; empty by default. See Options/Dialogs/LoadoutReminder.lua.

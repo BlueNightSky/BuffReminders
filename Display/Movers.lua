@@ -1216,7 +1216,7 @@ local function UpdateAnchor()
     end
 
     local db = BR.profile
-    local unlocked = not db.locked
+    local unlocked = not BR.Display.IsFrameLocked()
 
     -- Main mover: show when unlocked AND not all categories split
     local allSplit = AreAllCategoriesSplit()

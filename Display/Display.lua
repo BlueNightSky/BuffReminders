@@ -3526,16 +3526,26 @@ BR.Helpers = {
     end,
 }
 
--- Toggle lock state: when unlocked, show mover frames for dragging
-local function ToggleLock()
-    local db = BR.profile
-    db.locked = not db.locked
-    if db.locked then
+-- Lock state is session-only: frames start locked on every login/reload and the
+-- unlocked state is never persisted, so a user can't accidentally leave anchor
+-- handles showing across sessions.
+local frameLocked = true
+local function IsFrameLocked()
+    return frameLocked
+end
+local function SetFrameLocked(locked)
+    frameLocked = locked
+    if locked then
         BR.Movers.HideAll()
     else
         BR.Movers.UpdateAnchor()
     end
-    return db.locked
+end
+
+-- Toggle lock state: when unlocked, show mover frames for dragging
+local function ToggleLock()
+    SetFrameLocked(not frameLocked)
+    return frameLocked
 end
 
 -- Export display functions for Options.lua
@@ -3549,6 +3559,8 @@ BR.Display.SetPlayerClass = function(class)
     playerClass = class
 end
 BR.Display.ToggleLock = ToggleLock
+BR.Display.IsFrameLocked = IsFrameLocked
+BR.Display.SetFrameLocked = SetFrameLocked
 BR.Display.UpdateVisuals = UpdateVisuals
 BR.Display.UpdateActionButtons = function(category)
     return BR.SecureButtons.UpdateActionButtons(category)
@@ -3679,13 +3691,11 @@ local function SlashHandler(msg)
     elseif cmd == "snooze" then
         BR.SnoozeConsumables()
     elseif cmd == "lock" then
-        BR.profile.locked = true
-        BR.Movers.HideAll()
+        SetFrameLocked(true)
         BR.Components.RefreshAll()
         print("|cff00ccffBuffReminders:|r " .. L["Display.FramesLocked"])
     elseif cmd == "unlock" then
-        BR.profile.locked = false
-        BR.Movers.UpdateAnchor()
+        SetFrameLocked(false)
         BR.Components.RefreshAll()
         print("|cff00ccffBuffReminders:|r " .. L["Display.FramesUnlocked"])
     elseif cmd == "minimap" then
