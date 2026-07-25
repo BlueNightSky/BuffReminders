@@ -15,6 +15,9 @@
 
 ---@class Button: Frame
 
+---@class EditBox: Frame
+---@field SetFont fun(self: EditBox, font: string, size: number, flags?: string)
+
 ---@class Texture
 ---@field SetAllPoints fun(self: Texture, target?: any)
 ---@field SetTexCoord fun(self: Texture, left: number, right: number, top: number, bottom: number)

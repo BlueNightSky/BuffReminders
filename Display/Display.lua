@@ -224,7 +224,8 @@ local fontProbe = UIParent:CreateFontString(nil, "BACKGROUND")
 fontProbe:Hide()
 local fontPathValidCache = {}
 
----Check whether a font file path is loadable by the WoW client
+---Check whether a font file path is loadable by the WoW client (BR.Helpers
+---export; the options font picker filters the LSM list through this)
 ---@param path string? LSM-resolved font file path
 ---@return boolean valid true if path is non-nil and SetFont succeeds
 local function IsFontPathValid(path)
@@ -709,17 +710,20 @@ end
 ---Apply the shared font (fontPath/outlineFlag) to a fontstring only when
 ---something actually changed. SetFont forces a full fontstring re-layout, and
 ---render paths re-apply fonts up to twice per second with unchanged values.
----@param fs BRFontString|FontString
+---@param fs BRFontString|FontString|EditBox any FontInstance (edit boxes included)
 ---@param size number
-local function SetFontCached(fs, size)
-    if fs._br_font_size == size and fs._br_font_path == fontPath and fs._br_font_outline == outlineFlag then
+---@param outline? string overrides the shared outlineFlag (e.g. "" for edit boxes)
+local function SetFontCached(fs, size, outline)
+    outline = outline or outlineFlag
+    if fs._br_font_size == size and fs._br_font_path == fontPath and fs._br_font_outline == outline then
         return
     end
     fs._br_font_size = size
     fs._br_font_path = fontPath
-    fs._br_font_outline = outlineFlag
-    fs:SetFont(fontPath, size, outlineFlag)
+    fs._br_font_outline = outline
+    fs:SetFont(fontPath, size, outline)
 end
+BR.Display.SetFontCached = SetFontCached
 
 ---Get effective icon width (falls back to iconSize for square icons)
 ---@param iconWidth? number Explicit width setting
@@ -1275,11 +1279,7 @@ local function CreateBuffFrame(buff, category)
         local raidCs = db.categorySettings and db.categorySettings.raid
         local bz, bx, by = BR.TextPositions.Get("buffReminder")
         BR.TextPositions.Apply(frame.buffText, frame, bz, bx, by)
-        frame.buffText:SetFont(
-            fontPath,
-            (raidCs and raidCs.buffTextSize) or GetFontSize(0.8, catSettings.textSize),
-            outlineFlag
-        )
+        SetFontCached(frame.buffText, (raidCs and raidCs.buffTextSize) or GetFontSize(0.8, catSettings.textSize))
         frame.buffText:SetTextColor(textColor[1], textColor[2], textColor[3], textAlpha)
         frame.buffText:SetText(L["Overlay.Buff"])
         if raidCs and raidCs.showBuffReminder == false then
@@ -1297,7 +1297,7 @@ local function CreateBuffFrame(buff, category)
         frame.subLabel:SetWidth(iconWidth * SUBLABEL_WIDTH_FACTOR)
         local lz, lx, ly = BR.TextPositions.Get("buffReminder")
         BR.TextPositions.Apply(frame.subLabel, frame, lz, lx, ly)
-        frame.subLabel:SetFont(fontPath, GetFontSize(SUBLABEL_FONT_SCALE, catSettings.textSize), outlineFlag)
+        SetFontCached(frame.subLabel, GetFontSize(SUBLABEL_FONT_SCALE, catSettings.textSize))
         frame.subLabel:SetTextColor(textColor[1], textColor[2], textColor[3], textAlpha)
         frame.subLabel:Hide()
     end
@@ -2438,19 +2438,24 @@ local function UpdatePetLabels(frame, petAction)
         return
     end
 
-    -- Early out if nothing changed since last call. Zone + offsets are part
-    -- of the key so live position edits re-anchor on the next display update.
+    -- Early out if nothing changed since last call. Every input the labels
+    -- derive from is part of the key: zone + offsets so live position edits
+    -- re-anchor, frame width because the sizes scale off it, and the shared
+    -- font/outline because SetFontCached reads those.
     local scale = defs.petLabelScale or 100
     local zone, offX, offY = BR.TextPositions.Get("petLabel")
     local cacheKey = format(
-        "%s:%s:%s:%d:%s:%s:%s",
+        "%s:%s:%s:%d:%s:%s:%s:%d:%s:%s",
         petAction.key,
         petAction.label or "",
         petAction.petFamily or "",
         scale,
         zone,
         tostring(offX),
-        tostring(offY)
+        tostring(offY),
+        frame:GetWidth(),
+        fontPath,
+        outlineFlag
     )
     if frame._br_pet_label_key == cacheKey then
         return
@@ -2466,7 +2471,7 @@ local function UpdatePetLabels(frame, petAction)
     local ratio = scale / 100
     local nameSize = max(7, floor(frame:GetWidth() * 0.18 * ratio))
     local familySize = max(7, floor(nameSize * 0.85))
-    frame._br_pet_name_text:SetFont(fontPath, nameSize, outlineFlag)
+    SetFontCached(frame._br_pet_name_text, nameSize)
     BR.TextPositions.Apply(frame._br_pet_name_text, frame, zone, offX, offY)
     frame._br_pet_name_text:SetText(petAction.label or "")
     frame._br_pet_name_text:SetTextColor(1, 1, 1)
@@ -2474,7 +2479,7 @@ local function UpdatePetLabels(frame, petAction)
 
     local family = petAction.petFamily
     if family and family ~= "" then
-        frame._br_pet_family_text:SetFont(fontPath, familySize, outlineFlag)
+        SetFontCached(frame._br_pet_family_text, familySize)
         frame._br_pet_family_text:ClearAllPoints()
         frame._br_pet_family_text:SetPoint("TOP", frame._br_pet_name_text, "BOTTOM", 0, -1)
         frame._br_pet_family_text:SetText(family)
@@ -2486,7 +2491,7 @@ local function UpdatePetLabels(frame, petAction)
 
     if petAction.petSpiritBeast then
         local anchor = (family and family ~= "") and frame._br_pet_family_text or frame._br_pet_name_text
-        frame._br_pet_extra_text:SetFont(fontPath, familySize, outlineFlag)
+        SetFontCached(frame._br_pet_extra_text, familySize)
         frame._br_pet_extra_text:ClearAllPoints()
         frame._br_pet_extra_text:SetPoint("TOP", anchor, "BOTTOM", 0, -1)
         frame._br_pet_extra_text:SetText(L["Pet.SpiritBeast"])
@@ -3357,11 +3362,7 @@ local function UpdateVisuals()
         if frame.buffText then
             -- Raid BUFF! text
             local raidCs = BR.profile.categorySettings and BR.profile.categorySettings.raid
-            frame.buffText:SetFont(
-                fontPath,
-                (raidCs and raidCs.buffTextSize) or GetFrameFontSize(frame, 0.8),
-                outlineFlag
-            )
+            SetFontCached(frame.buffText, (raidCs and raidCs.buffTextSize) or GetFrameFontSize(frame, 0.8))
             frame.buffText:SetTextColor(tc[1], tc[2], tc[3], ta)
             local bz, bx, by = BR.TextPositions.Get("buffReminder")
             BR.TextPositions.Apply(frame.buffText, frame, bz, bx, by)
@@ -3374,7 +3375,7 @@ local function UpdateVisuals()
         end
         if frame.subLabel then
             -- Loadout name label: same treatment as buffText (font / color / zone).
-            frame.subLabel:SetFont(fontPath, GetFrameFontSize(frame, SUBLABEL_FONT_SCALE), outlineFlag)
+            SetFontCached(frame.subLabel, GetFrameFontSize(frame, SUBLABEL_FONT_SCALE))
             frame.subLabel:SetTextColor(tc[1], tc[2], tc[3], ta)
             frame.subLabel:SetWidth(width * SUBLABEL_WIDTH_FACTOR)
             local lz, lx, ly = BR.TextPositions.Get("buffReminder")
