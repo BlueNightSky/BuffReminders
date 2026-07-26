@@ -180,6 +180,7 @@ local _, BR = ...
 ---@field _br_pet_spell? string             -- Localized spell name for pet click-to-cast
 ---@field _br_pet_spec_icon? number        -- Pet spec ability icon texture for hover swap
 ---@field _br_pet_label_key? string        -- Cache key for pet label updates
+---@field _br_count_scale? number          -- Font scale the count text was last written with
 ---@field _br_pet_name_text? FontString    -- Pet name label below icon
 ---@field _br_pet_family_text? FontString  -- Pet spec label below name
 ---@field _br_pet_extra_text? FontString   -- Spirit Beast label below spec
@@ -386,6 +387,7 @@ local defaults = BR.defaults
 -- Constants
 local CODE_DEFAULTS = defaults.defaults
 local OVERLAY_TEXT_SCALE = 0.6 -- scale for "NO X" warning text
+local COUNT_TEXT_SCALE = 1 -- scale for group counts and countdowns
 
 -- Locals
 local mainFrame
@@ -743,6 +745,20 @@ local function GetFrameFontSize(frame, scale)
     return GetFontSize(scale, catSettings.textSize)
 end
 
+---Write the count overlay's text and the font size that text calls for in one
+---step. The scale belongs to the content - labels render smaller than counts -
+---so setting them together is what stops the two from drifting apart, and
+---recording it on the frame lets UpdateVisuals re-apply the right scale without
+---having to know what is currently on screen.
+---@param frame BuffFrame
+---@param text string
+---@param scale number OVERLAY_TEXT_SCALE for labels, COUNT_TEXT_SCALE for numbers
+local function SetCountText(frame, text, scale)
+    frame._br_count_scale = scale
+    SetFontCached(frame.count, GetFrameFontSize(frame, scale))
+    frame.count:SetText(text)
+end
+
 -- Use functions from State.lua
 local FormatRemainingTime = BR.StateHelpers.FormatRemainingTime
 local FormatEatingTime = BR.StateHelpers.FormatEatingTime
@@ -968,8 +984,7 @@ local function ShowTextFrame(frame, overlayText, shouldGlow, category, cachedGlo
         frame.qualityIcon:Hide()
     end
     if overlayText then
-        SetFontCached(frame.count, GetFrameFontSize(frame, OVERLAY_TEXT_SCALE))
-        frame.count:SetText(overlayText)
+        SetCountText(frame, overlayText, OVERLAY_TEXT_SCALE)
         frame.count:Show()
     else
         frame.count:Hide()
@@ -2163,8 +2178,7 @@ local function RenderVisibleEntry(frame, entry)
             -- Seed initial text, then hand off to per-frame OnUpdate for smooth countdown
             local remaining = entry.eatingExpirationTime - GetTime()
             if remaining > 0 then
-                SetFontCached(frame.count, GetFrameFontSize(frame))
-                frame.count:SetText(FormatEatingTime(remaining))
+                SetCountText(frame, FormatEatingTime(remaining), COUNT_TEXT_SCALE)
                 frame.count:Show()
             else
                 frame.count:Hide()
@@ -2218,8 +2232,7 @@ local function RenderVisibleEntry(frame, entry)
         if frame.buffCategory == "consumable" then
             SetIconDesaturated(frame.icon, false)
         end
-        SetFontCached(frame.count, GetFrameFontSize(frame))
-        frame.count:SetText(entry.countText or "")
+        SetCountText(frame, entry.countText or "", COUNT_TEXT_SCALE)
         frame.count:Show()
         frame:Show()
         SetExpirationGlow(frame, entry.shouldGlow, entry.category, cachedGlow)
@@ -3317,7 +3330,9 @@ local function UpdateVisuals()
         local size = catSettings.iconSize or 64
         local width = GetEffectiveWidth(catSettings.iconWidth, size)
         frame:SetSize(width, size)
-        SetFontCached(frame.count, GetFrameFontSize(frame, 1))
+        -- Re-apply at the scale the current text was written with, not a guess:
+        -- a frame showing a "NO X" label must not be resized to count scale.
+        SetFontCached(frame.count, GetFrameFontSize(frame, frame._br_count_scale or COUNT_TEXT_SCALE))
 
         -- Re-anchor text overlays on every VisualsRefresh so config changes
         -- take effect immediately.
