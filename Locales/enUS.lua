@@ -893,6 +893,8 @@ english["CustomBuff.EditShort"] = "Edit"
 english["CustomBuff.Add"] = "Add Custom Buff"
 english["CustomBuff.AddButton"] = "+ Add Custom Buff"
 english["CustomBuff.Empty"] = "No custom buffs yet. Add one below."
+english["CustomBuff.RestrictedNote"] =
+    "Hidden in combat, boss encounters and Mythic+ - WoW blocks aura reads there. Bar glow detection works in combat."
 english["CustomBuff.SpellIDs"] = "Spell IDs:"
 english["CustomBuff.Lookup"] = "Lookup"
 english["CustomBuff.AddSpellID"] = "+ Add Spell ID"

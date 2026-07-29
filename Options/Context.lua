@@ -290,6 +290,7 @@ end
 ---@param config table {
 ---  header?     string   - section header text (omit for no header)
 ---  note?       string   - section note text (omit for none)
+---  warning?    string   - caution note (amber) under the note (omit for none)
 ---  addLabel    string   - Add button label
 ---  addWidth?   number   - Add button width (default 160)
 ---  onAdd       function(render) - opens the editor dialog; pass render as its refresh cb
@@ -310,6 +311,9 @@ function Helpers.ListEditor(content, scrollFrame, config)
     end
     if config.note then
         Helpers.LayoutSectionNote(layout, content, config.note)
+    end
+    if config.warning then
+        Helpers.LayoutSectionNote(layout, content, "|cffe0b34d" .. config.warning .. "|r")
     end
 
     local rowHeight = config.rowHeight
