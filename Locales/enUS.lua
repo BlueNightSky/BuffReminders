@@ -266,7 +266,7 @@ english["Tooltip.InstanceEntryReminder"] = "Instance Entry Reminder"
 english["Tooltip.InstanceEntryReminder.Desc"] =
     "Briefly shown when entering a dungeon as a reminder to drop a Soulwell. Dismissed after casting or after 30 seconds."
 english["Tooltip.MageFood"] = "Healers Only"
-english["Tooltip.MageFood.Desc"] = "Only shown while you're playing a healer, since conjured mage food restores mana."
+english["Tooltip.MageFood.Desc"] = "Only shown while you're playing a healer"
 english["BuffTooltip.ProvidedBy"] = "Provided by %s"
 
 -- ============================================================================
