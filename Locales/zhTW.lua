@@ -255,8 +255,8 @@ L["Tooltip.MayShowExtraIcon.Desc"] =
 L["Tooltip.InstanceEntryReminder"] = "副本進本提示"
 L["Tooltip.InstanceEntryReminder.Desc"] =
     "進入地下城時會短暫顯示放置靈魂井的提示。施放法術或30秒後將消失。"
-L["Tooltip.Repair"] = "修理提醒"
-L["Tooltip.Repair.Desc"] = "當裝備的物品耐久度低於閾值時顯示。拜訪一個商店來修理。"
+L["Tooltip.MageFood"] = "僅限治療者"
+L["Tooltip.MageFood.Desc"] = "只有當你玩捕時才顯示"
 L["BuffTooltip.ProvidedBy"] = "由 %s 提供"
 
 -- ============================================================================
@@ -688,6 +688,9 @@ L["BuffRow.Caption.FelOn"] = "使用惡魔支配"
 L["BuffRow.Caption.FelOff"] = "惡魔支配關閉"
 L["BuffRow.Caption.FoodTimerOn"] = "顯示到期計時器"
 L["BuffRow.Caption.FoodTimerOff"] = "沒有到期定時器"
+L["BuffRow.Caption.MageFoodAll"] = "在所有副本顯示"
+L["BuffRow.Caption.MageFoodDungeon"] = "僅限地下城"
+L["BuffRow.Caption.MageFoodRaid"] = "僅限團隊副本"
 -- Trailing link on the All Buffs row: a gold "Extras" for any buff with its own
 -- options (vs the gray "Settings" for the rest); the specific option is named
 -- inside the drawer. The two rich editors keep their name for the drawer's
@@ -700,9 +703,15 @@ L["BuffRow.Glyph.Sound"] = "聲音警報"
 L["BuffRow.Glyph.Detached"] = "獨立的圖示"
 L["BuffRow.Glyph.Detached.Desc"] =
     "該圖示可以自由放置在螢幕上。在增益的設定或佈局頁面上進行管理。"
+L["BuffRow.Glyph.New"] = "新增益"
+L["BuffRow.Glyph.New.Desc"] = "在最後更新加入。"
 -- Drawer door to a buff's focused editor (poison/runeforge). %s = option name.
 L["BuffPanel.EditOption"] = "編輯 %s"
 L["BuffPanel.Show"] = "顯示"
+L["BuffPanel.MageFoodContent"] = "何處"
+L["BuffPanel.MageFoodContent.All"] = "所有副本"
+L["BuffPanel.MageFoodContent.Dungeon"] = "僅限地下城"
+L["BuffPanel.MageFoodContent.Raid"] = "僅限團隊副本"
 L["BuffPanel.Sound"] = "聲音"
 L["BuffPanel.Sound.None"] = "無"
 L["BuffPanel.Detached"] = "自己的框架 (獨立的)"
@@ -866,6 +875,8 @@ L["CustomBuff.EditShort"] = "編輯"
 L["CustomBuff.Add"] = "添加自定義增益"
 L["CustomBuff.AddButton"] = "+ 添加自定義增益"
 L["CustomBuff.Empty"] = "尚未有自定義增益。下面新增一個。"
+L["CustomBuff.RestrictedNote"] =
+    "當與首領以及傳奇+戰鬥時隱藏 - WoW阻止在那裡讀取光環。條形發光檢測在戰鬥中有效。"
 L["CustomBuff.SpellIDs"] = "法術ID:"
 L["CustomBuff.Lookup"] = "查找"
 L["CustomBuff.AddSpellID"] = "+ 添加法術ID"
