@@ -651,8 +651,6 @@ L["Options.SplitFrame.Desc"] =
 -- old per-category slider wrote, but as a single ordered list across all
 -- non-split categories.
 L["Options.DisplayOrder"] = "쌓이는 순서"
-L["Options.DisplayOrder.Moved"] =
-    "표시 순서 설정을 찾고 있나요? 레이아웃 페이지로 옮겨졌습니다."
 
 -- Layout page
 L["Layout.PositionFrames"] = "프레임 위치"
@@ -1028,7 +1026,6 @@ L["Appearance.Zoom"] = "확대"
 L["Appearance.Border"] = "테두리"
 L["Appearance.Spacing"] = "간격"
 L["Appearance.Alpha"] = "불투명도"
-L["Appearance.Text"] = "텍스트"
 
 -- Slider tooltip
 L["Component.AdjustValue"] = "값 조정"

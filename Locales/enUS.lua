@@ -366,6 +366,9 @@ english["Options.Preview"] = "Preview"
 english["Options.GlobalDefaults"] = "Global Defaults"
 english["Options.GlobalDefaults.Note"] = "(All categories inherit these unless overridden with a custom appearance)"
 english["Options.Default"] = "Default"
+english["Options.Text"] = "Text"
+english["Options.Text.Note"] =
+    "(Size and color can be overridden per category; font, outline and position always apply everywhere)"
 english["Options.Font"] = "Font"
 english["Options.TextOutline"] = "Outline"
 english["Options.TextOutline.None"] = "None"
@@ -484,6 +487,9 @@ english["Options.TextPositions"] = "Text"
 english["Options.TextPositions.Zone"] = "Position"
 english["Options.TextPositions.OffsetX.Short"] = "X"
 english["Options.TextPositions.OffsetY.Short"] = "Y"
+english["Options.TextPositions.MainText"] = "Main text"
+english["Options.TextPositions.MainText.Note"] =
+    "Position of the big text on the icon - group counts like 17/20, countdowns, and labels like NO FLASK."
 english["Options.TextPositions.StackCount"] = "Stack count"
 english["Options.TextPositions.StatLabel"] = "Stat label"
 english["Options.TextPositions.Badge"] = "Badge (H / F)"
@@ -650,11 +656,9 @@ english["Options.Layout"] = "Layout"
 english["Options.SplitFrame"] = "Split into separate frame"
 english["Options.SplitFrame.Desc"] = "Display this category's buffs in a separate, independently movable frame"
 
--- Display Order section (Defaults page) - drives the same priority field the
--- old per-category slider wrote, but as a single ordered list across all
--- non-split categories.
+-- Stacking Order section (Layout page): one ordered list across all non-split
+-- categories, driving each category's priority field.
 english["Options.DisplayOrder"] = "Stacking Order"
-english["Options.DisplayOrder.Moved"] = "Looking for Display Order? It moved to the Layout page."
 
 -- Layout page
 english["Layout.PositionFrames"] = "Position Frames"
@@ -1029,7 +1033,7 @@ english["Appearance.Zoom"] = "Zoom"
 english["Appearance.Border"] = "Border"
 english["Appearance.Spacing"] = "Spacing"
 english["Appearance.Alpha"] = "Alpha"
-english["Appearance.Text"] = "Text"
+english["Appearance.Text"] = "Text size"
 
 -- Slider tooltip
 english["Component.AdjustValue"] = "Adjust value"

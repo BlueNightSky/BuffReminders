@@ -643,7 +643,6 @@ L["Options.SplitFrame.Desc"] = "將此類別中的增益顯示在可獨立移動
 -- old per-category slider wrote, but as a single ordered list across all
 -- non-split categories.
 L["Options.DisplayOrder"] = "顯示順序"
-L["Options.DisplayOrder.Moved"] = "正在尋找顯示順序？它移至佈局頁面。"
 
 -- Layout page
 L["Layout.PositionFrames"] = "定位框架"
@@ -1011,7 +1010,6 @@ L["Appearance.Zoom"] = "縮放"
 L["Appearance.Border"] = "邊框"
 L["Appearance.Spacing"] = "間距"
 L["Appearance.Alpha"] = "透明度"
-L["Appearance.Text"] = "文字"
 
 -- Slider tooltip
 L["Component.AdjustValue"] = "調整數值"
