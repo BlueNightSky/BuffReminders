@@ -356,6 +356,9 @@ L["Options.Preview"] = "預覽"
 L["Options.GlobalDefaults"] = "全局預設值"
 L["Options.GlobalDefaults.Note"] = "（套用於所有類別，除非被自定義外觀覆蓋）"
 L["Options.Default"] = "預設"
+L["Options.Text"] = "文字"
+L["Options.Text.Note"] =
+    "(每個類別都可以覆蓋大小和顏色；字體、外框樣式和位置始終適用於任何地方)"
 L["Options.Font"] = "字體"
 L["Options.TextOutline"] = "外框樣式"
 L["Options.TextOutline.None"] = "無"
@@ -474,6 +477,9 @@ L["Options.TextPositions"] = "文字"
 L["Options.TextPositions.Zone"] = "位置"
 L["Options.TextPositions.OffsetX.Short"] = "X"
 L["Options.TextPositions.OffsetY.Short"] = "Y"
+L["Options.TextPositions.MainText"] = "主文字"
+L["Options.TextPositions.MainText.Note"] =
+    "圖示上大文字的位置 - 群組計數，例如 17/20、倒數計時和標籤，例如無精煉。"
 L["Options.TextPositions.StackCount"] = "堆疊計數"
 L["Options.TextPositions.StatLabel"] = "屬性標籤"
 L["Options.TextPositions.Badge"] = "標誌 (H / F)"
@@ -639,10 +645,9 @@ L["Options.Layout"] = "佈局"
 L["Options.SplitFrame"] = "分離為獨立框架"
 L["Options.SplitFrame.Desc"] = "將此類別中的增益顯示在可獨立移動的單獨框架中。"
 
--- Display Order section (Defaults page) - drives the same priority field the
--- old per-category slider wrote, but as a single ordered list across all
--- non-split categories.
-L["Options.DisplayOrder"] = "顯示順序"
+-- Stacking Order section (Layout page): one ordered list across all non-split
+-- categories, driving each category's priority field.
+L["Options.DisplayOrder"] = "堆疊順序"
 
 -- Layout page
 L["Layout.PositionFrames"] = "定位框架"
@@ -673,6 +678,7 @@ L["BuffRow.Caption.PoisonsUnset"] = "選擇您使用的毒藥"
 L["BuffRow.Caption.Runeforge"] = "符文鎔鑄: %s"
 L["BuffRow.Caption.RuneforgeUnset"] = "設定您每個專精的符文鎔鑄"
 L["BuffRow.Caption.Healthstone"] = "庫存不足警報: 低於 %d"
+L["BuffRow.Caption.Repair"] = "當低於 %d%% 耐久度時提醒"
 L["BuffRow.Caption.HealthstoneOff"] = "庫存不足警報: 關閉"
 L["BuffRow.Caption.SoulstoneHidden"] = "冷卻時隱藏"
 L["BuffRow.Caption.SoulstoneShown"] = "冷卻時顯示"
@@ -1010,6 +1016,7 @@ L["Appearance.Zoom"] = "縮放"
 L["Appearance.Border"] = "邊框"
 L["Appearance.Spacing"] = "間距"
 L["Appearance.Alpha"] = "透明度"
+L["Appearance.Text"] = "文字"
 
 -- Slider tooltip
 L["Component.AdjustValue"] = "調整數值"
