@@ -36,6 +36,7 @@ read_globals = {
     "C_PvP",
     "C_EncodingUtil",
     "C_Item",
+    "C_MountJournal",
     "C_Spell",
     "C_Traits",
     "C_StableInfo",

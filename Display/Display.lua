@@ -1777,9 +1777,9 @@ local function GenerateTestEntries()
                         end
                     end
                 else
-                    -- consumable, presence, targeted, self, custom, loadout
+                    -- consumable, presence, targeted, self, custom, loadout, utility
                     entry.displayType = "text"
-                    entry.overlayText = buff.overlayText
+                    entry.overlayText = buff.overlayTextFn and buff.overlayTextFn() or buff.overlayText
                     entry.iconByRole = buff.icons and buff.icons.byRole
                     entry.shouldGlow = missGlowEnabled
 
@@ -3815,6 +3815,7 @@ eventFrame:RegisterEvent("PLAYER_LEVEL_UP")
 eventFrame:RegisterEvent("UPDATE_EXPANSION_LEVEL")
 eventFrame:RegisterEvent("BAG_UPDATE_DELAYED")
 eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY")
+eventFrame:RegisterEvent("NEW_MOUNT_ADDED")
 eventFrame:RegisterEvent("PVP_MATCH_STATE_CHANGED")
 
 ClearInstanceEntryState = function()
@@ -3850,6 +3851,7 @@ eventHandlers.PLAYER_ENTERING_WORLD = function()
     BR.BuffState.InvalidatePetCache()
     BR.BuffState.InvalidateStanceCache()
     BR.BuffState.InvalidateLoadoutCache()
+    BR.BuffState.InvalidateRepairSourceCache()
     -- Sync flags with current state (in case of reload)
     inCombat = InCombatLockdown()
     isResting = IsResting()
@@ -4227,9 +4229,17 @@ end
 
 eventHandlers.BAG_UPDATE_DELAYED = function()
     BR.BuffState.InvalidateItemCache()
+    BR.BuffState.InvalidateRepairSourceCache()
     BR.SecureButtons.InvalidateConsumableCache()
     SetDirty()
     BR.SecureButtons.UpdateActionButtons("consumable")
+    BR.SecureButtons.UpdateActionButtons("utility")
+end
+
+-- A newly collected repair mount changes the repair reminder's click action.
+eventHandlers.NEW_MOUNT_ADDED = function()
+    BR.BuffState.InvalidateRepairSourceCache()
+    BR.SecureButtons.UpdateActionButtons("utility")
 end
 
 eventHandlers.UNIT_ENTERED_VEHICLE = function(arg1)

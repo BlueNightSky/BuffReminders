@@ -4,6 +4,11 @@ local L = BR.L
 
 -- Lua stdlib locals
 local min = math.min
+local floor = math.floor
+
+-- Only the word is translated; the number and "%" are appended in code so a locale
+-- can't break the icon text with a malformed format specifier.
+local REPAIR_LABEL = L["Overlay.RepairLabel"]
 
 -- WoW API locals
 local GetSpellTexture = C_Spell.GetSpellTexture
@@ -424,6 +429,22 @@ function BR.InvalidatePoisonCache()
     poisonCache.time = -1
 end
 
+-- Repair sources for the repair reminder's click action, in preference order.
+-- Mounts summon a vendor who repairs - the Tundra Mammoth's vendors only buy and
+-- sell, so it's deliberately absent. Items repair on the spot and are the path
+-- where mounting is blocked. Legacy engineering items can lose their use effect
+-- across expansions, so State.lua gates them on usability, not just ownership.
+BR.REPAIR_SOURCES = {
+    mounts = {
+        122708, -- Grand Expedition Yak (Cousin Slowhands)
+        264058, -- Mighty Caravan Brutosaur (Merchant Maku)
+    },
+    items = {
+        132514, -- Auto-Hammer
+        49040, -- Jeeves
+    },
+}
+
 -- Utility reminders are chores (drop a table/well, repair), not auras: the utility
 -- loop in State.lua gates them on class + customCheck + showOnInstanceEntry +
 -- visibilityCondition only, and never aura-tracks or expiration-glows them. Fields
@@ -435,6 +456,7 @@ end
 ---@field groupId? string               -- Shared enable/setting key (falls back to key)
 ---@field class? ClassName              -- Only show to this class
 ---@field overlayText? string
+---@field overlayTextFn? fun(): string  -- Live overlay text, wins over overlayText
 ---@field icons? IconSpec
 ---@field infoTooltip? TooltipText
 ---@field castSpellID? number           -- Spell ID used for click-to-cast (else spellID)
@@ -1439,8 +1461,12 @@ BR.BUFF_TABLES = {
             addedIn = "6.3.0",
             name = L["Buff.RepairGear"],
             icons = { textures = { 1405803 } },
-            overlayText = L["Overlay.Repair"],
-            noClickToCast = true, -- nothing to cast; the action is visiting a merchant
+            overlayText = L["Overlay.Repair"], -- fallback only: overlayTextFn always wins
+            -- Live durability so the icon says how bad it is, not just that it's bad.
+            -- floor, not round: 84.9% must never read as the 85% threshold it crossed.
+            overlayTextFn = function()
+                return REPAIR_LABEL .. "\n" .. floor(BR.BuffState.GetLowestDurability() * 100) .. "%"
+            end,
             customCheck = function()
                 return BR.BuffState.GetLowestDurability() < (BR.Config.Get("defaults.repairThreshold", 20) / 100)
             end,

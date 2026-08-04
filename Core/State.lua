@@ -60,6 +60,7 @@ local FMT_SECONDS = BR.L["Overlay.SecondsFormat"]
 
 -- Buff tables from Buffs.lua (via BR namespace)
 local BUFF_TABLES = BR.BUFF_TABLES
+local REPAIR_SOURCES = BR.REPAIR_SOURCES
 local BuffBeneficiaries = BR.BuffBeneficiaries
 local SpecBeneficiaries = BR.SpecBeneficiaries
 
@@ -244,6 +245,13 @@ local cachedItemOwnership = {}
 -- Invalidated on UPDATE_INVENTORY_DURABILITY, PLAYER_EQUIPMENT_CHANGED.
 ---@type number|nil
 local cachedLowestDurability = nil
+
+-- Resolved repair click sources (mount to summon / item to use). Mount collection
+-- and bag contents only change on their own events, so the pair is resolved once.
+-- Only ever holds a positive answer (see GetRepairSources).
+-- Invalidated on BAG_UPDATE_DELAYED, NEW_MOUNT_ADDED, PLAYER_ENTERING_WORLD.
+---@type { mountSpellID: number?, itemID: number? }|nil
+local cachedRepairSources = nil
 
 -- Loadout state cache: rule.key -> { satisfied, icon }. The detection calls
 -- (IsSatisfied / GetRuleIcon) are read-only WoW lookups whose answers only change
@@ -2269,7 +2277,7 @@ function BuffState.Refresh(refreshMode)
                 and PassesPreChecks(buff, nil, db, trackingMode)
                 and (not buff.customCheck or buff.customCheck(isAuraRestricted))
             then
-                SetEntryText(entry, buff.overlayText, utilityMissGlow)
+                SetEntryText(entry, buff.overlayTextFn and buff.overlayTextFn() or buff.overlayText, utilityMissGlow)
                 BR.Helpers.ApplyDynamicIcon(entry, buff)
             end
         end
@@ -3082,6 +3090,52 @@ end
 ---Invalidate the durability cache (call on UPDATE_INVENTORY_DURABILITY, PLAYER_EQUIPMENT_CHANGED)
 function BuffState.InvalidateDurabilityCache()
     cachedLowestDurability = nil
+end
+
+---Best repair sources for the repair reminder's click action: a collected repair
+---mount and/or a usable repair item. Both answers only change on collection and
+---bag events, so the resolved pair is memoized like every other lookup here.
+---@return { mountSpellID: number?, itemID: number? }
+function BuffState.GetRepairSources()
+    if cachedRepairSources then
+        return cachedRepairSources
+    end
+    local sources = {}
+    for _, spellID in ipairs(REPAIR_SOURCES.mounts) do
+        local mountID = C_MountJournal.GetMountFromSpell(spellID)
+        if mountID then
+            local _, _, _, _, _, _, _, _, _, _, isCollected = C_MountJournal.GetMountInfoByID(mountID)
+            if isCollected then
+                sources.mountSpellID = spellID
+                break
+            end
+        end
+    end
+    for _, itemID in ipairs(REPAIR_SOURCES.items) do
+        if HasItemInBags(itemID) then
+            -- A retired use effect must not arm a dead click, so ownership isn't
+            -- enough. An unreadable verdict means the item info isn't cached yet -
+            -- ownership decides then.
+            local ok, usable = pcall(C_Item.IsUsableItem, itemID)
+            if not ok or usable ~= false then
+                sources.itemID = itemID
+                break
+            end
+        end
+    end
+    -- Only a positive resolution is cached: the mount journal isn't always populated
+    -- at login, and freezing a false "owns nothing" would leave the icon inert for
+    -- the whole session. An empty answer is re-resolved on the next arming pass.
+    if sources.mountSpellID or sources.itemID then
+        cachedRepairSources = sources
+    end
+    return sources
+end
+
+---Invalidate the repair source cache (call on BAG_UPDATE_DELAYED, NEW_MOUNT_ADDED,
+---PLAYER_ENTERING_WORLD)
+function BuffState.InvalidateRepairSourceCache()
+    cachedRepairSources = nil
 end
 
 ---Invalidate loadout state cache (call on PLAYER_SPECIALIZATION_CHANGED,
