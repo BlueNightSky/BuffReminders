@@ -188,7 +188,10 @@ crash. The 2026-07-12 group-payload verification (3.2) predates it.
 skips (re-syncs on combat end) and `GroupAuraUpdateMatters` skips (3s-ticker backstop). See
 #3.6 (group-container secrecy confirmed on PTR) and #4.4 for why fail-closed won.
 
-### 3.5 Frame-API overhaul does not affect BuffReminders - _patch notes, 12.1.0 PTR 4/6_
+### 3.5 Frame-API overhaul does not affect the reminder pipeline - _patch notes, 12.1.0 PTR 4/6_
+
+> Scope: this section is about the **existing** reminder display, which the rework leaves
+> untouched. The same APIs _do_ enable a new present-based tracker - see #3.9.
 
 The AuraContainer/AuraGroup/AuraSlot rework, `AddAuraFrame` removal,
 `SecureAuraHeaderTemplate` removal, and `AddPrivateAuraAppliedSound` -> `AddAuraAppliedSound`
@@ -362,6 +365,120 @@ beneficiary with the role is found, so Source of Magic would silently stop remin
 `TargetMemory`, which is fed from these same entries - so the `Plain` at the source fixes that
 secret-as-table-key throw too, and nothing downstream needs its own guard.
 
+### 3.9 AuraContainers display auras we cannot read - _verified in-game, 12.1.0 PTR_
+
+**An `AuraSlot` renders a buff in combat that the addon has no ability to read.** Verified by
+casting Power Infusion (10060, not whitelisted) on self: the icon **and its duration
+countdown** both appeared while in combat. This is the one capability the secret system does
+_not_ take away, because Blizzard does the rendering and the addon never touches the aura.
+
+It does **not** rescue the reminder pipeline (§2 stands - still no countable integer, still no
+branchable boolean). What it enables is a **separate, present-based display**: "show me PI /
+Bloodlust / an external buff while it's up", which today is impossible in restricted contexts.
+
+Mechanics confirmed by reading `Blizzard_AuraContainer/` source at tag `12.1.0`:
+
+- **Legality.** `ValidateCandidateFilters`: _"Spell ID matching is only permitted for helpful
+  buffs on assistable units, and harmful buffs on non-assistable units."_ The player is
+  assistable, so `"HELPFUL"` + `includeSpellIDs` on `"player"` is allowed. A **debuff on
+  yourself is not** - which is why this can never become a debuff-reminder path.
+- **Empty slots hide themselves.** `CustomAuraButtonPrivateMixin:ApplyVisibility` is
+  `self:SetShown(secretwrap(auraData ~= nil))`. No occlusion trick needed, and the shown state
+  is secret-wrapped so it can't be read back.
+- **`initializeFrame` is the creation window, and styling does NOT stay open** (confirmed
+  in-game). The frame provider calls it via
+  `securecallfunction(initializeFrame, auraFrame:GetObjectTable())` and only then applies the
+  `DenyTaintedAccessWhenAurasAreSecret` access restriction. Crucially, **that restriction reaches
+  our own regions, not just the button**: restyling a texture we created via
+  `button:CreateTexture()` fails in combat with
+
+  ```
+  calling 'ClearAllPoints' on bad self (Attempt to access forbidden object from code
+  tainted by an AddOn)
+  ```
+
+  The texture _itself_ is a forbidden object. **The boundary is the button's whole subtree**, and
+  there is no host-frame escape hatch - all four probe levels were denied in combat:
+
+  | Probe (in combat)                       | Result |
+  | --------------------------------------- | ------ |
+  | recolor a texture **on** the button     | DENY   |
+  | reanchor a texture **on** the button    | DENY   |
+  | resize a child **Frame** of the button  | DENY   |
+  | recolor a texture on that child frame   | DENY   |
+
+  So decoration must be built in the creation window, and any live restyle must **tolerate
+  denial**: attempt it, catch the failure, queue it, and retry when the restriction lifts
+  (`PLAYER_REGEN_ENABLED`, `ENCOUNTER_END`, `PLAYER_ENTERING_WORLD`, `ZONE_CHANGED_NEW_AREA`).
+  Never assume a style application landed.
+- **Corollary: dynamic chrome belongs OUTSIDE the button subtree.** Anything we animate or
+  toggle at runtime - glow being the obvious one - cannot live on the button or its children,
+  because starting/stopping it in combat would be denied. Put it on a **sibling frame we own**
+  (e.g. the container's plain parent). That is viable precisely because we anchor the slot
+  ourselves and take size from config, so a sibling overlay can track the button without ever
+  reading its geometry. Keep the button subtree limited to what Blizzard drives: `SetIcon`,
+  `SetDurationText`, and static decoration set once at creation.
+- **Skinning is available, and our existing icon treatment transfers** (confirmed in-game).
+  Create regions/child frames in the creation window and style those. Verified: a border texture
+  at `BACKGROUND` anchored with a **negative inset** - `SetPoint("TOPLEFT", -size, size)`, i.e.
+  protruding **past** the button's bounds, exactly as `UpdateIconStyling` does it - renders
+  correctly. So regions must be **children of the button**, but they are _not_ confined to its
+  bounds; the fontstring anchored below the button's bottom edge renders for the same reason. No
+  restructuring of our border math is needed. Per-button state still belongs in an **external
+  weak-keyed table**, never written onto the button itself.
+- **`button:SetSize` is denied on the same terms**, and an unsized button renders nothing - so
+  sizing has to land in the creation window or ride the same deferred-retry path.
+- **Our icon styling survives the per-aura update.** `AuraContainerUtil.SetIconTextureForAura`
+  only calls `texture:SetTexture(secretwrap(icon))` - it never touches texcoords, vertex color,
+  desaturation, size, or anchors. So `UpdateIconStyling`'s zoom + aspect-ratio crop
+  (`SetTexCoord`) applies once and holds while Blizzard swaps the texture file underneath.
+- **Duration text is rendered, never read** (confirmed in-game). `SetDurationText` stamps
+  `SecretAspect.Text/Alpha/VertexColor` onto the fontstring we pass in. Blizzard writes it and
+  counts it down; we must never read it back. So a tracker gets a live timer **for free**, on a
+  buff whose remaining duration we could not otherwise obtain in a restricted context.
+- **`AddAuraSlot` returns the button**, and slots are exempt from the container's flow layout,
+  so we anchor them ourselves. Anchor the container to a plain parent frame - a frame anchored
+  _to_ a container inherits its layout restrictions.
+
+These findings are implemented in `Display/AuraTracker.lua` (the throwaway `/brpi` harness that
+produced them has been removed). That module is the reference for the shape: one AuraGroup whose
+filters get reconfigured rather than rebuilt, styling applied in `initializeFrame`, every
+button-touching call `pcall`ed with a lift watcher to retry what a restricted context denied.
+
+**Masque cannot skin an AuraButton - confirmed in-game, and not for the reason expected.**
+`Group:AddButton` fails with:
+
+```
+Masque/Core/Core.lua:119: attempt to perform arithmetic on a secret number value
+(execution tainted by 'Masque')
+```
+
+This is **not** an access-restriction denial - it is #3.1's failure mode. **An AuraButton's
+dimensions read back as secret numbers**, and Masque does arithmetic on them while sizing a
+skin. Two consequences:
+
+- **Not fixable from our side.** Deferring, or calling `AddButton` inside the creation window,
+  changes nothing: the read returns a secret regardless of when it happens. Masque would have to
+  guard its own arithmetic. A tracked-buff display must therefore skin itself - which costs
+  nothing, since the icon treatment transfers (above).
+- **Never read geometry off an AuraButton.** Any `GetWidth`/`GetHeight`/`GetSize` on one feeds a
+  secret into arithmetic or a comparison and throws. This directly implicates `UI/Glow.lua`,
+  which gates on `host:GetWidth() < 1`; a glow for a tracked buff must attach to a plain host
+  frame we own, never to the button. Size must come from **config**, as `UpdateIconStyling`
+  already does (`catSettings.iconSize`, never a live read).
+
+**Implied shape for a tracker:** decoration created in the window as child frames, per-button
+state in an external weak-keyed table, and a restyle path that tolerates denial - queue the
+button-level calls that failed and retry them when the restriction lifts, rather than assuming
+a style application always lands.
+
+**Restriction detection is worth revisiting separately.** Restricted state can be probed
+empirically - `pcall(C_UnitAuras.GetAuraDataByIndex, "player", 1, "HELPFUL")`, which throws in
+restricted contexts (#3.6) - instead of being derived from combat/encounter/M+ flags. That
+matters beyond containers: the 12.1 notes list **PvP matches** as a restricted context, but our
+model (§_Restricted contexts_ above, and CLAUDE.md -> _Aura API Restrictions_) only covers
+combat, encounters, and M+. A live gap, tracked in #5.
+
 ---
 
 ## 4. How to handle secrets correctly
@@ -498,6 +615,14 @@ liberally as the first line of any branch that touches combat data.
   general model are solid; the exact namespace signatures are **verify-before-use**. The
   display primitives are likely never needed (see #2), but `C_RestrictedActions.IsRestricted`
   is worth confirming as a cleaner replacement for the combat/encounter/M+ gating.
+- **PvP matches are a restricted context we do not model (open, #3.9).** The 12.1 notes name
+  combat, encounters, M+ **and PvP matches**; our `isAuraRestricted` covers the first three, so
+  a non-whitelisted buff may read `nil` in a battleground or arena and surface as a false
+  "missing". Two candidate fixes, both needing a PTR check: add an explicit PvP-match term, or
+  replace the whole derivation with an empirical probe (`pcall` on `GetAuraDataByIndex`, throws
+  ⇒ restricted) / `C_RestrictedActions.IsRestricted` if it proves real. Note #3.2 tested a
+  battleground and found whitelisted auras still readable, so this is about the
+  **non**-whitelisted path and the gating flag, not the whitelist itself.
 - **Aura struct secrecy scope - partly RESOLVED (#3.6).** Out of combat everything reads
   plain; in restricted contexts enumeration throws while whitelisted targeted queries stay
   plain. So "always fully secret" is not literally true for the targeted path. Remaining

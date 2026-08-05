@@ -29,6 +29,7 @@ read_globals = {
     "C_AddOns",
     "C_Container",
     "C_ChallengeMode",
+    "C_StringUtil",
     "C_ClassTalents",
     "C_CreatureInfo",
     "C_EquipmentSet",
