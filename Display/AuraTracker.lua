@@ -329,13 +329,14 @@ local function EnsureFrames()
         container = CreateFrame("AuraContainer", nil, anchorFrame, "CustomAuraContainerTemplate")
         container:SetSize(1, 1)
         container:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT")
-        container:SetUnit("player")
         container:AddAuraGroup(GROUP_KEY, "HELPFUL", {
             maxFrameCount = MAX_FRAMES,
             candidateFilters = { includeSpellIDs = BuildSpellIDMap() },
             initializeFrame = InitializeButton,
             layout = { elementSpacing = Settings().spacing or 0 },
         })
+        container:SetUnit("player")
+        container:UpdateAllAuras()
     end)
 
     if not ok then
