@@ -346,9 +346,15 @@ english["Externals.DisabledReason"] = "Enable external buffs first."
 english["Externals.EnableElsewhere"] = "Enable external buffs on the Buffs > External Buffs page first."
 english["Externals.Defensives"] = "External Defensives"
 english["Externals.GroupBuffs"] = "Group Buffs"
+english["Externals.Movement"] = "Movement"
+english["Externals.Aggro"] = "Threat Redirects"
 english["Externals.Augmentation"] = "Augmentation"
 -- Groups Bloodlust/Heroism/Time Warp/Fury of the Aspects/Primal Rage/Ancient Hysteria
 english["Externals.Bloodlust"] = "Bloodlust"
+-- Groups the three barriers Mass Barrier casts on allies (Ice/Blazing/Prismatic)
+english["Externals.MassBarrier"] = "Mass Barrier"
+-- Groups Blessing of Summer/Autumn/Winter/Spring
+english["Externals.BlessingOfSeasons"] = "Blessing of the Seasons"
 english["Externals.MoverTooltip"] = "Drag to reposition"
 english["Externals.DurationSize"] = "Countdown size"
 english["Externals.Appearance"] = "Appearance"
