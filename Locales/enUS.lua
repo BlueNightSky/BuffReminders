@@ -780,6 +780,8 @@ english["Options.Override.Appearance.Desc"] =
     "Override the global appearance defaults for this category.\nWhile off, the controls below show the inherited values from the Defaults page."
 english["Options.Override.Glow.Desc"] =
     "Override the global glow settings for this category.\nWhile off, the controls below show the inherited values from the Defaults page."
+english["Options.Override.Externals.Desc"] =
+    "Override the global appearance defaults for these icons.\nWhile off, the size, zoom, border and spacing controls show the inherited values from the Defaults page. Countdown size and direction are always separate."
 english["Options.Customize"] = "Customize"
 english["Options.ResetPosition"] = "Reset Position"
 english["Options.MasqueNote"] = "Zoom and Border settings are managed by Masque"

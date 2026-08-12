@@ -65,6 +65,40 @@ function BR.AreExternalsEnabled()
     return BR.GetExternalSettings().enabled == true
 end
 
+local floor = math.floor
+
+-- Appearance keys that follow the global `defaults` table while
+-- externals.useCustomAppearance is off. durationSize and growDirection are
+-- absent on purpose: `defaults` has no countdown text, and its growDirection
+-- values (CENTER/UP/DOWN) do not exist in the flow layout.
+local INHERITED_KEYS = {
+    iconSize = true,
+    iconWidth = true,
+    iconZoom = true,
+    borderSize = true,
+    iconAlpha = true,
+    spacing = true,
+}
+
+---Effective value for one externals setting, with inheritance from the global
+---defaults - the externals counterpart of BR.Config.GetCategorySetting.
+---@param key string
+---@return any
+function BR.GetExternalSetting(key)
+    local settings = BR.GetExternalSettings()
+    if not INHERITED_KEYS[key] or settings.useCustomAppearance then
+        return settings[key]
+    end
+    local defaults = BR.profile and BR.profile.defaults or BR.defaults.defaults
+    if key == "spacing" then
+        -- defaults.spacing is a size multiplier; the flow layout wants absolute px.
+        -- Same math as the reminder rows' horizontal gap: floor(mainAxisWidth * spacing).
+        local width = defaults.iconWidth or defaults.iconSize or 64
+        return floor((defaults.spacing or 0) * width)
+    end
+    return defaults[key]
+end
+
 ---Display label for an entry: explicit key when it spans differently-named spells,
 ---otherwise the spell's own (already localized) name.
 ---@param entry table

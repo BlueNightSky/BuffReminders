@@ -10,6 +10,11 @@ local _, BR = ...
 -- forbidden button, and growth is container-level flow-layout state with LEFT/RIGHT
 -- only (the flow layout has no centered growth).
 --
+-- Appearance keys follow the category convention: an Override checkbox gates them,
+-- and while it is off they inherit from the global defaults (BR.GetExternalSetting
+-- resolves the gate) and render dimmed with the live inherited values. Countdown
+-- size and direction have no `defaults` counterpart, so they ignore the override.
+--
 -- Like CustomAppearance, this section is terminal: it owns the tab frame's height.
 
 local L = BR.L
@@ -22,24 +27,109 @@ local COMPONENT_GAP = BR.Options.Constants.COMPONENT_GAP
 local DROPDOWN_EXTRA = BR.Options.Constants.DROPDOWN_EXTRA
 
 local abs = math.abs
+local tinsert = table.insert
 
 BR.Options.BuffSections = BR.Options.BuffSections or {}
 
 local SLIDERS = {
-    { key = "iconZoom", labelKey = "Appearance.Zoom", min = 0, max = 40, suffix = "%", default = 0 },
-    { key = "borderSize", labelKey = "Appearance.Border", min = 0, max = 8, suffix = "px", default = 2 },
-    { key = "spacing", labelKey = "Appearance.Spacing", min = 0, max = 32, suffix = "px", default = 4 },
+    { key = "iconZoom", labelKey = "Appearance.Zoom", min = 0, max = 40, suffix = "%", default = 0, inherited = true },
+    {
+        key = "borderSize",
+        labelKey = "Appearance.Border",
+        min = 0,
+        max = 8,
+        suffix = "px",
+        default = 2,
+        inherited = true,
+    },
+    {
+        key = "spacing",
+        labelKey = "Appearance.Spacing",
+        min = 0,
+        max = 32,
+        suffix = "px",
+        default = 4,
+        inherited = true,
+    },
     { key = "durationSize", labelKey = "Externals.DurationSize", min = 8, max = 32, suffix = "px", default = 16 },
 }
 
+-- Keys copied into the externals table when the override turns on.
+local SNAPSHOT_KEYS = { "iconSize", "iconWidth", "iconZoom", "borderSize", "iconAlpha", "spacing" }
+
 local Settings = BR.GetExternalSettings
+local Setting = BR.GetExternalSetting
 local IsEnabled = BR.AreExternalsEnabled
+
+local function IsOverriding()
+    return Settings().useCustomAppearance == true
+end
+
+local function InheritedEnabled()
+    return IsEnabled() and IsOverriding()
+end
+
+local function InheritedDisabledReason()
+    if not IsEnabled() then
+        return L["Externals.EnableElsewhere"]
+    end
+    return L["DisabledReason.OverrideSection"]
+end
+
+---Override checkbox + live inheritance state label, matching CustomAppearance.
+local function AddOverrideRow(parent, layout)
+    local holder = Components.Checkbox(parent, {
+        label = L["Options.Override"],
+        get = IsOverriding,
+        tooltip = { title = L["Options.Override"], desc = L["Options.Override.Externals.Desc"] },
+        enabled = IsEnabled,
+        disabledReason = L["Externals.EnableElsewhere"],
+        onChange = function(checked)
+            if checked then
+                -- Snapshot the effective values before the flag flips, so the
+                -- display does not jump. The category nil-fill pattern does not
+                -- work here: the externals keys are always seeded, so a stored
+                -- value is not proof of a deliberate customization.
+                local snapshot = {}
+                for _, key in ipairs(SNAPSHOT_KEYS) do
+                    snapshot[key] = Setting(key)
+                end
+                BR.Config.Set("externals.iconWidth", snapshot.iconWidth) -- nil = square
+                BR.Config.SetMulti({
+                    ["externals.iconSize"] = snapshot.iconSize or 40,
+                    ["externals.iconZoom"] = snapshot.iconZoom or 0,
+                    ["externals.borderSize"] = snapshot.borderSize or 2,
+                    ["externals.iconAlpha"] = snapshot.iconAlpha or 1,
+                    ["externals.spacing"] = snapshot.spacing or 4,
+                })
+            end
+            BR.Config.Set("externals.useCustomAppearance", checked)
+            Components.RefreshAll()
+        end,
+    })
+
+    local stateText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    stateText:SetPoint("LEFT", holder.infoIcon or holder.label, "RIGHT", 10, 0)
+    local function refreshState()
+        if IsOverriding() then
+            stateText:SetText(L["Options.Override.Overriding"])
+            stateText:SetTextColor(1, 0.82, 0)
+        else
+            stateText:SetText(L["Options.Override.Inherited"])
+            stateText:SetTextColor(0.55, 0.55, 0.55)
+        end
+    end
+    refreshState()
+    tinsert(BR.RefreshableComponents, { Refresh = refreshState })
+
+    layout:Add(holder, nil, COMPONENT_GAP)
+end
 
 ---Width [link] Height on one row, with AppearanceGrid's coupling semantics:
 ---linked = iconWidth nil (square, one value), unlinked = explicit iconWidth.
 local function BuildSizeRow(parent, labelWidth)
     local function isLinked()
-        return Settings().iconWidth == nil
+        return Setting("iconWidth") == nil
     end
 
     local row = CreateFrame("Frame", nil, parent)
@@ -52,11 +142,10 @@ local function BuildSizeRow(parent, labelWidth)
         max = 128,
         step = 1,
         suffix = "px",
-        enabled = IsEnabled,
-        disabledReason = L["Externals.EnableElsewhere"],
+        enabled = InheritedEnabled,
+        disabledReason = InheritedDisabledReason,
         get = function()
-            local settings = Settings()
-            return settings.iconWidth or settings.iconSize or 40
+            return Setting("iconWidth") or Setting("iconSize") or 40
         end,
         onChange = function(value)
             BR.Config.Set(isLinked() and "externals.iconSize" or "externals.iconWidth", value)
@@ -69,13 +158,13 @@ local function BuildSizeRow(parent, labelWidth)
 
     local linkBtn = Components.DimensionLink(row, {
         isLinked = isLinked,
-        enabled = IsEnabled,
+        enabled = InheritedEnabled,
         onLink = function()
             BR.Config.Set("externals.iconWidth", nil)
             Components.RefreshAll()
         end,
         onUnlink = function()
-            BR.Config.Set("externals.iconWidth", Settings().iconSize or 40)
+            BR.Config.Set("externals.iconWidth", Setting("iconSize") or 40)
             Components.RefreshAll()
         end,
     })
@@ -87,10 +176,10 @@ local function BuildSizeRow(parent, labelWidth)
         max = 128,
         step = 1,
         suffix = "px",
-        enabled = IsEnabled,
-        disabledReason = L["Externals.EnableElsewhere"],
+        enabled = InheritedEnabled,
+        disabledReason = InheritedDisabledReason,
         get = function()
-            return Settings().iconSize or 40
+            return Setting("iconSize") or 40
         end,
         onChange = function(value)
             BR.Config.Set("externals.iconSize", value)
@@ -111,6 +200,8 @@ local function Build(ctx, layout)
     LayoutSectionHeader(layout, parent, L["Externals.Appearance"])
     LayoutSectionNote(layout, parent, L["Externals.AppearanceNote"])
 
+    AddOverrideRow(parent, layout)
+
     -- One shared label column so the tracks line up: "Countdown size" is far wider
     -- than "Zoom", and each slider would otherwise size its own label to fit.
     local labels = { L["Appearance.Width"] }
@@ -130,10 +221,10 @@ local function Build(ctx, layout)
             max = spec.max,
             step = 1,
             suffix = spec.suffix,
-            enabled = IsEnabled,
-            disabledReason = L["Externals.EnableElsewhere"],
+            enabled = spec.inherited and InheritedEnabled or IsEnabled,
+            disabledReason = spec.inherited and InheritedDisabledReason or L["Externals.EnableElsewhere"],
             get = function()
-                return Settings()[key] or default
+                return Setting(key) or default
             end,
             onChange = function(value)
                 BR.Config.Set("externals." .. key, value)
@@ -152,7 +243,7 @@ local function Build(ctx, layout)
         enabled = IsEnabled,
         disabledReason = L["Externals.EnableElsewhere"],
         get = function()
-            return Settings().growDirection or "RIGHT"
+            return Setting("growDirection") or "RIGHT"
         end,
         onChange = function(dir)
             BR.Config.Set("externals.growDirection", dir)

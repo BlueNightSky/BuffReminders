@@ -63,6 +63,11 @@ BR.defaults = {
     -- DeepCopyDefault seeds it, so no migration is needed.
     externals = {
         enabled = false,
+        -- false = the appearance keys below inherit from the global `defaults`
+        -- table (resolved by BR.GetExternalSetting) and their stored values stay
+        -- dormant. Countdown size and direction have no `defaults` counterpart,
+        -- so they always come from this table.
+        useCustomAppearance = false,
         position = { point = "CENTER", x = 0, y = -180 },
         iconSize = 40,
         -- iconWidth: nil = same as iconSize (square). Set explicitly for non-square icons.

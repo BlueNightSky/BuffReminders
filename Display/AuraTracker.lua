@@ -33,6 +33,9 @@ local TEXCOORD_INSET = BR.TEXCOORD_INSET
 local GetAspectCropInsets = BR.GetAspectCropInsets
 
 local Settings = BR.GetExternalSettings
+-- Appearance reads go through the resolver, which inherits from the global
+-- defaults unless externals.useCustomAppearance is set.
+local Setting = BR.GetExternalSetting
 
 local GROUP_KEY = "externals"
 -- Blizzard allocates aura frames in batches of 10; this caps how many can be
@@ -82,12 +85,11 @@ local function BuildSpellIDMap()
 end
 
 ---Icon dimensions from config. iconWidth nil = square (same as iconSize).
----@param settings table
 ---@return number width
 ---@return number height
-local function GetIconDimensions(settings)
-    local height = settings.iconSize or 40
-    return settings.iconWidth or height, height
+local function GetIconDimensions()
+    local height = Setting("iconSize") or 40
+    return Setting("iconWidth") or height, height
 end
 
 ---A suffix-free countdown formatter, built once and handed to SetDurationText.
@@ -131,9 +133,8 @@ local function StyleButton(button)
         return
     end
 
-    local settings = Settings()
-    local width, height = GetIconDimensions(settings)
-    local borderSize = settings.borderSize or 0
+    local width, height = GetIconDimensions()
+    local borderSize = Setting("borderSize") or 0
 
     -- Size comes from config, never from button:GetWidth() - that returns a secret.
     button:SetSize(width, height)
@@ -142,10 +143,10 @@ local function StyleButton(button)
     -- are aspect-aware so non-square icons show a centered slice instead of
     -- stretching. Blizzard's per-aura update only calls SetTexture, so this
     -- survives every icon swap.
-    local inset = TEXCOORD_INSET + (settings.iconZoom or 0) / 100
+    local inset = TEXCOORD_INSET + (Setting("iconZoom") or 0) / 100
     local xInset, yInset = GetAspectCropInsets(inset, width, height)
     regions.icon:SetTexCoord(xInset, 1 - xInset, yInset, 1 - yInset)
-    regions.icon:SetAlpha(settings.iconAlpha or 1)
+    regions.icon:SetAlpha(Setting("iconAlpha") or 1)
 
     -- Duration text: ours to place and font, Blizzard's to write. Uses the addon's
     -- configured font face and outline, so it matches every other icon's text.
@@ -159,7 +160,7 @@ local function StyleButton(button)
     -- font that never landed and the post-combat retry would skip it.
     local fontPath = BR.Display.GetFontPath()
     local outline = BR.Display.GetOutline()
-    local durationSize = settings.durationSize or 16
+    local durationSize = Setting("durationSize") or 16
     local fontSig = fontPath .. "|" .. durationSize .. "|" .. outline
     if regions.fontSig ~= fontSig then
         regions.duration:SetFont(fontPath, durationSize, outline)
@@ -278,7 +279,7 @@ local function ApplyConfig()
 
     local settings = Settings()
     local map, entryCount = BuildSpellIDMap()
-    local width, height = GetIconDimensions(settings)
+    local width, height = GetIconDimensions()
 
     local ok = pcall(function()
         if testMode then
@@ -293,7 +294,7 @@ local function ApplyConfig()
         -- elementWidth/Height feed the flow math only (packing, spacing); the
         -- visible size is StyleButton's SetSize. The two must agree.
         container:SetAuraGroupLayout(GROUP_KEY, {
-            elementSpacing = settings.spacing or 0,
+            elementSpacing = Setting("spacing") or 0,
             elementWidth = width,
             elementHeight = height,
         })
@@ -369,7 +370,7 @@ local function EnsureFrames()
         -- animated chrome must live OUTSIDE the button subtree, and a frame anchored
         -- *to* a container inherits its layout restrictions.
         anchorFrame = CreateFrame("Frame", "BuffRemindersExternals", UIParent)
-        anchorFrame:SetSize(GetIconDimensions(Settings()))
+        anchorFrame:SetSize(GetIconDimensions())
         anchorFrame:SetMovable(true)
         anchorFrame:SetClampedToScreen(true)
         ApplyPosition()
@@ -390,7 +391,7 @@ local function EnsureFrames()
             maxFrameCount = MAX_FRAMES,
             candidateFilters = { includeSpellIDs = BuildSpellIDMap() },
             initializeFrame = InitializeButton,
-            layout = { elementSpacing = Settings().spacing or 0 },
+            layout = { elementSpacing = Setting("spacing") or 0 },
         })
         container:SetUnit("player")
         container:UpdateAllAuras()
@@ -430,7 +431,7 @@ local function Refresh()
     end
 
     ApplyPosition()
-    anchorFrame:SetSize(GetIconDimensions(settings))
+    anchorFrame:SetSize(GetIconDimensions())
     anchorFrame.mover:UpdateFont()
     ApplyConfig()
     anchorFrame:Show()
