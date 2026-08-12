@@ -38,6 +38,9 @@ local GROUP_KEY = "externals"
 -- Blizzard allocates aura frames in batches of 10; this caps how many can be
 -- visible at once, not how many can be enabled.
 local MAX_FRAMES = 20
+-- Test mode cap: enough frames to judge spacing and growth direction, few enough
+-- that a player carrying dozens of buffs doesn't preview a wall of icons.
+local TEST_MODE_CAP = 3
 -- Matches the category movers' label size in Movers.lua.
 local MOVER_LABEL_SIZE = 11
 
@@ -46,6 +49,11 @@ local anchorFrame, container
 local buttonRegions = setmetatable({}, { __mode = "k" })
 -- Set when a reconfigure or restyle was denied, so the lift watcher retries.
 local applyPending = false
+-- Test mode previews through the REAL container: the spell-ID filter is dropped so
+-- the player's current buffs render, capped low. Fake icons would have to emulate
+-- Blizzard's packing, and button geometry is secret, so an emulation could never be
+-- verified against the real layout.
+local testMode = false
 
 ---Union of every enabled entry's spell IDs.
 ---
@@ -273,8 +281,15 @@ local function ApplyConfig()
     local width, height = GetIconDimensions(settings)
 
     local ok = pcall(function()
-        container:SetAuraGroupCandidateFilters(GROUP_KEY, { includeSpellIDs = map })
-        container:SetAuraGroupMaxFrameCount(GROUP_KEY, min(entryCount, MAX_FRAMES))
+        if testMode then
+            -- No candidate filters at all: any HELPFUL aura on the player qualifies,
+            -- so the preview has something to show regardless of what is enabled.
+            container:SetAuraGroupCandidateFilters(GROUP_KEY, {})
+            container:SetAuraGroupMaxFrameCount(GROUP_KEY, TEST_MODE_CAP)
+        else
+            container:SetAuraGroupCandidateFilters(GROUP_KEY, { includeSpellIDs = map })
+            container:SetAuraGroupMaxFrameCount(GROUP_KEY, min(entryCount, MAX_FRAMES))
+        end
         -- elementWidth/Height feed the flow math only (packing, spacing); the
         -- visible size is StyleButton's SetSize. The two must agree.
         container:SetAuraGroupLayout(GROUP_KEY, {
@@ -424,6 +439,13 @@ local function Refresh()
     SetUnlocked(not BR.Display.IsFrameLocked())
 end
 
+---Driven by Display.lua's ToggleTestMode alongside the reminder categories. A
+---denied reconfigure (toggled during combat) is retried by the lift watcher.
+local function SetTestMode(enabled)
+    testMode = enabled == true
+    Refresh()
+end
+
 -- Retry anything the restricted context denied. These are the events that end a
 -- restricted context; a denied restyle otherwise stays stale until the next change.
 local liftWatcher = CreateFrame("Frame")
@@ -448,6 +470,7 @@ BR.CallbackRegistry:RegisterCallback("VisualsRefresh", Refresh)
 BR.AuraTracker = {
     Refresh = Refresh,
     SetUnlocked = SetUnlocked,
+    SetTestMode = SetTestMode,
     BuildSpellIDMap = BuildSpellIDMap,
     ---True when a reconfigure was denied and is waiting on a restriction lift.
     IsApplyPending = function()

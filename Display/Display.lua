@@ -1842,6 +1842,9 @@ ToggleTestMode = function()
         -- Reset layout signatures so positioning runs fresh
         lastMainSignature = ""
         wipe(lastSplitSignatures)
+        if BR.AuraTracker then
+            BR.AuraTracker.SetTestMode(false)
+        end
         UpdateDisplay()
         return false
     else
@@ -1863,6 +1866,9 @@ ToggleTestMode = function()
         BR.SecureButtons.HideAllSecureFrames()
         lastMainSignature = ""
         wipe(lastSplitSignatures)
+        if BR.AuraTracker then
+            BR.AuraTracker.SetTestMode(true)
+        end
         UpdateDisplay()
         return true
     end
