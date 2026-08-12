@@ -30,6 +30,7 @@ local pcall = pcall
 
 local L = BR.L
 local TEXCOORD_INSET = BR.TEXCOORD_INSET
+local GetAspectCropInsets = BR.GetAspectCropInsets
 
 local Settings = BR.GetExternalSettings
 
@@ -70,6 +71,15 @@ local function BuildSpellIDMap()
     end
 
     return map, entryCount
+end
+
+---Icon dimensions from config. iconWidth nil = square (same as iconSize).
+---@param settings table
+---@return number width
+---@return number height
+local function GetIconDimensions(settings)
+    local height = settings.iconSize or 40
+    return settings.iconWidth or height, height
 end
 
 ---A suffix-free countdown formatter, built once and handed to SetDurationText.
@@ -114,16 +124,19 @@ local function StyleButton(button)
     end
 
     local settings = Settings()
-    local size = settings.iconSize or 40
+    local width, height = GetIconDimensions(settings)
     local borderSize = settings.borderSize or 0
 
     -- Size comes from config, never from button:GetWidth() - that returns a secret.
-    button:SetSize(size, size)
+    button:SetSize(width, height)
 
-    -- Base crop hides texture edge artifacts; iconZoom adds on top. Blizzard's
-    -- per-aura update only calls SetTexture, so this survives every icon swap.
+    -- Base crop hides texture edge artifacts; iconZoom adds on top, and the insets
+    -- are aspect-aware so non-square icons show a centered slice instead of
+    -- stretching. Blizzard's per-aura update only calls SetTexture, so this
+    -- survives every icon swap.
     local inset = TEXCOORD_INSET + (settings.iconZoom or 0) / 100
-    regions.icon:SetTexCoord(inset, 1 - inset, inset, 1 - inset)
+    local xInset, yInset = GetAspectCropInsets(inset, width, height)
+    regions.icon:SetTexCoord(xInset, 1 - xInset, yInset, 1 - yInset)
     regions.icon:SetAlpha(settings.iconAlpha or 1)
 
     -- Duration text: ours to place and font, Blizzard's to write. Uses the addon's
@@ -223,6 +236,31 @@ local function ApplyPosition()
     )
 end
 
+---Growth is container-level flow-layout state, public on the container (unlike
+---per-button styling): SetFlowLayout* since 68914, SetAuraLayout* before - resolve
+---per call so either API generation works. Direction values are
+---AnchorUtil.FlowDirection members, and there is no centered growth. The flow
+---layout places buttons from its INTERNAL anchor point (default TOPLEFT),
+---independent of the container's own anchor - the same corner must feed both, or
+---the first icon lands on the wrong side of the mover.
+local function ApplyGrowth(settings)
+    local corner = settings.growDirection == "LEFT" and "TOPRIGHT" or "TOPLEFT"
+    container:ClearAllPoints()
+    container:SetPoint(corner, anchorFrame, corner)
+
+    local setAnchor = container.SetFlowLayoutAnchorPoint or container.SetAuraLayoutAnchorPoint
+    if setAnchor then
+        setAnchor(container, corner)
+    end
+
+    local directions = AnchorUtil and AnchorUtil.FlowDirection
+    local setGrowth = container.SetFlowLayoutGrowthDirection or container.SetAuraLayoutGrowthDirection
+    if directions and setGrowth then
+        local growthH = settings.growDirection == "LEFT" and directions.Left or directions.Right
+        setGrowth(container, growthH, directions.Down)
+    end
+end
+
 ---Push the current config into the container. Every button-touching call here can
 ---be denied while auras are secret; on denial we flag and retry on the next lift.
 local function ApplyConfig()
@@ -232,15 +270,19 @@ local function ApplyConfig()
 
     local settings = Settings()
     local map, entryCount = BuildSpellIDMap()
+    local width, height = GetIconDimensions(settings)
 
     local ok = pcall(function()
         container:SetAuraGroupCandidateFilters(GROUP_KEY, { includeSpellIDs = map })
         container:SetAuraGroupMaxFrameCount(GROUP_KEY, min(entryCount, MAX_FRAMES))
+        -- elementWidth/Height feed the flow math only (packing, spacing); the
+        -- visible size is StyleButton's SetSize. The two must agree.
         container:SetAuraGroupLayout(GROUP_KEY, {
             elementSpacing = settings.spacing or 0,
-            elementWidth = settings.iconSize or 40,
-            elementHeight = settings.iconSize or 40,
+            elementWidth = width,
+            elementHeight = height,
         })
+        ApplyGrowth(settings)
     end)
 
     for button in pairs(buttonRegions) do
@@ -312,7 +354,7 @@ local function EnsureFrames()
         -- animated chrome must live OUTSIDE the button subtree, and a frame anchored
         -- *to* a container inherits its layout restrictions.
         anchorFrame = CreateFrame("Frame", "BuffRemindersExternals", UIParent)
-        anchorFrame:SetSize(Settings().iconSize or 40, Settings().iconSize or 40)
+        anchorFrame:SetSize(GetIconDimensions(Settings()))
         anchorFrame:SetMovable(true)
         anchorFrame:SetClampedToScreen(true)
         ApplyPosition()
@@ -328,7 +370,7 @@ local function EnsureFrames()
     local ok = pcall(function()
         container = CreateFrame("AuraContainer", nil, anchorFrame, "CustomAuraContainerTemplate")
         container:SetSize(1, 1)
-        container:SetPoint("TOPLEFT", anchorFrame, "TOPLEFT")
+        ApplyGrowth(Settings())
         container:AddAuraGroup(GROUP_KEY, "HELPFUL", {
             maxFrameCount = MAX_FRAMES,
             candidateFilters = { includeSpellIDs = BuildSpellIDMap() },
@@ -373,7 +415,7 @@ local function Refresh()
     end
 
     ApplyPosition()
-    anchorFrame:SetSize(settings.iconSize or 40, settings.iconSize or 40)
+    anchorFrame:SetSize(GetIconDimensions(settings))
     anchorFrame.mover:UpdateFont()
     ApplyConfig()
     anchorFrame:Show()

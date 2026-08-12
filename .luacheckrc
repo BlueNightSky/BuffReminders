@@ -25,6 +25,7 @@ globals = {
 
 read_globals = {
     -- WoW API
+    "AnchorUtil",
     "C_ActionBar",
     "C_AddOns",
     "C_Container",

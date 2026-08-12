@@ -65,11 +65,13 @@ BR.defaults = {
         enabled = false,
         position = { point = "CENTER", x = 0, y = -180 },
         iconSize = 40,
+        -- iconWidth: nil = same as iconSize (square). Set explicitly for non-square icons.
         iconZoom = 0,
         borderSize = 2,
         iconAlpha = 1,
         spacing = 4, -- absolute px (Blizzard's elementSpacing), not an iconSize multiplier
         durationSize = 16, -- countdown text, centered on the icon
+        growDirection = "RIGHT", -- "LEFT" or "RIGHT"; the flow layout has no centered growth
         entries = {}, -- [Data/Externals.lua key] = true
     },
 

@@ -439,6 +439,19 @@ Mechanics confirmed by reading `Blizzard_AuraContainer/` source at tag `12.1.0`:
 - **`AddAuraSlot` returns the button**, and slots are exempt from the container's flow layout,
   so we anchor them ourselves. Anchor the container to a plain parent frame - a frame anchored
   _to_ a container inherits its layout restrictions.
+- **Container-level flow layout is public and live-settable**:
+  `SetFlowLayoutGrowthDirection(growthH, growthV)`,
+  `SetFlowLayoutAnchorPoint`, `SetFlowLayoutAxis`, `SetFlowLayoutMaximumLineSize`,
+  `SetFlowLayoutPadding` - 68914+ names; older builds spell them `SetAuraLayout*`, so resolve
+  per call with the old name as fallback. Direction values are `AnchorUtil.FlowDirection`
+  members (Left=-1, Right=1, Up=1, Down=-1), **not strings**, and there is no centered growth.
+  Two traps: (1) the flow layout places buttons from its INTERNAL anchor point (default
+  `TOPLEFT`), independent of the container's own anchor - derive ONE corner from the direction
+  and feed it to both the container `SetPoint` and `SetFlowLayoutAnchorPoint`, or the first
+  icon lands on the wrong side. (2) a group's `elementWidth`/`elementHeight` in
+  `SetAuraGroupLayout` feed the flow math only and **never resize the button** - the visible
+  size is `button:SetSize` in the creation window (or the deferred-retry path), and the two
+  must agree.
 
 These findings are implemented in `Display/AuraTracker.lua` (the throwaway `/brpi` harness that
 produced them has been removed). That module is the reference for the shape: one AuraGroup whose
