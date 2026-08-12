@@ -163,6 +163,8 @@ local function InitializeButton(button)
     local regions = {}
     buttonRegions[button] = regions
 
+    button:EnableMouse(false)
+
     regions.border = button:CreateTexture(nil, "BACKGROUND")
     regions.border:SetColorTexture(0, 0, 0, 1)
 
