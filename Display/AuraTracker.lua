@@ -235,7 +235,7 @@ local function ApplyConfig()
 
     local ok = pcall(function()
         container:SetAuraGroupCandidateFilters(GROUP_KEY, { includeSpellIDs = map })
-        container:SetAuraGroupMaxFrameCount(GROUP_KEY, min(entryCount > 0 and entryCount or 1, MAX_FRAMES))
+        container:SetAuraGroupMaxFrameCount(GROUP_KEY, min(entryCount, MAX_FRAMES))
         container:SetAuraGroupLayout(GROUP_KEY, {
             elementSpacing = settings.spacing or 0,
             elementWidth = settings.iconSize or 40,
