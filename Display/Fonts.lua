@@ -12,6 +12,7 @@ local _, BR = ...
 
 local LSM = LibStub("LibSharedMedia-3.0")
 local abs = math.abs
+local floor = math.floor
 
 -- The stock client font, captured at file load, before any addon can
 -- reassign the STANDARD_TEXT_FONT global at login. The client preloads this
@@ -23,10 +24,6 @@ local fontPath = STANDARD_TEXT_FONT
 
 -- "NONE" in saved settings maps to "" at the WoW API level.
 local outlineFlag = "OUTLINE"
-
--- All Font objects are built at this height. Per-fontstring sizes are text
--- scales (size / BASE_HEIGHT), so a size change never touches the font API.
-local BASE_HEIGHT = 20
 
 ---One verified font apply on any FontInstance. The return value of SetFont
 ---is ignored: fontstrings can return `true` without a real apply, and Font
@@ -46,9 +43,13 @@ local function TrySetFont(target, path, size, outline)
     return okRead and appliedPath == path and appliedSize ~= nil and abs(appliedSize - size) < 0.5
 end
 
--- Shared Font objects, one per outline variant in use.
+-- Shared Font objects, keyed by (outline, size). Each size gets its own
+-- object because SetTextScale sizing snaps to discrete steps. Sizes come
+-- from integer sliders, so the set stays small.
 -- healthy = the configured face passed a verified apply on the object.
 local fontObjects = {} ---@type table<string, Font>
+local objectSize = {} ---@type table<string, number>
+local objectOutline = {} ---@type table<string, string>
 local objectHealthy = {} ---@type table<string, boolean>
 local objectCount = 0
 
@@ -57,46 +58,53 @@ local ScheduleReassert -- defined below
 ---Apply the configured face to one Font object, with fallbacks. The object
 ---must always carry a font: SetText on a fontstring linked to a font-less
 ---object raises an error.
----@param outline string
-local function AssertObject(outline)
-    local obj = fontObjects[outline]
-    if TrySetFont(obj, fontPath, BASE_HEIGHT, outline) then
-        objectHealthy[outline] = true
+---@param key string
+local function AssertObject(key)
+    local obj = fontObjects[key]
+    local size = objectSize[key]
+    local outline = objectOutline[key]
+    if TrySetFont(obj, fontPath, size, outline) then
+        objectHealthy[key] = true
         return
     end
-    objectHealthy[outline] = false
+    objectHealthy[key] = false
     -- Fallback chain: the live STANDARD_TEXT_FONT (another addon can swap
     -- it game-wide), then the stock client font.
-    if fontPath == STANDARD_TEXT_FONT or not TrySetFont(obj, STANDARD_TEXT_FONT, BASE_HEIGHT, outline) then
-        pcall(obj.SetFont, obj, CLIENT_FONT, BASE_HEIGHT, outline)
+    if fontPath == STANDARD_TEXT_FONT or not TrySetFont(obj, STANDARD_TEXT_FONT, size, outline) then
+        pcall(obj.SetFont, obj, CLIENT_FONT, size, outline)
     end
     ScheduleReassert()
 end
 
 ---Re-apply every object that the client reverted or never accepted.
 local function ReassertObjects()
-    for outline, obj in pairs(fontObjects) do
+    for key, obj in pairs(fontObjects) do
         local okRead, path, size = pcall(obj.GetFont, obj)
-        local intact = okRead and path == fontPath and size ~= nil and abs(size - BASE_HEIGHT) < 0.5
+        local intact = okRead and path == fontPath and size ~= nil and abs(size - objectSize[key]) < 0.5
         if not intact then
-            AssertObject(outline)
+            AssertObject(key)
         else
-            objectHealthy[outline] = true
+            objectHealthy[key] = true
         end
     end
 end
 
 ---@param outline string
----@return Font
-local function GetObject(outline)
-    local obj = fontObjects[outline]
+---@param size number integer pixel size
+---@return Font obj
+---@return string key
+local function GetObject(outline, size)
+    local key = outline .. "@" .. size
+    local obj = fontObjects[key]
     if not obj then
         objectCount = objectCount + 1
         obj = CreateFont("BuffRemindersDisplayFont" .. objectCount)
-        fontObjects[outline] = obj
-        AssertObject(outline)
+        fontObjects[key] = obj
+        objectSize[key] = size
+        objectOutline[key] = outline
+        AssertObject(key)
     end
-    return obj
+    return obj, key
 end
 
 -- Retry timer for objects that failed a verified apply (for example, the
@@ -166,25 +174,23 @@ local function Resolve()
     ReassertObjects()
 end
 
----Link a fontstring to the shared font and set its pixel size as a text
----scale. Safe to call from render paths on every pass. Edit boxes have no
----SetTextScale, so they get a direct verified apply with fallback.
+---Link a fontstring to the shared Font object for its (outline, size).
+---Safe to call from render paths on every pass. Edit boxes have no
+---SetTextScale marker method, so they get a direct verified apply with
+---fallback.
 ---@param fs FontString|EditBox any FontInstance
----@param size number pixel size
+---@param size number pixel size, rounded to an integer here
 ---@param outline? string overrides the shared outlineFlag (e.g. "" for edit boxes)
 ---@return boolean healthy true when the configured face is on the shared object
 local function Apply(fs, size, outline)
     outline = outline or outlineFlag
+    size = floor(size + 0.5)
     if fs.SetTextScale then
-        local obj = GetObject(outline)
+        local obj, key = GetObject(outline, size)
         if fs:GetFontObject() ~= obj then
             fs:SetFontObject(obj)
         end
-        local scale = size / BASE_HEIGHT
-        if abs(fs:GetTextScale() - scale) > 0.001 then
-            fs:SetTextScale(scale)
-        end
-        return objectHealthy[outline] == true
+        return objectHealthy[key] == true
     end
     if TrySetFont(fs, fontPath, size, outline) then
         return true
