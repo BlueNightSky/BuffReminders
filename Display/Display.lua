@@ -203,6 +203,7 @@ local GetAspectCropInsets = BR.GetAspectCropInsets
 
 -- WoW API locals
 local PlaySoundFile = PlaySoundFile
+local IsInGroup = IsInGroup
 
 -- LibSharedMedia for sound resolution (fonts live in Display/FontCache.lua)
 local LSM = LibStub("LibSharedMedia-3.0")
@@ -423,6 +424,27 @@ end
 -- inCombat reflects both player regen AND boss encounter state for early detection
 local inCombat = false
 local inEncounter = false
+
+-- Narrow UNIT_AURA to player+pet whenever group payloads can't matter: in
+-- combat/encounters they are secret and fail closed in GroupAuraUpdateMatters
+-- (the 3s ticker owns group refresh there), and solo there are no group units.
+-- Narrow registration filters on the game's side, so group and nameplate aura
+-- churn never reaches Lua. Grouped out of combat listens broadly, filtered by
+-- GroupAuraUpdateMatters.
+local auraEventsNarrow -- nil forces the first call to register
+local function UpdateAuraEventRegistration()
+    local narrow = inCombat or not IsInGroup()
+    if narrow == auraEventsNarrow then
+        return
+    end
+    auraEventsNarrow = narrow
+    if narrow then
+        eventFrame:RegisterUnitEvent("UNIT_AURA", "player", "pet")
+    else
+        eventFrame:RegisterEvent("UNIT_AURA")
+        SetDirty("group") -- catch group changes missed while narrowed
+    end
+end
 local isResting = false
 local petDismountSuppressed = false -- Suppress pet eval briefly after dismount (pet respawn delay)
 local wasMounted = IsMounted()
@@ -3707,7 +3729,7 @@ eventFrame:RegisterEvent("ENCOUNTER_START")
 eventFrame:RegisterEvent("ENCOUNTER_END")
 eventFrame:RegisterEvent("PLAYER_DEAD")
 eventFrame:RegisterEvent("PLAYER_UNGHOST")
-eventFrame:RegisterEvent("UNIT_AURA")
+UpdateAuraEventRegistration() -- UNIT_AURA: narrow or broad by combat/group state
 eventFrame:RegisterEvent("UNIT_FLAGS")
 eventFrame:RegisterEvent("UNIT_CONNECTION")
 eventFrame:RegisterEvent("UNIT_PHASE")
@@ -3779,6 +3801,7 @@ eventHandlers.PLAYER_ENTERING_WORLD = function()
     BR.BuffState.SetPlayerLevel(UnitLevel("player"))
     BR.BuffState.SetMaxExpansionLevel(GetMaxLevelForPlayerExpansion())
     BR.BuffState.SetInCombat(inCombat)
+    UpdateAuraEventRegistration()
     -- Detect PvP prep phase: in a PvP instance but match not yet started.
     -- Used by the `hideInPvPMatch` visibility setting to gate buff display once
     -- the match starts. Aura API is restricted for the whole BG/arena regardless.
@@ -3876,6 +3899,9 @@ eventHandlers.ZONE_CHANGED_NEW_AREA = function()
     -- so defer the cache invalidation + refresh.
     C_Timer.After(0.5, function()
         BR.BuffState.InvalidateContentTypeCache()
+        -- Instance-group state can flip here without GROUP_ROSTER_UPDATE
+        -- (delves and follower dungeons have no loading screen)
+        UpdateAuraEventRegistration()
         SetDirty()
         -- Trigger delve entry for showOnInstanceEntry consumables (no loading screen on re-entry)
         -- Skip if PLAYER_ENTERING_WORLD already started a timer for this entry
@@ -3896,6 +3922,7 @@ end
 
 eventHandlers.GROUP_ROSTER_UPDATE = function()
     BR.BuffState.InvalidateHealerCache()
+    UpdateAuraEventRegistration()
     SetDirty("group")
     -- Refresh chat-request macrotext so prefix tracks party↔raid↔instance
     -- transitions. PreClick used to rebuild the macro on each click, but the
@@ -3915,6 +3942,7 @@ end
 eventHandlers.PLAYER_REGEN_ENABLED = function()
     inCombat = inEncounter
     BR.BuffState.SetInCombat(inCombat)
+    UpdateAuraEventRegistration()
     BR.StateHelpers.ScanEatingState()
     BR.SecureButtons.RefreshOverlaySpells()
     StartUpdates()
@@ -3923,6 +3951,7 @@ end
 eventHandlers.PLAYER_REGEN_DISABLED = function()
     inCombat = true
     BR.BuffState.SetInCombat(true)
+    UpdateAuraEventRegistration()
     ClearDelveEntryState()
     SetDirty()
 end
@@ -3931,6 +3960,7 @@ eventHandlers.ENCOUNTER_START = function()
     inEncounter = true
     inCombat = true
     BR.BuffState.SetInCombat(true)
+    UpdateAuraEventRegistration()
     ClearDelveEntryState()
     SetDirty()
 end
@@ -3939,6 +3969,7 @@ eventHandlers.ENCOUNTER_END = function()
     inEncounter = false
     inCombat = inCombat and InCombatLockdown()
     BR.BuffState.SetInCombat(inCombat)
+    UpdateAuraEventRegistration()
     SetDirty()
 end
 
