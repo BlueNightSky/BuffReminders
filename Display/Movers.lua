@@ -367,14 +367,14 @@ end
 ---@param size number
 ---@param outline? string explicit outline override
 local function TrackFont(list, obj, size, outline)
-    BR.Display.SetFontCached(obj, size, outline)
+    BR.FontCache.SetFontCached(obj, size, outline)
     obj._br_font_explicit_outline = outline
     list[#list + 1] = obj
 end
 
 ---@param list table Accumulator filled by TrackFont
 local function RefreshFonts(list)
-    local SetFontCached = BR.Display.SetFontCached
+    local SetFontCached = BR.FontCache.SetFontCached
     for i = 1, #list do
         local obj = list[i]
         SetFontCached(obj, obj._br_font_size, obj._br_font_explicit_outline)
@@ -889,7 +889,7 @@ end
 -- Create a mover frame for positioning a category.
 -- The mover matches the category's iconSize for accurate positioning. Shown when unlocked.
 local function CreateMoverFrame(catKey, displayName)
-    local SetFontCached = BR.Display.SetFontCached
+    local SetFontCached = BR.FontCache.SetFontCached
     local catSettings = GetCategorySettings(catKey)
     local iconSize = catSettings.iconSize or 64
     local iconWidth = catSettings.iconWidth or iconSize
@@ -1111,7 +1111,7 @@ local function CreateDetachedMover(key, displayName)
         return nil
     end
 
-    local SetFontCached = BR.Display.SetFontCached
+    local SetFontCached = BR.FontCache.SetFontCached
     local buffFrame = BR.Display.frames[key]
     local effectiveCat = "main"
     if buffFrame and buffFrame.buffCategory then

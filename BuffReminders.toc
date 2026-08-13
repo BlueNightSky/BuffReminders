@@ -63,6 +63,7 @@ Core\State.lua
 UI\Components.lua
 UI\Glow.lua
 Display\Icons.lua
+Display\FontCache.lua
 Display\Display.lua
 Core\ImportExport.lua
 Display\Movers.lua

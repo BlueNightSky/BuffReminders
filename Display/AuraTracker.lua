@@ -158,8 +158,8 @@ local function StyleButton(button)
     -- per-button state on a subtree that goes forbidden, and it records the cache
     -- before calling SetFont - so a denial in combat would leave the cache claiming a
     -- font that never landed and the post-combat retry would skip it.
-    local fontPath = BR.Display.GetFontPath()
-    local outline = BR.Display.GetOutline()
+    local fontPath = BR.FontCache.GetFontPath()
+    local outline = BR.FontCache.GetOutline()
     local durationSize = Setting("durationSize") or 16
     local fontSig = fontPath .. "|" .. durationSize .. "|" .. outline
     if regions.fontSig ~= fontSig then
@@ -332,7 +332,7 @@ local function CreateMover()
     -- with - same reason Movers.lua re-applies this from UpdateSize(). SetFontCached
     -- is safe here: this is our own frame, not a forbidden button subtree.
     function mover:UpdateFont()
-        BR.Display.SetFontCached(self.label, MOVER_LABEL_SIZE)
+        BR.FontCache.SetFontCached(self.label, MOVER_LABEL_SIZE)
     end
     -- Must run before SetText: the FontString inherits no font, and setting text on
     -- a font-less FontString raises an error (hence the same order in Movers.lua).

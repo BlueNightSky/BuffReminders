@@ -175,7 +175,7 @@ local function ShowLastTargetTooltip(anchor, name, class, hint)
         lastTargetTooltip = tip
     end
     local tip = lastTargetTooltip
-    BR.Display.SetFontCached(tip.name, 13)
+    BR.FontCache.SetFontCached(tip.name, 13)
     -- Set class-colored name
     local r, g, b = 1, 1, 1
     if class then
@@ -909,9 +909,9 @@ local function SyncSecureButtons()
         HideAllSecureFrames()
         return
     end
-    local fontPath = BR.Display.GetFontPath()
-    local outlineFlag = BR.Display.GetOutline()
-    local SetFontCached = BR.Display.SetFontCached
+    local fontPath = BR.FontCache.GetFontPath()
+    local outlineFlag = BR.FontCache.GetOutline()
+    local SetFontCached = BR.FontCache.SetFontCached
     for frame in pairs(secureHostFrames) do
         -- Sync click overlay
         local overlay = frame.clickOverlay

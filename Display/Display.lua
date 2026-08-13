@@ -204,8 +204,14 @@ local GetAspectCropInsets = BR.GetAspectCropInsets
 -- WoW API locals
 local PlaySoundFile = PlaySoundFile
 
--- LibSharedMedia for font resolution
+-- LibSharedMedia for sound resolution (fonts live in Display/FontCache.lua)
 local LSM = LibStub("LibSharedMedia-3.0")
+
+-- Shared display font (Display/FontCache.lua), aliased for hot render paths
+local FontCache = BR.FontCache
+local SetFontCached = FontCache.SetFontCached
+local GetFontPath = FontCache.GetFontPath
+local GetOutline = FontCache.GetOutline
 
 -- Masque integration (optional)
 local Masque = LibStub("Masque", true)
@@ -213,63 +219,6 @@ local masqueGroup = Masque and Masque:Group("BuffReminders")
 
 local function IsMasqueActive()
     return masqueGroup ~= nil and not masqueGroup.db.Disabled
-end
-
--- Cached font path - resolved once on load and updated when the setting changes (via VisualsRefresh).
--- All SetFont calls read this local directly instead of calling LSM:Fetch() every time.
-local fontPath = STANDARD_TEXT_FONT
-
--- LSM can register fonts whose file assets can't be loaded (e.g. another addon points to
--- a missing TTF). We probe each path with a hidden FontString + pcall so we never hand a
--- broken path to SetFont, which would hard-error and break the display / options panel.
-local fontProbe = UIParent:CreateFontString(nil, "BACKGROUND")
-fontProbe:Hide()
-local fontPathValidCache = {}
-
----Check whether a font file path is loadable by the WoW client (BR.Helpers
----export; the options font picker filters the LSM list through this)
----@param path string? LSM-resolved font file path
----@return boolean valid true if path is non-nil and SetFont succeeds
-local function IsFontPathValid(path)
-    if not path then
-        return false
-    end
-    local cached = fontPathValidCache[path]
-    if cached ~= nil then
-        return cached
-    end
-    local ok = pcall(fontProbe.SetFont, fontProbe, path, 12, "")
-    fontPathValidCache[path] = ok
-    return ok
-end
-
----Resolve the font path from saved settings and update the cache
-local function ResolveFontPath()
-    local fontName = BR.profile and BR.profile.defaults and BR.profile.defaults.fontFace
-    if fontName then
-        local path = LSM:Fetch("font", fontName)
-        if IsFontPathValid(path) then
-            fontPath = path
-            return
-        end
-    end
-    fontPath = STANDARD_TEXT_FONT
-end
-
--- Cached outline flag - resolved on load and updated when the setting changes (via VisualsRefresh).
--- "NONE" in saved settings is translated to "" at the WoW API level.
-local outlineFlag = "OUTLINE"
-
----Resolve the text outline flag from saved settings and update the cache
-local function ResolveOutline()
-    local value = BR.profile and BR.profile.defaults and BR.profile.defaults.textOutline
-    if value == "NONE" then
-        outlineFlag = ""
-    elseif value == nil then
-        outlineFlag = "OUTLINE"
-    else
-        outlineFlag = value
-    end
 end
 
 -- Global API table for external addon integration
@@ -512,12 +461,6 @@ BR.CATEGORY_LABELS = CATEGORY_LABELS
 
 -- Early init of BR.Display for split modules (populated further below and in InitializeFrames)
 BR.Display = BR.Display or {}
-BR.Display.GetFontPath = function()
-    return fontPath
-end
-BR.Display.GetOutline = function()
-    return outlineFlag
-end
 
 ---Check if a category is split into its own frame
 ---@param category string
@@ -704,29 +647,6 @@ end
 local function GetFontSize(scale, textSize)
     return max(6, floor(textSize * (scale or 1)))
 end
-
----@class BRFontString: FontString
----@field _br_font_size number?   -- last font size applied via SetFontCached
----@field _br_font_path string?   -- last font path applied via SetFontCached
----@field _br_font_outline string? -- last outline flag applied via SetFontCached
-
----Apply the shared font (fontPath/outlineFlag) to a fontstring only when
----something actually changed. SetFont forces a full fontstring re-layout, and
----render paths re-apply fonts up to twice per second with unchanged values.
----@param fs BRFontString|FontString|EditBox any FontInstance (edit boxes included)
----@param size number
----@param outline? string overrides the shared outlineFlag (e.g. "" for edit boxes)
-local function SetFontCached(fs, size, outline)
-    outline = outline or outlineFlag
-    if fs._br_font_size == size and fs._br_font_path == fontPath and fs._br_font_outline == outline then
-        return
-    end
-    fs._br_font_size = size
-    fs._br_font_path = fontPath
-    fs._br_font_outline = outline
-    fs:SetFont(fontPath, size, outline)
-end
-BR.Display.SetFontCached = SetFontCached
 
 ---Get effective icon width (falls back to iconSize for square icons)
 ---@param iconWidth? number Explicit width setting
@@ -2463,8 +2383,8 @@ local function UpdatePetLabels(frame, petAction)
         tostring(offX),
         tostring(offY),
         frame:GetWidth(),
-        fontPath,
-        outlineFlag
+        GetFontPath(),
+        GetOutline()
     )
     if frame._br_pet_label_key == cacheKey then
         return
@@ -3435,8 +3355,7 @@ end
 
 -- Visual changes (icon size, zoom, border, text visibility, font)
 CallbackRegistry:RegisterCallback("VisualsRefresh", function()
-    ResolveFontPath()
-    ResolveOutline()
+    FontCache.Resolve()
     ResetLayoutSignatures()
     wipe(expiringGlowCache)
     wipe(missingGlowCache)
@@ -3521,7 +3440,6 @@ BR.Helpers = {
     ValidateSpellID = ValidateSpellID,
     ValidateItemID = ValidateItemID,
     GenerateCustomBuffKey = GenerateCustomBuffKey,
-    IsFontPathValid = IsFontPathValid,
     SetBuffSound = function(key, soundName)
         local db = BR.profile
         if soundName then
@@ -3868,8 +3786,7 @@ eventHandlers.PLAYER_ENTERING_WORLD = function()
     BR.BuffState.SetPvPPrepPhase(inPvPZone and isPrep)
     BR.BuffState.SetInVehicle(UnitInVehicle("player") == true)
     BR.StateHelpers.ScanEatingState()
-    ResolveFontPath()
-    ResolveOutline()
+    FontCache.Resolve()
     if not mainFrame then
         InitializeFrames()
         -- Initialize action buttons for categories with clickable enabled
