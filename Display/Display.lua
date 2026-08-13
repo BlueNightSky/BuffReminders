@@ -2819,8 +2819,12 @@ local function StartUpdates()
     if updateTicker then
         updateTicker:Cancel()
     end
-    -- Slow fallback ticker for expiration text staleness (e.g. "14m" -> "13m")
-    updateTicker = C_Timer.NewTicker(3, SetDirty)
+    -- Slow fallback ticker for expiration text staleness (e.g. "14m" -> "13m").
+    -- NewTicker passes the ticker object to its callback, so wrap SetDirty
+    -- instead of passing it directly - a table arg would corrupt dirtyMode.
+    updateTicker = C_Timer.NewTicker(3, function()
+        SetDirty("full")
+    end)
     -- OnUpdate checks dirty flag with throttle
     eventFrame:SetScript("OnUpdate", function()
         if not dirty then
