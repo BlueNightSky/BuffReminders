@@ -2389,7 +2389,6 @@ local function UpdatePetLabels(frame, petAction)
     if frame._br_pet_label_key == cacheKey then
         return
     end
-    frame._br_pet_label_key = cacheKey
 
     if not frame._br_pet_name_text then
         frame._br_pet_name_text = frame:CreateFontString(nil, "OVERLAY")
@@ -2400,7 +2399,7 @@ local function UpdatePetLabels(frame, petAction)
     local ratio = scale / 100
     local nameSize = max(7, floor(frame:GetWidth() * 0.18 * ratio))
     local familySize = max(7, floor(nameSize * 0.85))
-    SetFontCached(frame._br_pet_name_text, nameSize)
+    local fontsApplied = SetFontCached(frame._br_pet_name_text, nameSize)
     BR.TextPositions.Apply(frame._br_pet_name_text, frame, zone, offX, offY)
     frame._br_pet_name_text:SetText(petAction.label or "")
     frame._br_pet_name_text:SetTextColor(1, 1, 1)
@@ -2408,7 +2407,7 @@ local function UpdatePetLabels(frame, petAction)
 
     local family = petAction.petFamily
     if family and family ~= "" then
-        SetFontCached(frame._br_pet_family_text, familySize)
+        fontsApplied = SetFontCached(frame._br_pet_family_text, familySize) and fontsApplied
         frame._br_pet_family_text:ClearAllPoints()
         frame._br_pet_family_text:SetPoint("TOP", frame._br_pet_name_text, "BOTTOM", 0, -1)
         frame._br_pet_family_text:SetText(family)
@@ -2420,7 +2419,7 @@ local function UpdatePetLabels(frame, petAction)
 
     if petAction.petSpiritBeast then
         local anchor = (family and family ~= "") and frame._br_pet_family_text or frame._br_pet_name_text
-        SetFontCached(frame._br_pet_extra_text, familySize)
+        fontsApplied = SetFontCached(frame._br_pet_extra_text, familySize) and fontsApplied
         frame._br_pet_extra_text:ClearAllPoints()
         frame._br_pet_extra_text:SetPoint("TOP", anchor, "BOTTOM", 0, -1)
         frame._br_pet_extra_text:SetText(L["Pet.SpiritBeast"])
@@ -2429,6 +2428,10 @@ local function UpdatePetLabels(frame, petAction)
     else
         frame._br_pet_extra_text:Hide()
     end
+
+    -- Store the key only when every label carries the desired face. Then the
+    -- next pass retries a face that failed at login, and no failure sticks.
+    frame._br_pet_label_key = fontsApplied and cacheKey or nil
 end
 
 local function SetupPetExtraFrame(frame, index, action, entry, cachedGlow, frameList)

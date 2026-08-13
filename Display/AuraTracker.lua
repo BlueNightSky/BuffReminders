@@ -152,19 +152,18 @@ local function StyleButton(button)
     -- configured font face and outline, so it matches every other icon's text.
     --
     -- Memoized like SetFontCached (SetFont forces a full fontstring re-layout, and
-    -- VisualsRefresh lands here on every step of any appearance slider drag) but with
-    -- the signature kept in OUR side table and written only AFTER the call returns.
-    -- SetFontCached does neither: it stores _br_font_* on the fontstring, which is
-    -- per-button state on a subtree that goes forbidden, and it records the cache
-    -- before calling SetFont - so a denial in combat would leave the cache claiming a
-    -- font that never landed and the post-combat retry would skip it.
+    -- VisualsRefresh lands here on every step of any appearance slider drag), but
+    -- the signature lives in OUR side table because _br_font_* fields become
+    -- per-button state on a subtree that goes forbidden. The signature records
+    -- the applied path. A denial in combat, or a face that the client did not
+    -- load yet, leaves a mismatched signature, and the next pass retries.
     local fontPath = BR.FontCache.GetFontPath()
     local outline = BR.FontCache.GetOutline()
     local durationSize = Setting("durationSize") or 16
     local fontSig = fontPath .. "|" .. durationSize .. "|" .. outline
     if regions.fontSig ~= fontSig then
-        regions.duration:SetFont(fontPath, durationSize, outline)
-        regions.fontSig = fontSig
+        local applied = BR.FontCache.ApplyFont(regions.duration, durationSize, outline)
+        regions.fontSig = applied and (applied .. "|" .. durationSize .. "|" .. outline) or nil
     end
 
     -- Border protrudes past the button's bounds, same as the reminder icons.

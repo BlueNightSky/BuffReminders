@@ -322,8 +322,6 @@ english["Display.LoginFirstInstall"] =
     "Thanks for installing! Type |cFFFFD100/br unlock|r to move the buff display, or use the button at the bottom of the |cFFFFD100/br|r options panel."
 english["Display.LoginSnooze"] =
     "The consumable dismiss button is now a right-click: right-click a consumable to snooze its reminders, or type |cFFFFD100/br snooze|r."
-english["Display.LoginExternals"] =
-    "New: |cFFFFD100External Buffs|r shows Power Infusion, Bloodlust, externals and Augmentation buffs while they are on you - and keeps working in combat. Turn it on under |cFFFFD100/br|r > Buffs > External Buffs."
 
 -- ============================================================================
 -- OPTIONS: NAVIGATION LABELS
