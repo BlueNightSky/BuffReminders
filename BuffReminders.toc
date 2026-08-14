@@ -82,6 +82,7 @@ Options\Pages\Defaults.lua
 Options\Pages\Visibility.lua
 Options\Pages\ChatRequests.lua
 Options\Pages\Layout.lua
+Options\Pages\CustomAnchors.lua
 Options\Pages\General.lua
 Options\Pages\Profiles.lua
 Options\Pages\Buffs\Sections\Visibility.lua
