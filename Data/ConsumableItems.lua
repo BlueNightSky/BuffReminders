@@ -164,6 +164,14 @@ BR.CONSUMABLE_ITEMS = {
         [267000] = { label = L["Label.HighSecondary"], badge = L["Badge.Hearty"] }, -- Hearty Flora Frenzy
         [268679] = { label = L["Label.HighPrimary"], badge = L["Badge.Hearty"] }, -- Hearty Impossibly Royal Roast
         [268680] = { label = L["Label.HighSecondary"], badge = L["Badge.Hearty"] }, -- Hearty Flora Frenzy
+
+        -- Midnight 12.1.0
+        [275258] = { label = L["Label.HighSecondary"] }, -- Venom-Spiced Cutlets
+        [275260] = { label = L["Label.HighSecondary"] }, -- Puffer Plate
+        [275261] = { label = L["Label.HighSecondary"] }, -- Sweet-And-Sour Skewers
+        [275264] = { label = L["Label.Feast"] }, -- Amani Cornucopia
+        [275265] = { label = L["Label.Feast"] }, -- Loa's Gathering
+        [275266] = { label = L["Label.Feast"] }, -- Feast of Knowledge
         -- Recovery-only (no Well Fed buff, just health/mana restore). Not tracked, listed here for reference.
         -- [260264] = true, -- Quel'Danas Rations
         -- [260275] = true, -- Mukleech Curry
