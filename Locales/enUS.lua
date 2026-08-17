@@ -353,7 +353,6 @@ english["Externals.Bloodlust"] = "Bloodlust"
 english["Externals.MassBarrier"] = "Mass Barrier"
 -- Groups Blessing of Summer/Autumn/Winter/Spring
 english["Externals.BlessingOfSeasons"] = "Blessing of the Seasons"
-english["Externals.MoverTooltip"] = "Drag to reposition"
 english["Externals.DurationSize"] = "Countdown size"
 english["Externals.Appearance"] = "Appearance"
 english["Externals.AppearanceNote"] =
