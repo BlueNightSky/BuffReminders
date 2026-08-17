@@ -156,10 +156,13 @@ Keys use PascalCase dot notation (`L["Options.ClickToCast"]`, `L["Overlay.NoFlas
 **To add a new string:**
 
 1. Define it in `Locales/enUS.lua`: `english["Section.Key"] = "English text"`
-2. Add translations to all 10 locale files: `L["Section.Key"] = "Translated text"`
-3. Use `L["Section.Key"]` in the source file
-4. Run `make` - the `locales` target verifies all keys are in sync
+2. Use `L["Section.Key"]` in the source file
+3. Run `make i18n` to verify that source and `enUS.lua` are in sync
+
+Add the key to `enUS.lua` only. Every other locale falls back to English until a translator translates the key.
 
 **Don't localize:** spell names (WoW API handles those), config keys, frame names, internal identifiers.
 
 **Overlay text** (`Overlay.*` keys) must be very short (2-4 chars per line) to fit on small buff icons.
+
+For the translator guide, and for the rule that applies when a string changes meaning, read [docs/Localization.md](docs/Localization.md).
