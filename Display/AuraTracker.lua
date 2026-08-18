@@ -226,12 +226,9 @@ end
 ---The frame this display is attached to, chosen in the mover coordinate popup.
 ---@return table? frame, string? point nil when unset, or when the frame does not exist
 local function ResolveAnchor()
-    local name = Settings().anchorFrame
-    if name and name ~= "" then
-        local frame = _G[name]
-        if frame and frame.GetCenter then
-            return frame, Settings().anchorPoint or "CENTER"
-        end
+    local frame = BR.ResolveAnchorFrame(Settings().anchorFrame)
+    if frame then
+        return frame, Settings().anchorPoint or "CENTER"
     end
     return nil, nil
 end
@@ -311,10 +308,9 @@ local function UpdateMoverCaption()
     end
     local settings = Settings()
     local dir = settings.growDirection or "RIGHT"
-    local name = settings.anchorFrame
+    local label = BR.Movers.AnchorFrameLabel(settings.anchorFrame)
     mover.anchorText:SetText(
-        (name and name ~= "") and format(L["Mover.AnchorGrowthFrame"], dir, name)
-            or format(L["Mover.AnchorGrowth"], dir)
+        label and format(L["Mover.AnchorGrowthFrame"], dir, label) or format(L["Mover.AnchorGrowth"], dir)
     )
 end
 

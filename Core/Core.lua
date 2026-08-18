@@ -189,6 +189,25 @@ BR.Secret = {
     AuraByInstanceID = AuraByInstanceID,
 }
 
+---The frame a stored anchor name points at, or nil when it cannot hold an anchor.
+---A forbidden frame raises on every method call, so anchoring to one would throw
+---on every login - and the name in the database can be anything the user typed.
+---@param name string? Global frame name
+---@return table? frame
+function BR.ResolveAnchorFrame(name)
+    if not name or name == "" then
+        return nil
+    end
+    local frame = _G[name]
+    if type(frame) ~= "table" or frame.GetCenter == nil then
+        return nil
+    end
+    if frame.IsForbidden ~= nil and Plain(frame:IsForbidden()) ~= false then
+        return nil
+    end
+    return frame
+end
+
 -- ============================================================================
 -- CALLBACK REGISTRY (Event System)
 -- ============================================================================
@@ -206,6 +225,7 @@ CallbackRegistry:GenerateCallbackEvents({
     "VisibilityRefresh", -- Fired when visibility toggles change (hide-when, show-only-in-group)
     "BuffStateChanged", -- Fired when buff state entries are recomputed
     "ExternalsRefresh", -- Fired when the externals display needs reconfiguring
+    "CustomAnchorsChanged", -- Fired when the user's anchor-target list gains or loses a name
 })
 BR.CallbackRegistry = CallbackRegistry
 

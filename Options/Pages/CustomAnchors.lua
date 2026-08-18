@@ -31,6 +31,7 @@ local function BuildTab(frame, contentWidth, onResize)
     local layout = Components.VerticalLayout(frame, { x = COL_PADDING, y = PAGE_TOP_PADDING })
 
     LayoutSectionNote(layout, frame, L["Options.CustomAnchorFrames.Desc"])
+    LayoutSectionNote(layout, frame, L["Options.CustomAnchorFrames.PickNote"])
 
     local rowWidth = contentWidth - COL_PADDING * 2
 
@@ -100,7 +101,7 @@ local function BuildTab(frame, contentWidth, onResize)
                 if #names == 0 then
                     db.customAnchorFrames = nil
                 end
-                Rebuild()
+                BR.CallbackRegistry:TriggerEvent("CustomAnchorsChanged")
             end)
 
             tinsert(entries, row)
@@ -117,22 +118,26 @@ local function BuildTab(frame, contentWidth, onResize)
         if name == "" then
             return
         end
-        local db = BR.profile
-        if not db.customAnchorFrames then
-            db.customAnchorFrames = {}
-        end
-        for _, existing in ipairs(db.customAnchorFrames) do
-            if existing == name then
-                addBox:SetText("")
-                return
-            end
-        end
-        tinsert(db.customAnchorFrames, name)
         addBox:SetText("")
-        Rebuild()
+        BR.Movers.RememberAnchorFrame(name)
     end)
     addBtn:SetSize(50, 22)
     addBtn:SetPoint("LEFT", addInput, "RIGHT", 6, 0)
+
+    -- Pointing at a frame is the only way to learn its name without /framestack,
+    -- so the list that holds typed names offers it too. The panel steps aside for
+    -- the pick: it covers the middle of the screen, where the frames are.
+    local pickBtn = CreateButton(addRow, L["Mover.PickFrame"], function()
+        BR.Options.Hide()
+        BR.Movers.PickFrame(function(name)
+            BR.Options.Show()
+            if name then
+                BR.Movers.RememberAnchorFrame(name)
+            end
+        end)
+    end)
+    pickBtn:SetSize(50, 22)
+    pickBtn:SetPoint("LEFT", addBtn, "RIGHT", 6, 0)
 
     addBox:SetScript("OnEnterPressed", function(self)
         self:ClearFocus()
@@ -143,6 +148,10 @@ local function BuildTab(frame, contentWidth, onResize)
     layout:Add(list, nil, COMPONENT_GAP)
 
     Rebuild()
+
+    -- A name can arrive from the mover popup as well as from this tab, so the list
+    -- follows the data rather than the button that changed it.
+    BR.CallbackRegistry:RegisterCallback("CustomAnchorsChanged", Rebuild)
 
     -- Re-render on show so a profile switch is reflected the next time the
     -- tab is visible.

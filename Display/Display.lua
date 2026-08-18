@@ -985,12 +985,9 @@ BR.EXT_DIRECTION_ANCHORS = EXT_DIRECTION_ANCHORS
 local function ResolveAnchorParent(catKey)
     local db = BR.profile
     local catSettings = db.categorySettings and db.categorySettings[catKey]
-    local frameName = catSettings and catSettings.anchorFrame
-    if frameName and frameName ~= "" then
-        local frame = _G[frameName]
-        if frame and frame.GetCenter then
-            return frame, catSettings.anchorPoint or "CENTER"
-        end
+    local frame = BR.ResolveAnchorFrame(catSettings and catSettings.anchorFrame)
+    if frame then
+        return frame, catSettings.anchorPoint or "CENTER"
     end
     return nil, nil
 end

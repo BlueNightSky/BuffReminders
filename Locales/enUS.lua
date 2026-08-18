@@ -1020,6 +1020,8 @@ english["Options.SupportKofi.Desc"] = "Enjoying BuffReminders?\nConsider support
 -- ============================================================================
 english["Options.CustomAnchorFrames.Desc"] =
     "Add global frame names to the anchor dropdown (e.g. MyAddon_PlayerFrame). \nFrames that don't exist in-game are silently skipped."
+english["Options.CustomAnchorFrames.PickNote"] =
+    "Every frame you pick with the Pick button lands here, so it stays one click away."
 english["Options.Add"] = "Add"
 english["Options.New"] = "New"
 english["Options.ResetToDefaults"] = "Reset to Defaults"
@@ -1041,6 +1043,28 @@ english["Content.ClickToFilter"] = "Click to filter by %s difficulty"
 -- Mover labels
 english["Mover.AnchorGrowth"] = "Anchor · Growth %s"
 english["Mover.AnchorGrowthFrame"] = "Anchor · Growth %s · > %s"
+-- Anchor dropdown: "%s %s" takes the owner (Blizzard, Cell, ...) and the role.
+-- "%s (%s)" takes the role and the frame's own name, for a discovered unit frame.
+english["Mover.AnchorFrameEntry"] = "%s %s"
+english["Mover.UnitFrameEntry"] = "%s (%s)"
+english["Mover.Role.Player"] = "Player Frame"
+english["Mover.Role.Target"] = "Target Frame"
+english["Mover.Role.Focus"] = "Focus Frame"
+english["Mover.Role.Pet"] = "Pet Frame"
+english["Mover.Role.Party"] = "Party Frames"
+english["Mover.Role.Raid"] = "Raid Frames"
+english["Mover.Role.Boss"] = "Boss Frame"
+english["Mover.Frame.Minimap"] = "Minimap"
+english["Mover.Frame.ObjectiveTracker"] = "Objective Tracker"
+english["Mover.PickFrame"] = "Pick"
+english["Mover.PickHint"] = "Point at a frame and click it. Right click or press Escape to cancel."
+english["Mover.PickNone"] = "No frame under the cursor"
+english["Mover.Frame.EssentialCooldowns"] = "Essential Cooldowns"
+english["Mover.Frame.UtilityCooldowns"] = "Utility Cooldowns"
+english["Mover.Frame.TrackedBuffIcons"] = "Tracked Buff Icons"
+english["Mover.Frame.TrackedBuffBars"] = "Tracked Buff Bars"
+english["Mover.AnchorHidden"] = "(hidden)"
+english["Mover.AnchorNotFound"] = "(not found)"
 
 -- Pet labels
 english["Pet.SpiritBeast"] = "Spirit Beast"

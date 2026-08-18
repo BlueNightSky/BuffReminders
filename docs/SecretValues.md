@@ -492,6 +492,43 @@ matters beyond containers: the 12.1 notes list **PvP matches** as a restricted c
 model (§_Restricted contexts_ above, and CLAUDE.md -> _Aura API Restrictions_) only covers
 combat, encounters, and M+. A live gap, tracked in #5.
 
+### 3.10 Widget getters return secrets - `IsVisible()` included - _confirmed live, v6.4_
+
+A sweep over every frame in the game (`EnumerateFrames`, for the anchor picker) threw on the
+first aura-owned frame it reached:
+
+```
+attempt to perform boolean test on a secret boolean value (execution tainted by 'BuffReminders')
+frame = Frame <AuraKit.lua:928>
+(*temporary) = <secret boolean>
+```
+
+The call was `frame:IsVisible()`, inside `if ... and frame:IsVisible() and ...`. So the secret
+tag reaches **widget getters**, not only the aura and unit-identity APIs of #3.1-#3.8:
+
+- `Frame:IsVisible()` returns a **secret boolean** for a frame that an aura owns. The call
+  itself is fine; the `and` that tests the result is what throws.
+- The same applies to geometry (`GetLeft`, `GetWidth`, `GetEffectiveScale`, ...), which #3.9
+  already found on aura buttons. A sweep hits those frames without asking for them.
+
+**Rule:** every widget read on a frame the addon does not own must go through `Plain()`, and
+must branch on `== true` / `== false` rather than on truthiness. An unknown answer is a third
+state:
+
+```lua
+local function FrameVisibility(frame)          -- true, false, or nil when secret
+    if frame.IsVisible == nil then return nil end
+    return Plain(frame:IsVisible())
+end
+```
+
+Skip a frame whose state reads back secret. It cannot be measured, so it cannot be an anchor,
+and reporting it as hidden would be a guess. `IsForbidden()` gets the same treatment, with
+unknown counted as forbidden - a frame the sweep cannot ask about is one it must not touch.
+
+This is the first case where the secret system reached an API with **no aura in its
+signature**. Treat any getter on a frame of unknown origin as capable of returning a secret.
+
 ---
 
 ## 4. How to handle secrets correctly
