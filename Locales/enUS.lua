@@ -87,6 +87,9 @@ english["Loadout.Scope.Battleground"] = "Battleground"
 english["Loadout.SpecClass"] = "%s %s"
 english["Loadout.Require.Gear"] = "Equipment set"
 english["Loadout.Require.Talent"] = "Talent"
+-- Requirement dropdown only. The check asks whether the player knows the spell,
+-- so it also covers granted passives. "Talent" above stays short for the rule list.
+english["Loadout.Require.TalentOption"] = "Talent or known spell"
 english["Loadout.Require.Loadout"] = "Talent loadout"
 -- On-icon "what's wrong" tags (newline wraps them to two lines on the icon)
 english["Loadout.Tag.Gear"] = "WRONG\nGEAR"
