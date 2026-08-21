@@ -203,9 +203,11 @@ local GetAspectCropInsets = BR.GetAspectCropInsets
 
 -- WoW API locals
 local PlaySoundFile = PlaySoundFile
+local ResolveSound = BR.Sounds.Resolve
 local IsInGroup = IsInGroup
 
--- LibSharedMedia for sound resolution (fonts live in Display/Fonts.lua)
+-- Held only to export BR.LSM for the options font picker. Sound values resolve
+-- through BR.Sounds, display fonts through Display/Fonts.lua.
 local LSM = LibStub("LibSharedMedia-3.0")
 
 -- Shared display font (Display/Fonts.lua), aliased for hot render paths
@@ -2569,7 +2571,7 @@ local function TryPlayBuffSound(key, buffSounds)
     end
     local soundName = buffSounds[settingKey]
     if soundName then
-        local soundFile = LSM:Fetch("sound", soundName)
+        local soundFile = ResolveSound(soundName)
         if soundFile then
             PlaySoundFile(soundFile, "Master")
         end

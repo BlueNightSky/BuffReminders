@@ -8,7 +8,8 @@ local _, BR = ...
 --   * DRAWER - a light popover anchored beside the row. Holds the universal
 --     knobs (Sound, Detach, and Show where it applies) plus this buff's small
 --     special controls inline. This is the whole interaction for most buffs.
---     Enable is NOT here - the row's own checkbox owns it.
+--     Enable is NOT here - the row's own checkbox owns it. ShowSound opens the
+--     same popover with the sound row alone, for the Externals rows.
 --   * EDITOR - a focused panel opened from the drawer's "Edit X" door, for the
 --     two buffs whose special section is a real editor (poison priority columns,
 --     runeforge-per-spec tabs). Single-purpose: just that editor.
@@ -26,7 +27,7 @@ local _, BR = ...
 local L = BR.L
 local Components = BR.Components
 local CreateButton = BR.CreateButton
-local LSM = BR.LSM
+local Sounds = BR.Sounds
 
 local COMPONENT_GAP = BR.Options.Constants.COMPONENT_GAP
 
@@ -524,14 +525,21 @@ local HAS_EDITOR = {
 
 -- ---- Shared row builders (write into the active `body` surface) ---------------
 
-local function BuildSoundOptions()
-    local opts = { { label = L["BuffPanel.Sound.None"], value = "__none" } }
-    for _, soundName in ipairs(LSM:List("sound")) do
-        if soundName ~= "None" then
-            tinsert(opts, { label = soundName, value = soundName })
-        end
-    end
-    return opts
+---The drawer takes a sound model rather than a buff key, so the Externals rows
+---can reuse the row with their own storage.
+---@param key string
+---@return table
+local function MakeBuffSoundModel(key)
+    return {
+        get = function()
+            local sounds = BR.profile.buffSounds
+            return sounds and sounds[key]
+        end,
+        set = function(value)
+            -- Shipped storage holds a name or nothing, never the sentinel.
+            BR.Helpers.SetBuffSound(key, value ~= Sounds.NO_SOUND and value or nil)
+        end,
+    }
 end
 
 local function AddShowRow(layout, info)
@@ -595,7 +603,31 @@ local function AddShowRow(layout, info)
     end
 end
 
-local function AddSoundRow(layout, key)
+---One sound control. `model.override` is optional: with it the row gains an
+---Override checkbox, and while the override is off the dropdown shows the
+---inherited sound, dimmed.
+---@param layout table
+---@param model table { get, set, override? = { isOn, setOn, desc, effective } }
+local function AddSoundRow(layout, model)
+    local override = model.override
+    local function effectiveValue()
+        if override and not override.isOn() then
+            return override.effective()
+        end
+        return model.get()
+    end
+
+    if override then
+        BR.Options.Helpers.AddOverrideRow(body, layout, {
+            get = override.isOn,
+            desc = override.desc,
+            onChange = function(checked)
+                override.setOn(checked)
+                Components.RefreshAll()
+            end,
+        })
+    end
+
     local soundRow = CreateFrame("Frame", nil, body)
     soundRow:SetSize(bodyW, 24)
     local soundLabel = soundRow:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -609,47 +641,24 @@ local function AddSoundRow(layout, key)
         labelWidth = 0,
         width = 178,
         maxItems = 15,
-        options = BuildSoundOptions(),
+        options = Sounds.BuildOptions(),
+        enabled = override and override.isOn or nil,
+        disabledReason = override and L["DisabledReason.SoundOverride"] or nil,
         get = function()
-            local sounds = BR.profile.buffSounds
-            return (sounds and sounds[key]) or "__none"
+            return effectiveValue() or Sounds.NO_SOUND
         end,
         onChange = function(val)
-            BR.Helpers.SetBuffSound(key, val ~= "__none" and val or nil)
-            -- Repaint the All Buffs row so its sound glyph appears/disappears live.
+            -- The raw value: each model decides whether the sentinel is stored.
+            model.set(val)
+            -- Repaint the row that opened the drawer so its sound glyph follows.
             Components.RefreshAll()
         end,
     })
     soundDrop:SetPoint("LEFT", soundRow, "LEFT", DRAWER_LABEL_W + 4, 0)
     tinsert(bodyHolders, soundDrop)
 
-    -- A small speaker icon instead of a "Preview" button - plays the current
-    -- sound on click, costing far less width than a labelled button.
-    local playBtn = CreateFrame("Button", nil, soundRow)
-    playBtn:SetSize(16, 16)
+    local playBtn = BR.Options.Helpers.SoundPreviewButton(soundRow, effectiveValue)
     playBtn:SetPoint("LEFT", soundDrop, "RIGHT", 8, 0)
-    local playTex = playBtn:CreateTexture(nil, "ARTWORK")
-    playTex:SetAllPoints()
-    playTex:SetAtlas("chatframe-button-icon-voicechat")
-    playTex:SetVertexColor(0.72, 0.72, 0.76)
-    playBtn:SetScript("OnEnter", function(self)
-        playTex:SetVertexColor(1, 1, 1)
-        BR.ShowTooltip(self, L["Options.Sound.Preview"], nil, "ANCHOR_RIGHT")
-    end)
-    playBtn:SetScript("OnLeave", function()
-        playTex:SetVertexColor(0.72, 0.72, 0.76)
-        BR.HideTooltip()
-    end)
-    playBtn:SetScript("OnClick", function()
-        local sounds = BR.profile.buffSounds
-        local soundName = sounds and sounds[key]
-        if soundName then
-            local file = LSM:Fetch("sound", soundName)
-            if file then
-                PlaySoundFile(file, "Master")
-            end
-        end
-    end)
     layout:Add(soundRow, 24, COMPONENT_GAP)
 end
 
@@ -853,13 +862,18 @@ local function TearDownDrawerBody()
     end
 end
 
-local function ShowDrawer(info, anchor)
+---Open the drawer with a body built by `fill`. Header, sizing and the slide-in
+---are the same for every caller; only the body differs.
+---@param title string
+---@param icon number|string|nil
+---@param anchor? table Frame to anchor the drawer beside
+---@param fill fun(layout: table)
+local function OpenDrawer(title, icon, anchor, fill)
     EnsureDrawer()
     TearDownDrawerBody()
 
-    local key = info.key
-    drawerTitle:SetText("|cffffcc00" .. (info.displayName or key) .. "|r")
-    drawerIcon:SetTexture(info.icons and info.icons[1] or 134400)
+    drawerTitle:SetText("|cffffcc00" .. title .. "|r")
+    drawerIcon:SetTexture(icon or 134400)
 
     -- Point the shared build surface at the drawer body.
     bodyW = DRAWER_W - DRAWER_BODY_X * 2
@@ -870,37 +884,7 @@ local function ShowDrawer(info, anchor)
     bodyHolders = drawerHolders
 
     local layout = Components.VerticalLayout(drawerBody, { x = 0, y = 0 })
-
-    -- Special section first (the buff's own knobs): a door to the focused editor
-    -- for the rich ones, the small controls inline for the rest.
-    local special = SPECIAL_SECTIONS[key]
-    if special then
-        if HAS_EDITOR[key] then
-            local editBtn = CreateButton(
-                drawerBody,
-                format(L["BuffPanel.EditOption"], SPECIAL_LABELS[key] or key),
-                function()
-                    HideDrawer()
-                    OpenEditor(info)
-                end
-            )
-            editBtn:SetSize(bodyW, 24)
-            layout:Add(editBtn, 24, COMPONENT_GAP)
-        else
-            special.build(layout)
-        end
-        layout:Space(4)
-        local sep = drawerBody:CreateTexture(nil, "ARTWORK")
-        sep:SetHeight(1)
-        sep:SetColorTexture(0.4, 0.32, 0.05, 0.6)
-        sep:SetPoint("TOPLEFT", drawerBody, "TOPLEFT", 0, layout:GetY())
-        sep:SetPoint("TOPRIGHT", drawerBody, "TOPRIGHT", 0, layout:GetY())
-        layout:Space(8)
-    end
-
-    AddShowRow(layout, info)
-    AddSoundRow(layout, key)
-    AddDetachRow(layout, key)
+    fill(layout)
 
     local h = abs(layout:GetY())
     drawerBody:SetHeight(h)
@@ -943,11 +927,54 @@ end
 ---@param info table { key, displayName, icons, readyCheckOnly, freeConsumable }
 ---@param anchor? table Frame to anchor the drawer beside (the row's link)
 local function Show(info, anchor)
-    ShowDrawer(info, anchor)
+    local key = info.key
+    OpenDrawer(info.displayName or key, info.icons and info.icons[1], anchor, function(layout)
+        -- Special section first (the buff's own knobs): a door to the focused
+        -- editor for the rich ones, the small controls inline for the rest.
+        local special = SPECIAL_SECTIONS[key]
+        if special then
+            if HAS_EDITOR[key] then
+                local editBtn = CreateButton(
+                    drawerBody,
+                    format(L["BuffPanel.EditOption"], SPECIAL_LABELS[key] or key),
+                    function()
+                        HideDrawer()
+                        OpenEditor(info)
+                    end
+                )
+                editBtn:SetSize(bodyW, 24)
+                layout:Add(editBtn, 24, COMPONENT_GAP)
+            else
+                special.build(layout)
+            end
+            layout:Space(4)
+            local sep = drawerBody:CreateTexture(nil, "ARTWORK")
+            sep:SetHeight(1)
+            sep:SetColorTexture(0.4, 0.32, 0.05, 0.6)
+            sep:SetPoint("TOPLEFT", drawerBody, "TOPLEFT", 0, layout:GetY())
+            sep:SetPoint("TOPRIGHT", drawerBody, "TOPRIGHT", 0, layout:GetY())
+            layout:Space(8)
+        end
+
+        AddShowRow(layout, info)
+        AddSoundRow(layout, MakeBuffSoundModel(key))
+        AddDetachRow(layout, key)
+    end)
+end
+
+---Open a sound-only drawer. Used by the Externals rows, whose entries have no
+---other per-entry setting.
+---@param info table { title, icon, model }
+---@param anchor? table Frame to anchor the drawer beside (the row's glyph)
+local function ShowSound(info, anchor)
+    OpenDrawer(info.title, info.icon, anchor, function(layout)
+        AddSoundRow(layout, info.model)
+    end)
 end
 
 BR.Options.Dialogs.BuffPanel = {
     Show = Show,
+    ShowSound = ShowSound,
     ---Whether a buff has its own options (a special section), and whether that
     ---option still needs setup. Drives the All Buffs row's trailing link: a gold
     ---"Extras" (orange when isWarning) vs the plain gray "Settings". Warning is

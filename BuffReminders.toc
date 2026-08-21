@@ -55,6 +55,8 @@ Data\AuraWhitelist.lua
 Data\ConsumableItems.lua
 Data\Pets.lua
 Data\Externals.lua
+Data\AlertSounds.lua
+Core\Sounds.lua
 Core\ChatRequest.lua
 Core\ConsumableMemory.lua
 Core\TargetMemory.lua

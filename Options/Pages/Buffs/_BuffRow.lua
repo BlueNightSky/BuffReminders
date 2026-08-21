@@ -222,7 +222,7 @@ local function CreateBuffRow(
         local hasSound = sounds and sounds[key] ~= nil
         local hasPin = IsIconDetached(key)
         local isRowNew = BR.Options.WhatsNew.IsItemNew(key)
-        soundGlyph.dynamicDesc = hasSound and sounds[key] or nil
+        soundGlyph.dynamicDesc = hasSound and BR.Sounds.Label(sounds[key]) or nil
 
         local anchor, anchorGap = settingsBtn, GLYPH_TO_LINK_GAP
         for _, g in ipairs({ { newDot, isRowNew }, { pinGlyph, hasPin }, { soundGlyph, hasSound } }) do

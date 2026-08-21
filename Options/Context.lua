@@ -107,6 +107,7 @@ local ceil = math.ceil
 local abs = math.abs
 local tinsert = table.insert
 local L = BR.L
+local Components = BR.Components
 local Helpers = BR.Options.Helpers
 local COMPONENT_GAP = BR.Options.Constants.COMPONENT_GAP
 local COL_PADDING = BR.Options.Constants.COL_PADDING
@@ -250,6 +251,74 @@ function Helpers.LayoutSectionNote(layout, parent, text)
 end
 
 -- ============================================================================
+-- SHARED ROWS
+-- ============================================================================
+
+---Override checkbox plus a live inheritance state label, added to the layout.
+---The wording is generic, so every override in the panel reads the same way.
+---@param parent table
+---@param layout table
+---@param opts table Fields: get (fun(): boolean), desc (string tooltip text), onChange (fun(checked: boolean))
+---@return table holder
+function Helpers.AddOverrideRow(parent, layout, opts)
+    local holder = Components.Checkbox(parent, {
+        label = L["Options.Override"],
+        get = opts.get,
+        tooltip = { title = L["Options.Override"], desc = opts.desc },
+        onChange = opts.onChange,
+    })
+
+    local stateText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    stateText:SetPoint("LEFT", holder.infoIcon or holder.label, "RIGHT", 10, 0)
+    local function refreshState()
+        if opts.get() then
+            stateText:SetText(L["Options.Override.Overriding"])
+            stateText:SetTextColor(1, 0.82, 0)
+        else
+            stateText:SetText(L["Options.Override.Inherited"])
+            stateText:SetTextColor(0.55, 0.55, 0.55)
+        end
+    end
+    refreshState()
+    tinsert(BR.RefreshableComponents, { Refresh = refreshState })
+
+    layout:Add(holder, nil, COMPONENT_GAP)
+    return holder
+end
+
+---A small speaker button that plays the current sound. It costs far less width
+---than a labelled button, which is why every sound control uses it.
+---@param parent table
+---@param getValue fun(): string? Stored sound value
+---@return table button
+function Helpers.SoundPreviewButton(parent, getValue)
+    local button = CreateFrame("Button", nil, parent)
+    button:SetSize(16, 16)
+
+    local icon = button:CreateTexture(nil, "ARTWORK")
+    icon:SetAllPoints()
+    icon:SetAtlas("chatframe-button-icon-voicechat")
+    icon:SetVertexColor(0.72, 0.72, 0.76)
+
+    button:SetScript("OnEnter", function(self)
+        icon:SetVertexColor(1, 1, 1)
+        BR.ShowTooltip(self, L["Options.Sound.Preview"], nil, "ANCHOR_RIGHT")
+    end)
+    button:SetScript("OnLeave", function()
+        icon:SetVertexColor(0.72, 0.72, 0.76)
+        BR.HideTooltip()
+    end)
+    button:SetScript("OnClick", function()
+        local file = BR.Sounds.Resolve(getValue())
+        if file then
+            PlaySoundFile(file, "Master")
+        end
+    end)
+
+    return button
+end
+
+-- ============================================================================
 -- LIST EDITOR
 -- ============================================================================
 -- Shared skeleton for the entry-list editor pages (Custom Buffs, Loadout
@@ -305,7 +374,6 @@ end
 --- }
 ---@return function render
 function Helpers.ListEditor(content, scrollFrame, config)
-    local Components = BR.Components
     local contentWidth = scrollFrame:GetContentWidth()
     local layout = Components.VerticalLayout(content, { x = COL_PADDING, y = PAGE_TOP_PADDING })
 

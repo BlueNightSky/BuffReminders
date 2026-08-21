@@ -30,7 +30,6 @@ local COMPONENT_GAP = BR.Options.Constants.COMPONENT_GAP
 local DROPDOWN_EXTRA = BR.Options.Constants.DROPDOWN_EXTRA
 local COL_PADDING = BR.Options.Constants.COL_PADDING
 
-local tinsert = table.insert
 local abs = math.abs
 
 BR.Options.BuffSections = BR.Options.BuffSections or {}
@@ -80,36 +79,6 @@ local GLOW_SNAPSHOT_KEYS = {
     "missingGlowYOffset",
 }
 
----Override checkbox + live inheritance state label, added to the layout.
----@param parent table
----@param layout table
----@param opts table Fields: get (fun(): boolean), desc (string tooltip text), onChange (fun(checked: boolean))
-local function AddOverrideRow(parent, layout, opts)
-    local holder = Components.Checkbox(parent, {
-        label = L["Options.Override"],
-        get = opts.get,
-        tooltip = { title = L["Options.Override"], desc = opts.desc },
-        onChange = opts.onChange,
-    })
-
-    local stateText = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    stateText:SetPoint("LEFT", holder.infoIcon or holder.label, "RIGHT", 10, 0)
-    local function refreshState()
-        if opts.get() then
-            stateText:SetText(L["Options.Override.Overriding"])
-            stateText:SetTextColor(1, 0.82, 0)
-        else
-            stateText:SetText(L["Options.Override.Inherited"])
-            stateText:SetTextColor(0.55, 0.55, 0.55)
-        end
-    end
-    refreshState()
-    tinsert(BR.RefreshableComponents, { Refresh = refreshState })
-
-    layout:Add(holder, nil, COMPONENT_GAP)
-    return holder
-end
-
 local function Build(ctx, layout)
     local category = ctx.category
     local parent = ctx.content
@@ -142,7 +111,7 @@ local function Build(ctx, layout)
     -- ========================================================================
     LayoutSectionHeader(layout, parent, L["Options.Appearance"])
 
-    AddOverrideRow(parent, layout, {
+    BR.Options.Helpers.AddOverrideRow(parent, layout, {
         get = isOverridingAppearance,
         desc = L["Options.Override.Appearance.Desc"],
         onChange = function(checked)
@@ -243,7 +212,7 @@ local function Build(ctx, layout)
     -- ========================================================================
     LayoutSectionHeader(layout, parent, L["Options.Glow"])
 
-    AddOverrideRow(parent, layout, {
+    BR.Options.Helpers.AddOverrideRow(parent, layout, {
         get = isOverridingGlow,
         desc = L["Options.Override.Glow.Desc"],
         onChange = function(checked)
