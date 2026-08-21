@@ -14,7 +14,7 @@ local REPAIR_LABEL = L["Overlay.RepairLabel"]
 local GetSpellTexture = C_Spell.GetSpellTexture
 local _, playerClass = UnitClass("player")
 
--- Secret-safe read helpers (see Core.lua / docs/SecretValues.md)
+-- Secret-safe read helpers (see Core.lua)
 local AuraField = BR.Secret.AuraField
 local Plain = BR.Secret.Plain
 

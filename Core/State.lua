@@ -448,8 +448,8 @@ local function IsAuraTrackable(buff)
     return result
 end
 
--- Secret-safe read helpers (see Core.lua / docs/SecretValues.md). Aliased to
--- file-scope locals so hot loops pay only a local call, not a table lookup.
+-- Secret-safe read helpers (see Core.lua). Aliased to file-scope locals so hot
+-- loops pay only a local call, not a table lookup.
 local Plain = BR.Secret.Plain
 local AuraList = BR.Secret.AuraList
 local AuraField = BR.Secret.AuraField
@@ -2998,7 +2998,7 @@ end
 ---Anything skipped is bounded by the 3s ticker. This deliberately reverts group
 ---refresh to ticker-driven in restricted contexts - the alternative (fail open on a
 ---secret container) would rescan on every combat payload and undo the CPU win from
----"perf(events): cut aura update CPU usage in groups and combat". See docs/SecretValues.md.
+---"perf(events): cut aura update CPU usage in groups and combat".
 ---@param unit string
 ---@param updateInfo table?
 ---@return boolean

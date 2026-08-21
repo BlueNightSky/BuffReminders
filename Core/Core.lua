@@ -101,8 +101,7 @@ BR.Colors = {
 -- pcall around every operation. Fail-closed by design: a secret reads as absent.
 -- Callers that must fail OPEN (e.g. GroupAuraUpdateMatters, which rescans when it
 -- can't prove a payload irrelevant) check issecretvalue explicitly instead.
--- Defined here in Core so every layer shares one implementation. See
--- docs/SecretValues.md.
+-- Defined here in Core so every layer shares one implementation.
 
 local issecretvalue = issecretvalue
 local EMPTY_LIST = {}

@@ -223,8 +223,7 @@ end
 ---@return number? x, number? y nil when the frame has no laid-out rect yet
 local function GetPointCoords(frame, point)
     -- Plain on every read: the anchor can be any frame the user picked, and an
-    -- aura-owned one hands back secret geometry that throws on arithmetic
-    -- (docs/SecretValues.md #3.10).
+    -- aura-owned one hands back secret geometry that throws on arithmetic.
     local left, bottom = Plain(frame:GetLeft()), Plain(frame:GetBottom())
     local w, h = Plain(frame:GetWidth()), Plain(frame:GetHeight())
     local scale = Plain(frame:GetEffectiveScale())
@@ -397,7 +396,7 @@ end
 ---Whether a frame is on screen: true, false, or nil when the client answers with
 ---a secret. Aura-owned frames report their state as secret values, and a boolean
 ---test on one throws, so every read on a frame the addon does not own goes through
----Plain (docs/SecretValues.md #3.10).
+---Plain.
 ---@return boolean? shown
 local function FrameVisibility(frame)
     if frame.IsVisible == nil then
