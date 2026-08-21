@@ -18,6 +18,12 @@ local _, BR = ...
 --   * Per-button state lives in a weak-keyed table here, never on the button.
 --   * Groups cannot be removed (ClearAuraGroups is deliberately unexposed), so the
 --     entry set is changed by reconfiguring the group's filters, never by rebuilding.
+--     A live group does not re-parse the auras already on the player when its
+--     filters change, so every reconfigure runs inside a container Hide/Show pair.
+--   * The engine honors includeSpellIDs only while the player is assistable, and it
+--     fails OPEN - a group asking for one spell then renders every buff. Vehicles,
+--     cinematics and faction flips all drop assistability, so the display suppresses
+--     itself for those windows instead of showing the wrong set.
 --
 -- One AuraGroup holds every enabled spell ID. Blizzard packs the visible buttons,
 -- which is why enabling five buffs and having one active shows a tight row of one
@@ -29,8 +35,11 @@ local format = string.format
 local ipairs = ipairs
 local pairs = pairs
 local pcall = pcall
+local UnitCanAssist = UnitCanAssist
+local InVehicle = UnitUsingVehicle or UnitInVehicle
 
 local L = BR.L
+local Plain = BR.Secret.Plain
 local TEXCOORD_INSET = BR.TEXCOORD_INSET
 local GetAspectCropInsets = BR.GetAspectCropInsets
 
@@ -340,8 +349,68 @@ local function ApplyGrowth(settings)
     end
 end
 
+-- ============================================================================
+-- ASSISTABILITY GATE
+-- ============================================================================
+-- AuraContainerUtil.CanApplyIdentityCandidateFilters applies includeSpellIDs to a
+-- helpful aura only while UnitCanAssist holds, and the check fails OPEN: the aura
+-- then passes on its filter string alone, so this group renders every buff on the
+-- player wearing the tracked buffs' styling. Membership is cached per aura instance
+-- and UNIT_AURA re-parses only what changed, so the wrong set outlives the window
+-- that caused it.
+
+-- Period, minimum wait and give-up point of the settle watch. The restore lands a
+-- measurable moment after the event that ends the window, so a probe taken on the
+-- event itself still reads degraded.
+local SETTLE_PERIOD = 0.1
+local SETTLE_MIN_TICKS = 5
+local SETTLE_MAX_TICKS = 20
+
+local settleTicker
+local recoveryPending = false
+local WatchForSettle, ScheduleRecovery
+
+---True while the engine honors this group's spell-ID filters.
+---
+---UnitUsingVehicle over UnitInVehicle: it also reads true across the boarding and
+---exiting transitions, where the filters are already degraded.
+---
+---An unreadable UnitCanAssist counts as assistable, against the addon's usual
+---fail-closed default. This display exists to run in combat, so a secret return
+---must not blank it for a whole fight.
+---@return boolean
+local function IsAssistable()
+    if InVehicle("player") then
+        return false
+    end
+    local ok, canAssist = pcall(UnitCanAssist, "player", "player")
+    return not (ok and Plain(canAssist) == false)
+end
+
+---True while the display must stay hidden. Test mode drops the spell-ID filter
+---entirely, so it has nothing to degrade.
+---@return boolean
+local function IsSuppressed()
+    return not testMode and not IsAssistable()
+end
+
+---Hide or show without touching the container's config. A reparse taken while
+---assistability is down re-bakes the unfiltered set.
+local function ApplyVisibility()
+    if anchorFrame then
+        anchorFrame:SetShown(IsEnabled() and not IsSuppressed())
+    end
+end
+
+local function StopSettleWatch()
+    if settleTicker then
+        settleTicker:Cancel()
+        settleTicker = nil
+    end
+end
+
 ---Push the current config into the container. Every button-touching call here can
----be denied while auras are secret; on denial we flag and retry on the next lift.
+---be denied while auras are secret. A denial is flagged and retried on the next lift.
 local function ApplyConfig()
     if not container then
         return
@@ -351,7 +420,13 @@ local function ApplyConfig()
     local map, entryCount = BuildSpellIDMap()
     local width, height = GetIconDimensions()
 
+    -- The Hide/Show pair around the reconfigure is what makes a filter change take
+    -- effect: a live group keeps serving the set it parsed, and
+    -- AuraContainerPrivateMixin:OnShow_Intrinsic is the call that forces a full
+    -- reparse. Without it, ticking a buff that is already on the player shows
+    -- nothing until the aura is reapplied.
     local ok = pcall(function()
+        container:Hide()
         if testMode then
             -- No candidate filters at all: any HELPFUL aura on the player qualifies,
             -- so the preview has something to show regardless of what is enabled.
@@ -370,6 +445,12 @@ local function ApplyConfig()
         })
         ApplyGrowth(settings)
     end)
+
+    -- Outside the pcall above: a denial part-way through the reconfigure must not
+    -- leave the container hidden for the rest of the session.
+    if not pcall(container.Show, container) then
+        ok = false
+    end
 
     for button in pairs(buttonRegions) do
         if not pcall(StyleButton, button) then
@@ -524,6 +605,7 @@ end
 
 local function Refresh()
     if not IsEnabled() then
+        StopSettleWatch()
         if anchorFrame then
             anchorFrame:Hide()
         end
@@ -540,10 +622,61 @@ local function Refresh()
     anchorFrame.mover:UpdateFont()
     UpdateMoverCaption()
     ApplyConfig()
-    anchorFrame:Show()
+    local suppressed = IsSuppressed()
+    anchorFrame:SetShown(not suppressed)
+    if suppressed then
+        -- The display restores itself from here, whichever path suppressed it:
+        -- nothing else announces the moment assistability comes back.
+        WatchForSettle()
+    end
     -- Re-sync the handle: the display can be created or enabled while the frames
     -- are already unlocked, in which case SetFrameLocked has long since fired.
     SetUnlocked(not BR.Display.IsFrameLocked())
+end
+
+---Wait out a restore that no event announces. Armed only while suppressed, and it
+---self-cancels on the first clean probe. A watch that times out leaves the display
+---hidden. The next trigger edge re-arms it.
+function WatchForSettle()
+    if settleTicker then
+        return
+    end
+    local ticks = 0
+    settleTicker = C_Timer.NewTicker(SETTLE_PERIOD, function()
+        ticks = ticks + 1
+        if ticks < SETTLE_MIN_TICKS or not IsAssistable() then
+            if ticks >= SETTLE_MAX_TICKS then
+                StopSettleWatch()
+            end
+            return
+        end
+        StopSettleWatch()
+        ScheduleRecovery()
+    end)
+end
+
+---Repair the display after a window that degraded the filters. Deferred one tick so
+---the transition has finished, and coalesced so a start-and-end burst costs one pass.
+function ScheduleRecovery()
+    if recoveryPending then
+        return
+    end
+    recoveryPending = true
+    C_Timer.After(0, function()
+        recoveryPending = false
+        if not (container and IsEnabled()) then
+            return
+        end
+        if IsSuppressed() then
+            -- A reconfigure taken now re-bakes the unfiltered set. If this was the
+            -- last trigger edge, nothing else repairs it.
+            ApplyVisibility()
+            WatchForSettle()
+            return
+        end
+        StopSettleWatch()
+        Refresh()
+    end)
 end
 
 ---Driven by Display.lua's ToggleTestMode alongside the reminder categories. A
@@ -553,35 +686,51 @@ local function SetTestMode(enabled)
     Refresh()
 end
 
--- Retry anything the restricted context denied. These are the events that end a
--- restricted context; a denied restyle otherwise stays stale until the next change.
+-- Every event that ends a restricted context or a degraded window. A denied restyle
+-- otherwise stays stale until the next settings change, and a degraded parse sticks
+-- until something forces a rebuild.
 local liftWatcher = CreateFrame("Frame")
 liftWatcher:RegisterEvent("PLAYER_REGEN_ENABLED")
 liftWatcher:RegisterEvent("ENCOUNTER_END")
 liftWatcher:RegisterEvent("PLAYER_ENTERING_WORLD")
 liftWatcher:RegisterEvent("ZONE_CHANGED_NEW_AREA")
--- Blizzard bug: an AuraContainer can show stale or unrelated auras after a
--- cinematic or a vehicle transition. A forced full update resyncs it. STOP_MOVIE
--- covers pre-rendered movies, which end without CINEMATIC_STOP.
+-- Cinematics drop the player's assistability, and UNIT_FACTION on the player is the
+-- only edge an in-world cutscene fires - UNIT_FLAGS does not. CINEMATIC_STOP and
+-- STOP_MOVIE cover the skip paths, whose faction restore can order ahead of it.
 liftWatcher:RegisterEvent("CINEMATIC_STOP")
 liftWatcher:RegisterEvent("STOP_MOVIE")
+liftWatcher:RegisterUnitEvent("UNIT_FACTION", "player")
+-- A ride keeps assistability down from the BOARDING transition to well past the
+-- exit, so ENTERING counts as an edge of its own.
+liftWatcher:RegisterUnitEvent("UNIT_ENTERING_VEHICLE", "player")
 liftWatcher:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", "player")
 liftWatcher:RegisterUnitEvent("UNIT_EXITED_VEHICLE", "player")
+
+local RECOVERY_EVENTS = {
+    CINEMATIC_STOP = true,
+    STOP_MOVIE = true,
+    UNIT_FACTION = true,
+    UNIT_ENTERING_VEHICLE = true,
+    UNIT_ENTERED_VEHICLE = true,
+    UNIT_EXITED_VEHICLE = true,
+}
+
 liftWatcher:SetScript("OnEvent", function(_, event)
-    if
-        event == "CINEMATIC_STOP"
-        or event == "STOP_MOVIE"
-        or event == "UNIT_ENTERED_VEHICLE"
-        or event == "UNIT_EXITED_VEHICLE"
-    then
-        if container and Settings().enabled and not pcall(container.UpdateAllAuras, container) then
-            applyPending = true
+    if RECOVERY_EVENTS[event] then
+        if container and IsEnabled() then
+            -- Hide on the event, repair on the next tick. Deferring the hide too
+            -- reads as a visible flash of the full buff set.
+            ApplyVisibility()
+            ScheduleRecovery()
         end
         return
     end
     -- PLAYER_ENTERING_WORLD doubles as first-run creation: the profile is seeded by
     -- then, and creating out of combat keeps the initial styling out of the deferred path.
-    if event == "PLAYER_ENTERING_WORLD" or (applyPending and Settings().enabled) then
+    if event == "PLAYER_ENTERING_WORLD" or (applyPending and IsEnabled()) then
+        -- A loading screen can land mid-transition (teleported out of a vehicle) with
+        -- no later edge guaranteed. Refresh arms the settle watch when it suppresses,
+        -- so this doubles as the safety net for a missed exit.
         Refresh()
     end
 end)

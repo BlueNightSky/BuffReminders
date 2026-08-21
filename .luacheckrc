@@ -123,6 +123,7 @@ read_globals = {
     "UnitLevel",
     "UnitPhaseReason",
     "UnitRace",
+    "UnitUsingVehicle",
 
     "strsplit",
     "strtrim",
