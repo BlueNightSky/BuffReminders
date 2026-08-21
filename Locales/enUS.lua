@@ -537,8 +537,11 @@ english["Options.TextPositions.Align.Right"] = "Right"
 english["Options.ClickToCast"] = "Click to cast"
 english["Options.ClickToCast.DescFull"] =
     "Make buff icons clickable to cast the corresponding spell (out of combat only). Only works for spells your character can cast."
+english["Options.RightClickSnooze"] = "Right-click to snooze"
+english["Options.RightClickSnooze.Desc"] =
+    "Right-click a consumable icon to snooze its reminders. If this option is off, right-click uses the consumable, like left-click."
 english["Options.ClickToCast.SnoozeNote"] =
-    "Right-click a consumable to snooze its reminders until the next loading screen (|cFFFFD100/br snooze|r always works)."
+    "A snooze hides the consumable reminders until the next loading screen. The |cFFFFD100/br snooze|r command always works."
 english["Options.HoverHighlight"] = "Hover highlight"
 english["Options.HoverHighlight.Desc"] = "Show a subtle highlight when hovering over clickable buff icons."
 english["Options.RequestBuffInChat"] = "Request missing buffs in chat"
@@ -1103,6 +1106,7 @@ english["DisabledReason.LevelingOverride"] =
 english["DisabledReason.ExpiringInCombat"] =
     '"In combat" hiding is enabled, so everything is already hidden during combat.'
 english["DisabledReason.HealthstoneThreshold"] = 'Enable "Warn when low" first.'
+english["DisabledReason.ClickToCast"] = 'Turn on "Click to cast" first.'
 english["DisabledReason.UseDefaultThreshold"] = 'Uncheck "Use default threshold" to set a category-specific value.'
 
 -- Direction labels

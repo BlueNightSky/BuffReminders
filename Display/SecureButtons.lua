@@ -206,17 +206,23 @@ end
 -- CLICK-TO-CAST OVERLAY
 -- ============================================================================
 
--- Right-click on a clickable consumable snoozes reminders instead of using the item. We neutralise
--- the right button's secure action (empty type2 so it resolves to no handler) and flag the button;
--- its PostClick then performs the snooze. Left-click still uses the item. `on == false` restores the
--- default (right-click uses the item), for overlays that switch to a non-item action (e.g. chat
--- request). Must run out of combat - callers already are. See BR.SnoozeConsumables.
+-- Right-click on a clickable consumable snoozes reminders instead of using the item. The right
+-- button's secure action is neutralised (empty type2 so it resolves to no handler) and the button
+-- is flagged; its PostClick then performs the snooze. Left-click still uses the item. `on == false`
+-- restores the default (right-click uses the item), for overlays that switch to a non-item action
+-- (e.g. chat request) and for users who turn `defaults.rightClickSnooze` off. Self-gated on the last
+-- applied value, so callers can re-apply on every display cycle. Must run out of combat - callers
+-- already are. See BR.SnoozeConsumables.
 local function SetRightClickSnooze(button, on)
     if not button then
         return
     end
-    button._br_snoozeRightClick = on == true
-    button:SetAttribute("type2", on == true and "" or nil)
+    on = on == true and BR.profile.defaults.rightClickSnooze ~= false
+    if button._br_snoozeRightClick == on then
+        return
+    end
+    button._br_snoozeRightClick = on
+    button:SetAttribute("type2", on and "" or nil)
 end
 
 -- Dirty-gated secure attribute writers. UpdateActionButtons re-wires every frame
@@ -791,10 +797,10 @@ local function UpdateConsumableButtons(frame, actionItems, clickable, startIndex
                 btn:SetAttribute("type", "item")
                 btn:SetAttribute("item", "item:" .. tostring(item.itemID))
             end
-            -- Right-click snoozes reminders instead of using this consumable.
-            SetRightClickSnooze(btn, true)
             btn._br_action_item = item.itemID
         end
+        -- Outside the dirty gate: the snooze option can change while the item does not.
+        SetRightClickSnooze(btn, true)
 
         btn:EnableMouse(clickable == true)
         btn._br_visible = true
@@ -1276,6 +1282,8 @@ end
 ---@param weaponSlot number? 16 or 17, or nil for non-weapon consumables
 local function SetItemAttributes(overlay, itemID, weaponSlot)
     overlay.itemID = itemID
+    -- Before the dirty gate: the snooze option can change while the item does not.
+    SetRightClickSnooze(overlay, true)
     -- Skip the attribute writes when the same item/slot is being re-applied
     if overlay._br_attr_kind == "item" and overlay._br_attr_value == itemID and overlay._br_attr_slot == weaponSlot then
         return
@@ -1290,8 +1298,6 @@ local function SetItemAttributes(overlay, itemID, weaponSlot)
         overlay:SetAttribute("type", "item")
         overlay:SetAttribute("item", "item:" .. itemID)
     end
-    -- Right-click snoozes reminders instead of using the consumable (left-click still uses it).
-    SetRightClickSnooze(overlay, true)
 end
 
 -- ============================================================================

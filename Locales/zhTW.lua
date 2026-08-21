@@ -524,8 +524,6 @@ L["Options.TextPositions.Align.Right"] = "右側"
 L["Options.ClickToCast"] = "點擊施法"
 L["Options.ClickToCast.DescFull"] =
     "你可以點擊增益圖示來施放對應的法術（僅限非戰鬥狀態）。只對你的角色可施放的法術有效。"
-L["Options.ClickToCast.SnoozeNote"] =
-    "右鍵點選消耗品可暫停其提醒，直到下次的登入畫面 (|cFFFFD100/br snooze|r 總是有用)。"
 L["Options.HoverHighlight"] = "懸停高亮"
 L["Options.HoverHighlight.Desc"] = "將鼠標懸停在可點擊的增益圖示上時，顯示微弱的高亮效果。"
 L["Options.RequestBuffInChat"] = "在聊天中請求缺失的增益"

@@ -131,6 +131,7 @@ BR.defaults = {
         consumableBadgeOnSubIcons = false,
         hideConsumableLabels = false,
         showConsumableTooltips = false,
+        rightClickSnooze = true,
         showBuffTooltips = false,
         hideLegacyConsumables = true,
         petDisplayMode = "generic", -- "generic" or "expanded"
