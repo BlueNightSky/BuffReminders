@@ -343,6 +343,10 @@ L["Externals.Sound.NoAlert"] = "未設定聲音警報。點選可賦予該增益
 L["Externals.Sound.Override.Desc"] =
     "為這個增益賦予自己的聲音。當此功能關閉時，增益會播放頁面的聲音警報。"
 L["DisabledReason.SoundOverride"] = "開啟「覆蓋」來選擇該增益效果的聲音。"
+L["Externals.SelectAll"] = "全部"
+L["Externals.SelectAll.Tooltip"] = "追蹤該群組中的每個增益。"
+L["Externals.SelectNone"] = "無"
+L["Externals.SelectNone.Tooltip"] = "停止追蹤該群組中的每個增益。"
 L["Externals.Defensives"] = "外來減傷"
 L["Externals.GroupBuffs"] = "群體增益"
 L["Externals.Movement"] = "移動"
