@@ -15,6 +15,9 @@ local _, BR = ...
 -- The ticked set is the switch: no separate enable toggle, so a first tick starts
 -- the display. One sound serves every tracked entry, and a row can override it, so
 -- the glyph column answers one question at a glance: which buffs make a sound.
+--
+-- Rows repaint through one page-wide function, not per widget: a section toggle and
+-- a row checkbox each change what the other must show.
 
 local L = BR.L
 local Components = BR.Components
@@ -53,6 +56,10 @@ local GLYPH_ALPHA_SILENT = 0.16
 local GLYPH_SIZE = 13
 local GLYPH_GAP = 6
 local SOUND_ATLAS = "chatframe-button-icon-voicechat"
+
+-- Section select-all, tinted like the row glyphs so the two read as one column set.
+local TOGGLE_GAP = 8
+local TOGGLE_HEIGHT = 14
 
 -- Left column takes the longest section on its own; the right column stacks the
 -- four shorter ones, which roughly balances the page at 16-18 rows a side.
@@ -195,8 +202,76 @@ local function CreateSoundGlyph(row, entry)
     return btn
 end
 
+---Section select-all: one click tracks the whole group, the next clears it.
+---Exposes Update() so the label follows the row checkboxes.
+---@param parent Frame
+---@param entries table[]
+local function CreateSectionToggle(parent, entries)
+    local btn = CreateFrame("Button", nil, parent)
+    local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    text:SetPoint("LEFT", 0, 0)
+    btn:SetFontString(text)
+
+    local function AllTracked()
+        local enabled = Settings().entries
+        if not enabled then
+            return false
+        end
+        for _, entry in ipairs(entries) do
+            if not enabled[entry.key] then
+                return false
+            end
+        end
+        return true
+    end
+
+    local function Tint(color)
+        text:SetTextColor(color[1], color[2], color[3])
+    end
+
+    function btn.Update()
+        local all = AllTracked()
+        btn.tracksAll = all
+        text:SetText(all and L["Externals.SelectNone"] or L["Externals.SelectAll"])
+        btn:SetSize(text:GetStringWidth() + 2, TOGGLE_HEIGHT)
+        Tint(GLYPH_IDLE)
+    end
+
+    btn:SetScript("OnEnter", function(self)
+        Tint(GLYPH_HOVER)
+        local all = btn.tracksAll
+        BR.ShowTooltip(
+            self,
+            all and L["Externals.SelectNone"] or L["Externals.SelectAll"],
+            all and L["Externals.SelectNone.Tooltip"] or L["Externals.SelectAll.Tooltip"],
+            "ANCHOR_RIGHT"
+        )
+    end)
+
+    btn:SetScript("OnLeave", function()
+        Tint(GLYPH_IDLE)
+        BR.HideTooltip()
+    end)
+
+    btn:SetScript("OnClick", function()
+        local settings = Settings()
+        settings.entries = settings.entries or {}
+        -- nil rather than false: keeps SavedVariables free of dead keys.
+        local track = not btn.tracksAll or nil
+        for _, entry in ipairs(entries) do
+            settings.entries[entry.key] = track
+        end
+        -- RefreshAll re-reads every row checkbox and runs the page repaint hook.
+        Components.RefreshAll()
+        BR.CallbackRegistry:TriggerEvent("ExternalsRefresh")
+    end)
+
+    btn.Update()
+    return btn
+end
+
 ---One row: enable checkbox, spell icon, name, sound glyph.
-local function RenderRow(parent, x, y, entry, rowWidth, updaters)
+local function RenderRow(parent, x, y, entry, rowWidth, ctx)
     local key = entry.key
     local row = CreateFrame("Frame", nil, parent)
     row:SetPoint("TOPLEFT", x, y)
@@ -204,7 +279,7 @@ local function RenderRow(parent, x, y, entry, rowWidth, updaters)
 
     local soundGlyph = CreateSoundGlyph(row, entry)
     soundGlyph:SetPoint("RIGHT", 0, 0)
-    updaters[#updaters + 1] = soundGlyph.Update
+    ctx.updaters[#ctx.updaters + 1] = soundGlyph.Update
 
     -- holderWidth 18: the label is drawn separately, so the checkbox holder only
     -- needs to cover the box itself or it would push the icon far to the right.
@@ -220,7 +295,7 @@ local function RenderRow(parent, x, y, entry, rowWidth, updaters)
             settings.entries = settings.entries or {}
             -- nil rather than false: keeps SavedVariables free of dead keys.
             settings.entries[key] = checked or nil
-            soundGlyph.Update()
+            ctx.Repaint()
             BR.CallbackRegistry:TriggerEvent("ExternalsRefresh")
         end,
     })
@@ -242,7 +317,7 @@ local function RenderRow(parent, x, y, entry, rowWidth, updaters)
     return y - ITEM_HEIGHT
 end
 
-local function RenderColumn(parent, x, y, sectionKeys, colWidth, updaters)
+local function RenderColumn(parent, x, y, sectionKeys, colWidth, ctx)
     local rowsX = x + ROW_INDENT
     local rowWidth = colWidth - ROW_INDENT
 
@@ -252,10 +327,17 @@ local function RenderColumn(parent, x, y, sectionKeys, colWidth, updaters)
         header:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
         header:SetText(L[SECTION_BY_KEY[sectionKey].titleKey])
 
+        local entries = entriesBySection[sectionKey] or {}
+        if #entries > 1 then
+            local toggle = CreateSectionToggle(parent, entries)
+            toggle:SetPoint("LEFT", header, "RIGHT", TOGGLE_GAP, 0)
+            ctx.updaters[#ctx.updaters + 1] = toggle.Update
+        end
+
         y = y - HEADER_TO_ROWS_GAP
 
-        for _, entry in ipairs(entriesBySection[sectionKey] or {}) do
-            y = RenderRow(parent, rowsX, y, entry, rowWidth, updaters)
+        for _, entry in ipairs(entries) do
+            y = RenderRow(parent, rowsX, y, entry, rowWidth, ctx)
         end
 
         if i < #sectionKeys then
@@ -297,26 +379,25 @@ local function Build(content, scrollFrame)
     preview:SetPoint("LEFT", soundDrop, "RIGHT", 8, 0)
     layout:Add(soundRow, 26, 16)
 
-    local updaters = {}
+    local ctx = { updaters = {} }
+    function ctx.Repaint()
+        for _, Update in ipairs(ctx.updaters) do
+            Update()
+        end
+    end
 
     local colWidth = floor((contentWidth - COL_PADDING * 3) / 2)
     local startY = layout:GetY()
-    local leftEndY = RenderColumn(content, COL_PADDING, startY, LEFT_SECTIONS, colWidth, updaters)
+    local leftEndY = RenderColumn(content, COL_PADDING, startY, LEFT_SECTIONS, colWidth, ctx)
     local rightX = COL_PADDING + colWidth + COL_PADDING
-    local rightEndY = RenderColumn(content, rightX, startY, RIGHT_SECTIONS, colWidth, updaters)
+    local rightEndY = RenderColumn(content, rightX, startY, RIGHT_SECTIONS, colWidth, ctx)
 
     content:SetHeight(max(abs(leftEndY), abs(rightEndY)) + 16)
 
     -- Persistent hook rather than per-widget `enabled`: a glyph is a plain button,
     -- not a component holder, so RefreshAll would never reach it. This repaints the
     -- column after the shared sound changes and on every page activation.
-    tinsert(BR.RefreshableComponents, {
-        Refresh = function()
-            for _, Update in ipairs(updaters) do
-                Update()
-            end
-        end,
-    })
+    tinsert(BR.RefreshableComponents, { Refresh = ctx.Repaint })
 end
 
 BR.Options.Pages.externals = {

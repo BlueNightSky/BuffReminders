@@ -353,6 +353,10 @@ english["Externals.Sound.NoAlert"] = "No sound alert is set. Click to give this 
 english["Externals.Sound.Override.Desc"] =
     "Give this buff its own sound. While this is off, the buff plays the sound alert of the page."
 english["DisabledReason.SoundOverride"] = "Turn on Override to select a sound for this buff."
+english["Externals.SelectAll"] = "All"
+english["Externals.SelectAll.Tooltip"] = "Track every buff in this group."
+english["Externals.SelectNone"] = "None"
+english["Externals.SelectNone.Tooltip"] = "Stop tracking every buff in this group."
 english["Externals.Defensives"] = "External Defensives"
 english["Externals.GroupBuffs"] = "Group Buffs"
 english["Externals.Movement"] = "Movement"
