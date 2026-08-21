@@ -59,10 +59,9 @@ BR.defaults = {
 
     -- Externals: a present-based display, the inverse of the reminder pipeline.
     -- Rendered by Blizzard via an AuraContainer, so it works for auras the addon is
-    -- not allowed to read (docs/SecretValues.md #3.9). Purely additive schema -
-    -- DeepCopyDefault seeds it, so no migration is needed.
+    -- not allowed to read. Purely additive schema - DeepCopyDefault seeds it, so
+    -- no migration is needed.
     externals = {
-        enabled = false,
         -- false = the appearance keys below inherit from the global `defaults`
         -- table (resolved by BR.GetExternalSetting) and their stored values stay
         -- dormant. Countdown size and direction have no `defaults` counterpart,
@@ -79,7 +78,15 @@ BR.defaults = {
         spacing = 4, -- absolute px (Blizzard's elementSpacing), not an iconSize multiplier
         durationSize = 16, -- countdown text, centered on the icon
         growDirection = "RIGHT", -- "LEFT" or "RIGHT"; the flow layout has no centered growth
+        -- The tracked set doubles as the on switch: empty means the display is off.
         entries = {}, -- [Data/Externals.lua key] = true
+        -- sound: deliberately absent - nil means no sound. One value for every
+        -- tracked external, played by the engine when the aura lands, because no
+        -- Lua code can see that happen. Core/Sounds.lua owns the value format.
+        --
+        -- sounds[key] is the per-entry override: nil inherits `sound`, a value
+        -- replaces it, and the no-sound sentinel silences that entry alone.
+        sounds = {},
     },
 
     -- Global defaults (inherited by categories unless overridden)

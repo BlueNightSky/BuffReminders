@@ -71,6 +71,7 @@ Core\ImportExport.lua
 Display\Movers.lua
 Display\SecureButtons.lua
 Display\AuraTracker.lua
+Display\AuraSounds.lua
 Core\Bootstrap.lua
 Options\Context.lua
 Options\WhatsNew.lua

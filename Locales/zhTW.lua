@@ -326,12 +326,6 @@ L["Sidebar.Display"] = "顯示"
 L["Sidebar.Alerts"] = "警告"
 -- Externals (present-based display)
 L["Externals.Title"] = "外來增益"
-L["Externals.PageNote"] =
-    "遊戲將這些增益標記為秘密並自行繪製圖示，因此插件永遠不會看到他們的數據。這就是為什麼它們在戰鬥中保持可見的原因 - 以及為什麼只能顯示對你的增益，除了大小和間距之外沒有任何可自訂的內容。"
-L["Externals.Enable"] = "啟用外來增益"
-L["Externals.EnableTooltip"] = "當下方選擇的增益效果在您身上啟用時，顯示一行圖示。"
-L["Externals.DisabledReason"] = "首先啟用外來增益。"
-L["Externals.EnableElsewhere"] = "首先在增益 > 外來增益頁面上啟用外來增益。"
 L["Externals.Defensives"] = "外來減傷"
 L["Externals.GroupBuffs"] = "群體增益"
 L["Externals.Movement"] = "移動"

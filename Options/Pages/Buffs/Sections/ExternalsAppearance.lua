@@ -71,7 +71,7 @@ end
 
 local function InheritedDisabledReason()
     if not IsEnabled() then
-        return L["Externals.EnableElsewhere"]
+        return L["Externals.NoneTracked"]
     end
     return L["DisabledReason.OverrideSection"]
 end
@@ -83,7 +83,7 @@ local function AddOverrideRow(parent, layout)
         get = IsOverriding,
         tooltip = { title = L["Options.Override"], desc = L["Options.Override.Externals.Desc"] },
         enabled = IsEnabled,
-        disabledReason = L["Externals.EnableElsewhere"],
+        disabledReason = L["Externals.NoneTracked"],
         onChange = function(checked)
             if checked then
                 -- Snapshot the effective values before the flag flips, so the
@@ -222,7 +222,7 @@ local function Build(ctx, layout)
             step = 1,
             suffix = spec.suffix,
             enabled = spec.inherited and InheritedEnabled or IsEnabled,
-            disabledReason = spec.inherited and InheritedDisabledReason or L["Externals.EnableElsewhere"],
+            disabledReason = spec.inherited and InheritedDisabledReason or L["Externals.NoneTracked"],
             get = function()
                 return Setting(key) or default
             end,
@@ -241,7 +241,7 @@ local function Build(ctx, layout)
             { label = L["Direction.Left"], value = "LEFT" },
         },
         enabled = IsEnabled,
-        disabledReason = L["Externals.EnableElsewhere"],
+        disabledReason = L["Externals.NoneTracked"],
         get = function()
             return Setting("growDirection") or "RIGHT"
         end,

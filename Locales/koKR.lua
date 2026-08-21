@@ -328,12 +328,6 @@ L["Sidebar.Display"] = "디스플레이"
 L["Sidebar.Alerts"] = "알림"
 -- Externals (present-based display)
 L["Externals.Title"] = "외부 버프"
-L["Externals.PageNote"] =
-    "게임에서 이들 버프를 비밀 상태로 설정하고 아이콘만 그려주기 때문에 애드온에선 버프 데이터를 절대 볼 수 없습니다. 그래서 전투 중에만 표시되며 - 나에게 걸린 버프만 표시해서 크기와 간격 이상의 커스터마이징은 할 수 없는 것입니다."
-L["Externals.Enable"] = "외부 버프 활성화"
-L["Externals.EnableTooltip"] = "아래에서 선택한 버프가 나에게 걸려 있는 동안 아이콘 줄을 표시합니다."
-L["Externals.DisabledReason"] = "먼저 외부 버프를 활성화하세요."
-L["Externals.EnableElsewhere"] = "먼저 버프 > 외부 버프 페이지에서 외부 버프를 활성화하세요."
 L["Externals.Defensives"] = "외부 생존기"
 L["Externals.GroupBuffs"] = "그룹 버프"
 L["Externals.Movement"] = "이동기"

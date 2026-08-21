@@ -8,7 +8,7 @@ local _, BR = ...
 -- the reminder pipeline and shares nothing with State.lua - Blizzard's AuraContainer
 -- does the filtering and rendering, so it works for auras the addon cannot read.
 --
--- The constraints this module is shaped around (all verified; docs/SecretValues.md #3.9):
+-- The constraints this module is shaped around (all verified):
 --
 --   * Decoration is CREATION-WINDOW ONLY. The whole button subtree - our own
 --     textures included - becomes forbidden while auras are secret. So every
@@ -35,6 +35,7 @@ local TEXCOORD_INSET = BR.TEXCOORD_INSET
 local GetAspectCropInsets = BR.GetAspectCropInsets
 
 local Settings = BR.GetExternalSettings
+local IsEnabled = BR.AreExternalsEnabled
 -- Appearance reads go through the resolver, which inherits from the global
 -- defaults unless externals.useCustomAppearance is set.
 local Setting = BR.GetExternalSetting
@@ -514,7 +515,7 @@ local function SetUnlocked(unlocked)
     if not mover then
         return
     end
-    local shown = unlocked and Settings().enabled
+    local shown = unlocked and IsEnabled()
     mover:SetShown(shown)
     if not shown then
         BR.Movers.HideCoordinatePopup(MOVER_KEY)
@@ -522,9 +523,7 @@ local function SetUnlocked(unlocked)
 end
 
 local function Refresh()
-    local settings = Settings()
-
-    if not settings.enabled then
+    if not IsEnabled() then
         if anchorFrame then
             anchorFrame:Hide()
         end

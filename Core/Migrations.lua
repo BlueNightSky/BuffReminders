@@ -23,7 +23,7 @@ local max = math.max
 
 BR.Migrations = {}
 
-BR.Migrations.DB_VERSION = 49
+BR.Migrations.DB_VERSION = 50
 
 -- Run pending migrations against the profile `db`, using code `defaults` for
 -- fallbacks. `ctx` carries the few Display.lua file-scope deps the
@@ -1037,6 +1037,16 @@ function BR.Migrations.Run(db, defaults, ctx)
             db.locked = nil
             if BR.aceDB and BR.aceDB.global then
                 BR.aceDB.global.glowDefaultNoticeCount = nil
+            end
+        end,
+
+        -- [50] The entry set is the externals switch: a ticked buff is a tracked
+        -- buff, so the separate enable flag is gone. A profile that kept ticks
+        -- while that flag was off starts drawing them, which is what the ticks
+        -- always asked for.
+        [50] = function()
+            if db.externals then
+                db.externals.enabled = nil
             end
         end,
     }

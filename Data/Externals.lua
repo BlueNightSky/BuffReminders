@@ -7,7 +7,7 @@ local _, BR = ...
 -- Every entry is a HELPFUL aura on the player, which is the only shape Blizzard
 -- permits spell-ID filtering for - "spell ID matching is only permitted for helpful
 -- buffs on assistable units". A harmful aura on yourself can never be tracked, so
--- this list is buffs-you-receive by construction. See docs/SecretValues.md #3.9.
+-- this list is buffs-you-receive by construction.
 --
 -- `section` buckets an entry under a heading in the options list; `labelKey` is only
 -- needed when one entry spans spells with different names, since single-name entries
@@ -60,6 +60,7 @@ BR.EXTERNALS = {
     { key = "spatialParadox", section = "groupBuffs", spellIDs = { 406789 } }, -- Evoker
     {
         key = "blessingOfSeasons", -- Paladin
+        defaultSound = false,
         section = "groupBuffs",
         labelKey = "Externals.BlessingOfSeasons",
         spellIDs = {
@@ -107,16 +108,16 @@ BR.EXTERNALS = {
     },
     { key = "tigersLust", section = "movement", spellIDs = { 116841 } }, -- Monk
     { key = "blessingOfFreedom", section = "movement", spellIDs = { 1044 } }, -- Paladin
-    { key = "windRushTotem", section = "movement", spellIDs = { 192082 } }, -- Shaman
+    { key = "windRushTotem", section = "movement", spellIDs = { 192082 }, defaultSound = false }, -- Shaman
 
-    { key = "misdirection", section = "aggro", spellIDs = { 34477 } }, -- Hunter
-    { key = "tricksOfTheTrade", section = "aggro", spellIDs = { 57934 } }, -- Rogue
+    { key = "misdirection", section = "aggro", spellIDs = { 34477 }, defaultSound = false }, -- Hunter
+    { key = "tricksOfTheTrade", section = "aggro", spellIDs = { 57934 }, defaultSound = false }, -- Rogue
 
-    -- De-whitelisted in 12.1 (#3.7), so the reminder pipeline can no longer see
-    -- these in combat - a container still can.
-    { key = "blisteringScales", section = "augmentation", spellIDs = { 360827 } }, -- Evoker
-    { key = "ebonMight", section = "augmentation", spellIDs = { 395152, 395296 } }, -- Evoker
-    { key = "prescience", section = "augmentation", spellIDs = { 410089 } }, -- Evoker
+    -- De-whitelisted in 12.1, so the reminder pipeline can no longer see these in
+    -- combat - a container still can.
+    { key = "blisteringScales", section = "augmentation", spellIDs = { 360827 }, defaultSound = false }, -- Evoker
+    { key = "ebonMight", section = "augmentation", spellIDs = { 395152, 395296 }, defaultSound = false }, -- Evoker
+    { key = "prescience", section = "augmentation", spellIDs = { 410089 }, defaultSound = false }, -- Evoker
 }
 
 ---The live externals settings table. Single accessor for every consumer, so the
@@ -126,9 +127,12 @@ function BR.GetExternalSettings()
     return BR.profile and BR.profile.externals or BR.defaults.externals
 end
 
+---True while the player tracks at least one external. The entry set is the
+---switch: nothing ticked means nothing to draw and nothing to play.
 ---@return boolean
 function BR.AreExternalsEnabled()
-    return BR.GetExternalSettings().enabled == true
+    local entries = BR.GetExternalSettings().entries
+    return entries ~= nil and next(entries) ~= nil
 end
 
 local floor = math.floor
@@ -163,6 +167,32 @@ function BR.GetExternalSetting(key)
         return floor((defaults.spacing or 0) * width)
     end
     return defaults[key]
+end
+
+---Sound value for one entry: its own override, or the page sound while it inherits.
+---`defaultSound = false` marks an entry that re-applies too often for the shared
+---sound, so it stays silent until the player overrides it.
+---@param entry table
+---@return string|nil
+function BR.GetExternalEntrySound(entry)
+    local settings = BR.GetExternalSettings()
+    local sounds = settings.sounds
+    local value = sounds and sounds[entry.key]
+    if value ~= nil then
+        return value
+    end
+    if entry.defaultSound == false then
+        return nil
+    end
+    return settings.sound
+end
+
+---True while an entry carries its own sound instead of inheriting the shared one.
+---@param key string
+---@return boolean
+function BR.IsExternalSoundOverridden(key)
+    local sounds = BR.GetExternalSettings().sounds
+    return sounds ~= nil and sounds[key] ~= nil
 end
 
 ---Display label for an entry: explicit key when it spans differently-named spells,

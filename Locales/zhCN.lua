@@ -324,12 +324,6 @@ L["Sidebar.Alerts"] = "警报"
 
 -- Externals (present-based display)
 L["Externals.Title"] = "外部增益"
-L["Externals.PageNote"] =
-    "暴雪将此类增益标记为秘密值，并由系统对图标进行渲染，因此插件无法读取其内部数据。这也是它们能在战斗中持续显示的原因——仅支持显示你自身获得的增益，且除尺寸和间距外无其他外观自定义选项。"
-L["Externals.Enable"] = "启用外部增益"
-L["Externals.EnableTooltip"] = "当你身上有下方选中的增益时，显示一排图标。"
-L["Externals.DisabledReason"] = "请先启用外部增益。"
-L["Externals.EnableElsewhere"] = "请先在 增益 > 外部增益 页面中启用外部增益。"
 L["Externals.Defensives"] = "外部减伤"
 L["Externals.GroupBuffs"] = "团队增益"
 L["Externals.Movement"] = "移动加速"
