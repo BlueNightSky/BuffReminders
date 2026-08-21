@@ -24,14 +24,23 @@ BR.EXTERNAL_SECTIONS = {
     { key = "augmentation", titleKey = "Externals.Augmentation" },
 }
 
--- Within a section, entries are ordered by the class that provides the buff
--- (classes alphabetical, then buff name). Multi-class Bloodlust sorts as Shaman.
+-- Within a section, entries are ordered by their English name: the options page
+-- renders them in this order, so the list reads alphabetically with no sort.
 BR.EXTERNALS = {
+    { key = "ancestralProtection", section = "defensives", spellIDs = { 207498 } }, -- Shaman
     { key = "antiMagicZone", section = "defensives", spellIDs = { 145629 } }, -- Death Knight
+    { key = "auraMastery", section = "defensives", spellIDs = { 31821 } }, -- Paladin
+    { key = "blessingOfProtection", section = "defensives", spellIDs = { 1022 } }, -- Paladin
+    { key = "blessingOfSacrifice", section = "defensives", spellIDs = { 6940 } }, -- Paladin
+    { key = "blessingOfSpellwarding", section = "defensives", spellIDs = { 204018 } }, -- Paladin
     { key = "darkness", section = "defensives", spellIDs = { 209426 } }, -- Demon Hunter
+    { key = "earthenWall", section = "defensives", spellIDs = { 201633 } }, -- Shaman
+    { key = "forgottenQueen", section = "defensives", spellIDs = { 228050 }, labelSpellID = 228049 }, -- Paladin
+    { key = "guardianSpirit", section = "defensives", spellIDs = { 47788 } }, -- Priest
+    { key = "intervene", section = "defensives", spellIDs = { 147833 } }, -- Warrior
     { key = "ironbark", section = "defensives", spellIDs = { 102342 } }, -- Druid
-    { key = "timeDilation", section = "defensives", spellIDs = { 357170 } }, -- Evoker
-    { key = "zephyr", section = "defensives", spellIDs = { 374227 } }, -- Evoker
+    { key = "lifeCocoon", section = "defensives", spellIDs = { 116849 } }, -- Monk
+    { key = "luminousBarrier", section = "defensives", spellIDs = { 271466 } }, -- Priest
     {
         key = "massBarrier", -- Mage
         section = "defensives",
@@ -42,22 +51,11 @@ BR.EXTERNALS = {
             414663, -- Prismatic Barrier
         },
     },
-    { key = "lifeCocoon", section = "defensives", spellIDs = { 116849 } }, -- Monk
-    { key = "auraMastery", section = "defensives", spellIDs = { 31821 } }, -- Paladin
-    { key = "blessingOfProtection", section = "defensives", spellIDs = { 1022 } }, -- Paladin
-    { key = "blessingOfSacrifice", section = "defensives", spellIDs = { 6940 } }, -- Paladin
-    { key = "blessingOfSpellwarding", section = "defensives", spellIDs = { 204018 } }, -- Paladin
-    { key = "forgottenQueen", section = "defensives", spellIDs = { 228050 }, labelSpellID = 228049 }, -- Paladin
-    { key = "guardianSpirit", section = "defensives", spellIDs = { 47788 } }, -- Priest
-    { key = "luminousBarrier", section = "defensives", spellIDs = { 271466 } }, -- Priest
     { key = "painSuppression", section = "defensives", spellIDs = { 33206 } }, -- Priest
     { key = "powerWordBarrier", section = "defensives", spellIDs = { 81782 } }, -- Priest
-    { key = "ancestralProtection", section = "defensives", spellIDs = { 207498 } }, -- Shaman
-    { key = "earthenWall", section = "defensives", spellIDs = { 201633 } }, -- Shaman
-    { key = "intervene", section = "defensives", spellIDs = { 147833 } }, -- Warrior
+    { key = "timeDilation", section = "defensives", spellIDs = { 357170 } }, -- Evoker
+    { key = "zephyr", section = "defensives", spellIDs = { 374227 } }, -- Evoker
 
-    { key = "innervate", section = "groupBuffs", spellIDs = { 29166 } }, -- Druid
-    { key = "spatialParadox", section = "groupBuffs", spellIDs = { 406789 } }, -- Evoker
     {
         key = "blessingOfSeasons", -- Paladin
         defaultSound = false,
@@ -70,7 +68,6 @@ BR.EXTERNALS = {
             388013, -- Blessing of Spring
         },
     },
-    { key = "powerInfusion", section = "groupBuffs", spellIDs = { 10060 } }, -- Priest
     {
         key = "bloodlust", -- Shaman + the cross-class variants
         section = "groupBuffs",
@@ -84,9 +81,14 @@ BR.EXTERNALS = {
             390386, -- Fury of the Aspects
         },
     },
+    { key = "innervate", section = "groupBuffs", spellIDs = { 29166 } }, -- Druid
+    { key = "powerInfusion", section = "groupBuffs", spellIDs = { 10060 } }, -- Priest
     { key = "rallyingCry", section = "groupBuffs", spellIDs = { 97463 } }, -- Warrior
+    { key = "spatialParadox", section = "groupBuffs", spellIDs = { 406789 } }, -- Evoker
 
+    { key = "blessingOfFreedom", section = "movement", spellIDs = { 1044 } }, -- Paladin
     { key = "stampedingRoar", section = "movement", spellIDs = { 106898, 77761, 77764 } }, -- Druid
+    { key = "tigersLust", section = "movement", spellIDs = { 116841 } }, -- Monk
     {
         key = "timeSpiral", -- Evoker
         section = "movement",
@@ -106,8 +108,6 @@ BR.EXTERNALS = {
             375258,
         },
     },
-    { key = "tigersLust", section = "movement", spellIDs = { 116841 } }, -- Monk
-    { key = "blessingOfFreedom", section = "movement", spellIDs = { 1044 } }, -- Paladin
     { key = "windRushTotem", section = "movement", spellIDs = { 192082 }, defaultSound = false }, -- Shaman
 
     { key = "misdirection", section = "aggro", spellIDs = { 34477 }, defaultSound = false }, -- Hunter
