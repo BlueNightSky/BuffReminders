@@ -23,7 +23,7 @@ local max = math.max
 
 BR.Migrations = {}
 
-BR.Migrations.DB_VERSION = 50
+BR.Migrations.DB_VERSION = 51
 
 -- Run pending migrations against the profile `db`, using code `defaults` for
 -- fallbacks. `ctx` carries the few Display.lua file-scope deps the
@@ -1047,6 +1047,30 @@ function BR.Migrations.Run(db, defaults, ctx)
         [50] = function()
             if db.externals then
                 db.externals.enabled = nil
+            end
+        end,
+        -- [51] Guardian of the Forgotten Queen leaves the curated externals list:
+        -- it is a PvP talent, too niche to offer everyone. A player who already
+        -- tracks it keeps it as an entry of their own, sound override included.
+        -- labelSpellID rather than a stored name: aura 228050 reads as "Divine
+        -- Shield", and the ability that grants it localizes on every client.
+        [51] = function()
+            local externals = db.externals
+            local entries = externals and externals.entries
+            if not entries or not entries.forgottenQueen then
+                return
+            end
+
+            externals.custom = externals.custom or {}
+            local key = BR.NewExternalKey(228050)
+            externals.custom[key] = { spellIDs = { 228050 }, labelSpellID = 228049 }
+            entries[key] = true
+            entries.forgottenQueen = nil
+
+            local sounds = externals.sounds
+            if sounds and sounds.forgottenQueen ~= nil then
+                sounds[key] = sounds.forgottenQueen
+                sounds.forgottenQueen = nil
             end
         end,
     }

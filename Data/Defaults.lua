@@ -87,6 +87,10 @@ BR.defaults = {
         -- sounds[key] is the per-entry override: nil inherits `sound`, a value
         -- replaces it, and the no-sound sentinel silences that entry alone.
         sounds = {},
+        -- The player's own entries, keyed the same way as the curated ones so
+        -- `entries` and `sounds` address both sets. Shape:
+        -- [key] = { spellIDs = { number, ... }, name = string? }.
+        custom = {},
     },
 
     -- Global defaults (inherited by categories unless overridden)

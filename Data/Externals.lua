@@ -1,19 +1,21 @@
 local _, BR = ...
 
--- The external defensives and buffs shown by Display/AuraTracker.lua, plus the two
+-- The external defensives and buffs shown by Display/AuraTracker.lua, plus the
 -- accessors every consumer of that feature needs. Loads before Display and Options,
--- so both can alias the accessors at file scope.
+-- so both can alias the accessors at file scope. The curated list below is only
+-- half the set: BR.GetExternalEntries merges the player's own entries onto it, and
+-- that accessor - never BR.EXTERNALS - is what consumers walk.
 --
 -- Every entry is a HELPFUL aura on the player, which is the only shape Blizzard
 -- permits spell-ID filtering for - "spell ID matching is only permitted for helpful
 -- buffs on assistable units". A harmful aura on yourself can never be tracked, so
 -- this list is buffs-you-receive by construction.
 --
--- `section` buckets an entry under a heading in the options list; `labelKey` is only
+-- `section` buckets an entry under a heading in the options list. `labelKey` is only
 -- needed when one entry spans spells with different names, since single-name entries
 -- take their label from the spell itself and localize for free. `labelSpellID` names
--- an entry after the ability that grants the aura, for auras whose own name misleads
--- (228050 resolves to "Divine Shield"); it localizes for free like the default.
+-- an entry after the ability that grants the aura, for auras whose own name misleads.
+-- A migrated entry of the player's own can carry labelSpellID too.
 
 ---Display groupings, in the order the options page renders them.
 BR.EXTERNAL_SECTIONS = {
@@ -35,7 +37,6 @@ BR.EXTERNALS = {
     { key = "blessingOfSpellwarding", section = "defensives", spellIDs = { 204018 } }, -- Paladin
     { key = "darkness", section = "defensives", spellIDs = { 209426 } }, -- Demon Hunter
     { key = "earthenWall", section = "defensives", spellIDs = { 201633 } }, -- Shaman
-    { key = "forgottenQueen", section = "defensives", spellIDs = { 228050 }, labelSpellID = 228049 }, -- Paladin
     { key = "guardianSpirit", section = "defensives", spellIDs = { 47788 } }, -- Priest
     { key = "intervene", section = "defensives", spellIDs = { 147833 } }, -- Warrior
     { key = "ironbark", section = "defensives", spellIDs = { 102342 } }, -- Druid
@@ -195,14 +196,133 @@ function BR.IsExternalSoundOverridden(key)
     return sounds ~= nil and sounds[key] ~= nil
 end
 
----Display label for an entry: explicit key when it spans differently-named spells,
----otherwise the (already localized) name of labelSpellID or the spell itself.
+---Display label for an entry: the player's own name when set, an explicit key when
+---the entry spans differently-named spells, otherwise the (already localized) name
+---of labelSpellID or the spell itself.
 ---@param entry table
 ---@return string
 function BR.GetExternalLabel(entry)
+    if entry.name then
+        return entry.name
+    end
     if entry.labelKey then
         return BR.L[entry.labelKey] or entry.key
     end
     local spellID = entry.labelSpellID or entry.spellIDs[1]
     return BR.GetSpellName(spellID) or tostring(spellID)
+end
+
+-- ============================================================================
+-- THE PLAYER'S OWN ENTRIES
+-- ============================================================================
+-- Stored under externals.custom as [key] = { spellIDs = {...}, name = string? },
+-- which is the curated entry shape minus the fields only a curated entry needs.
+-- They share the `entries` and `sounds` tables with the curated set, so a key must
+-- never collide with a curated one.
+
+local tsort = table.sort
+local type = type
+
+---Every entry the addon knows: the curated list first, then the player's own,
+---sorted by label. Rebuilt on each call, because the callers run on settings
+---changes and world events - a cache here adds only a way to go stale.
+---@return table[]
+function BR.GetExternalEntries()
+    local custom = BR.GetExternalSettings().custom
+    if not custom or next(custom) == nil then
+        return BR.EXTERNALS
+    end
+
+    local own = {}
+    for key, def in pairs(custom) do
+        -- A hand-edited SavedVariables file reaches this table too, so an entry
+        -- without a usable spell ID is dropped rather than handed to the engine.
+        if type(def) == "table" and type(def.spellIDs) == "table" and type(def.spellIDs[1]) == "number" then
+            own[#own + 1] = {
+                key = key,
+                spellIDs = def.spellIDs,
+                name = def.name,
+                labelSpellID = def.labelSpellID,
+                custom = true,
+            }
+        end
+    end
+    tsort(own, function(a, b)
+        return BR.GetExternalLabel(a) < BR.GetExternalLabel(b)
+    end)
+
+    local merged = {}
+    for _, entry in ipairs(BR.EXTERNALS) do
+        merged[#merged + 1] = entry
+    end
+    for _, entry in ipairs(own) do
+        merged[#merged + 1] = entry
+    end
+    return merged
+end
+
+---A key for a new custom entry. The prefix keeps it clear of every curated key,
+---and the timestamp keeps it stable across an edit that changes the spell IDs, so
+---the entry keeps its tracked state and its sound override.
+---@param spellID number
+---@return string
+function BR.NewExternalKey(spellID)
+    return "ext_" .. spellID .. "_" .. time()
+end
+
+---The first entry other than `exceptKey` that already lists this spell ID.
+---@param spellID number
+---@param exceptKey string?
+---@return table?
+function BR.FindExternalBySpellID(spellID, exceptKey)
+    for _, entry in ipairs(BR.GetExternalEntries()) do
+        if entry.key ~= exceptKey then
+            for _, id in ipairs(entry.spellIDs) do
+                if id == spellID then
+                    return entry
+                end
+            end
+        end
+    end
+    return nil
+end
+
+---The entry that takes this entry's sound, or nil while this entry keeps its own.
+---Mirrors the first-wins rule in Display/AuraSounds.lua: an earlier tracked entry
+---with a sound claims every spell ID it lists, and an entry loses its alert only
+---when every one of its IDs is claimed.
+---@param entry table
+---@return table?
+function BR.FindExternalSoundOwner(entry)
+    local tracked = BR.GetExternalSettings().entries
+    if not tracked or not tracked[entry.key] then
+        return nil
+    end
+
+    local all = BR.GetExternalEntries()
+    local owner
+    for _, id in ipairs(entry.spellIDs) do
+        local claimant
+        for _, other in ipairs(all) do
+            if other.key == entry.key then
+                break
+            end
+            if tracked[other.key] and BR.GetExternalEntrySound(other) then
+                for _, otherID in ipairs(other.spellIDs) do
+                    if otherID == id then
+                        claimant = other
+                        break
+                    end
+                end
+            end
+            if claimant then
+                break
+            end
+        end
+        if not claimant then
+            return nil
+        end
+        owner = owner or claimant
+    end
+    return owner
 end

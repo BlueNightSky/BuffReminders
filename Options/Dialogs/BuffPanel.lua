@@ -132,6 +132,7 @@ local DRAWER_W = 300
 local DRAWER_BODY_X = 14
 local DRAWER_BODY_TOP = 40
 local DRAWER_LABEL_W = 52
+local DRAWER_FIELD_W = 178
 local EDITOR_BODY_X = 16
 local EDITOR_BODY_TOP = 44
 
@@ -639,7 +640,7 @@ local function AddSoundRow(layout, model)
     local soundDrop = Components.Dropdown(soundRow, {
         label = "",
         labelWidth = 0,
-        width = 178,
+        width = DRAWER_FIELD_W,
         maxItems = 15,
         options = Sounds.BuildOptions(),
         enabled = override and override.isOn or nil,
@@ -819,7 +820,6 @@ local function EnsureDrawer()
     drawerIcon = BR.CreateBuffIcon(drawer, 16)
     drawerIcon:SetPoint("TOPLEFT", DRAWER_BODY_X, -9)
     drawerTitle = drawer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    drawerTitle:SetPoint("LEFT", drawerIcon, "RIGHT", 7, 0)
     drawerTitle:SetPoint("RIGHT", drawer, "RIGHT", -10, 0)
     drawerTitle:SetJustifyH("LEFT")
     drawerTitle:SetWordWrap(false)
@@ -867,16 +867,32 @@ end
 ---@param title string
 ---@param icon number|string|nil
 ---@param anchor? table Frame to anchor the drawer beside
----@param fill fun(layout: table)
-local function OpenDrawer(title, icon, anchor, fill)
+---@param fill fun(layout: table, body: table, width: number)
+---@param width? number Card width; defaults to the one the per-buff cards use
+local function OpenDrawer(title, icon, anchor, fill, width)
     EnsureDrawer()
     TearDownDrawerBody()
 
+    -- The card covers the widget that opened it, so that widget never gets its
+    -- OnLeave and its tooltip would hang over the card until the pointer crosses
+    -- the row again.
+    BR.HideTooltip()
+
+    drawer:SetWidth(width or DRAWER_W)
+
     drawerTitle:SetText("|cffffcc00" .. title .. "|r")
-    drawerIcon:SetTexture(icon or 134400)
+
+    -- A card about one buff wears its icon. A card about a list has none to wear, so
+    -- the title takes the icon's place instead of standing beside a placeholder.
+    -- -17 is the header strip's midpoint, which is where the icon centers.
+    drawerIcon:SetShown(icon ~= nil)
+    drawerTitle:SetPoint("LEFT", drawer, "TOPLEFT", icon and DRAWER_BODY_X + 23 or DRAWER_BODY_X, -17)
+    if icon then
+        drawerIcon:SetTexture(icon)
+    end
 
     -- Point the shared build surface at the drawer body.
-    bodyW = DRAWER_W - DRAWER_BODY_X * 2
+    bodyW = (width or DRAWER_W) - DRAWER_BODY_X * 2
     drawerBody = CreateFrame("Frame", nil, drawer)
     drawerBody:SetPoint("TOPLEFT", DRAWER_BODY_X, -DRAWER_BODY_TOP)
     drawerBody:SetSize(bodyW, 100)
@@ -884,7 +900,7 @@ local function OpenDrawer(title, icon, anchor, fill)
     bodyHolders = drawerHolders
 
     local layout = Components.VerticalLayout(drawerBody, { x = 0, y = 0 })
-    fill(layout)
+    fill(layout, drawerBody, bodyW)
 
     local h = abs(layout:GetY())
     drawerBody:SetHeight(h)
@@ -975,6 +991,16 @@ end
 BR.Options.Dialogs.BuffPanel = {
     Show = Show,
     ShowSound = ShowSound,
+    ---Open the drawer with a body of the caller's own. The Externals page uses this
+    ---for its custom entries, whose card holds more than a sound.
+    OpenDrawer = OpenDrawer,
+    HideDrawer = HideDrawer,
+    ---Add the shared sound row to a drawer body. Valid only inside an OpenDrawer
+    ---fill callback, which is what points the shared build surface at that body.
+    AddSoundRow = AddSoundRow,
+    ---Label and field widths of the drawer body, so a caller's rows line up.
+    LABEL_WIDTH = DRAWER_LABEL_W,
+    FIELD_WIDTH = DRAWER_FIELD_W,
     ---Whether a buff has its own options (a special section), and whether that
     ---option still needs setup. Drives the All Buffs row's trailing link: a gold
     ---"Extras" (orange when isWarning) vs the plain gray "Settings". Warning is

@@ -13,6 +13,10 @@ local _, BR = ...
 --
 -- A resolved sound is a file path OR a file ID, and the two go in different struct
 -- fields. The wrong field is rejected silently, with no sound and no error.
+--
+-- Two entries can list the same spell ID, because the player's own entries are free
+-- to repeat a curated one. Two handles on one ID play the sound twice, so each ID is
+-- claimed once per pass and the earlier entry wins.
 
 local ipairs = ipairs
 local pairs = pairs
@@ -31,9 +35,11 @@ local TRIGGER_ADDED = Enum.UnitAuraSoundTrigger and Enum.UnitAuraSoundTrigger.Ad
 local CHANNEL = "Master"
 
 local Settings = BR.GetExternalSettings
+local Entries = BR.GetExternalEntries
 local EntrySound = BR.GetExternalEntrySound
 
--- Live registrations per entry key: { sound = <path or file ID>, ids = { handle, ... } }.
+-- Live registrations per entry key:
+-- { sound = <path or file ID>, spellIDs = { id, ... }, ids = { handle, ... } }.
 local active = {}
 -- Set when a registration was refused, so the lift watcher retries.
 local pending = false
@@ -92,11 +98,28 @@ local function Register(key, spellIDs, sound)
         ids[#ids + 1] = handle
     end
 
-    active[key] = { sound = sound, ids = ids }
+    active[key] = { sound = sound, spellIDs = spellIDs, ids = ids }
 end
 
----Sound per entry key, for the entries that must play one.
----@return table<string, string|number>
+---True when two ID lists hold the same IDs in the same order.
+---@param a number[]
+---@param b number[]
+---@return boolean
+local function SameIDs(a, b)
+    if #a ~= #b then
+        return false
+    end
+    for i = 1, #a do
+        if a[i] ~= b[i] then
+            return false
+        end
+    end
+    return true
+end
+
+---Sound and owned spell IDs per entry key, for the entries that must play one.
+---An entry whose every ID belongs to an earlier entry drops out here.
+---@return table<string, table>
 local function BuildDesired()
     local desired = {}
     local enabled = Settings().entries
@@ -106,11 +129,21 @@ local function BuildDesired()
         return desired
     end
 
-    for _, entry in ipairs(BR.EXTERNALS) do
+    local claimed = {}
+    for _, entry in ipairs(Entries()) do
         if enabled[entry.key] then
             local sound = Resolve(EntrySound(entry))
             if sound then
-                desired[entry.key] = sound
+                local owned = {}
+                for _, spellID in ipairs(entry.spellIDs) do
+                    if not claimed[spellID] then
+                        claimed[spellID] = true
+                        owned[#owned + 1] = spellID
+                    end
+                end
+                if owned[1] then
+                    desired[entry.key] = { sound = sound, spellIDs = owned }
+                end
             end
         end
     end
@@ -128,7 +161,8 @@ local function Reconcile()
 
     -- Clearing the current key during traversal is legal in Lua 5.1.
     for key, registration in pairs(active) do
-        if desired[key] ~= registration.sound then
+        local want = desired[key]
+        if not want or want.sound ~= registration.sound or not SameIDs(want.spellIDs, registration.spellIDs) then
             Remove(key)
         end
     end
@@ -136,13 +170,13 @@ local function Reconcile()
     pending = false
     local restricted = IsRestricted()
 
-    for _, entry in ipairs(BR.EXTERNALS) do
-        local sound = desired[entry.key]
-        if sound and not active[entry.key] then
+    for _, entry in ipairs(Entries()) do
+        local want = desired[entry.key]
+        if want and not active[entry.key] then
             if restricted then
                 pending = true
             else
-                Register(entry.key, entry.spellIDs, sound)
+                Register(entry.key, want.spellIDs, want.sound)
             end
         end
     end

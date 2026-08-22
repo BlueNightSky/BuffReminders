@@ -373,6 +373,30 @@ english["Externals.Appearance"] = "Appearance"
 english["Externals.AppearanceNote"] =
     "While these buffs are secret the game forbids restyling their icons, so changes made in combat apply as soon as you leave it. Unlock the frames to drag the row."
 english["Externals.MasqueNote"] = "Masque cannot skin these icons: their size reads back as a secret value."
+english["Externals.Sound.Claimed"] = "%s already plays a sound for this spell ID."
+-- Externals: the player's own entries
+english["Externals.Custom"] = "Your Buffs"
+english["Externals.Custom.SpellID"] = "Spell ID"
+english["Externals.Custom.Name"] = "Name"
+english["Externals.Custom.Add"] = "Add"
+english["Externals.Custom.Save"] = "Save"
+english["Externals.Custom.Edit"] = "Edit"
+english["Externals.Custom.Delete"] = "Delete this buff"
+english["Externals.Custom.Empty"] = "No buffs of your own yet."
+english["Externals.Custom.SpellIDs"] = "Spell IDs"
+english["Externals.Custom.RemoveID"] = "Remove this spell ID"
+english["Externals.Custom.Hint"] =
+    "Use the aura ID from the buff tooltip, not the ability ID. Commas group several IDs into one icon."
+english["Externals.Custom.Unknown"] = "Unknown ID %d"
+english["Externals.Custom.AlreadyIn"] = "already in %s"
+english["Externals.Custom.RowTooltip"] = "Spell IDs: %s"
+english["Externals.Custom.Grab"] = "my buffs"
+english["Externals.Custom.GrabTitle"] = "Buffs on you now"
+english["Externals.Custom.Grab.Tooltip"] =
+    "Pick from the buffs on you now that no entry covers. The one you pick fills the field."
+english["Externals.Custom.GrabEmpty"] =
+    "No new buffs on you. The game hides your buffs in combat, in boss fights and in keystone runs."
+english["Externals.Custom.GrabMore"] = "and %d more"
 
 -- Page titles
 english["Page.General"] = "General"

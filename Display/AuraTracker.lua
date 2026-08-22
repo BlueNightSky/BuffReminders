@@ -44,6 +44,7 @@ local TEXCOORD_INSET = BR.TEXCOORD_INSET
 local GetAspectCropInsets = BR.GetAspectCropInsets
 
 local Settings = BR.GetExternalSettings
+local Entries = BR.GetExternalEntries
 local IsEnabled = BR.AreExternalsEnabled
 -- Appearance reads go through the resolver, which inherits from the global
 -- defaults unless externals.useCustomAppearance is set.
@@ -87,7 +88,7 @@ local function BuildSpellIDMap()
         return map, entryCount
     end
 
-    for _, entry in ipairs(BR.EXTERNALS) do
+    for _, entry in ipairs(Entries()) do
         if enabled[entry.key] then
             entryCount = entryCount + 1
             for _, spellID in ipairs(entry.spellIDs) do
