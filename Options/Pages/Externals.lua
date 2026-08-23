@@ -163,7 +163,8 @@ end
 
 ---Pointer feedback for one row: the faint strip the list-editor pages paint, plus
 ---the reveal of a trailing link that only shows under the pointer. A row that wants
----a tooltip of its own sets `row.ShowTip`.
+---a tooltip of its own sets `row.ShowTip`. Exposes `row.HoverIn` so a child that
+---takes the pointer can light the row it sits on.
 ---@param row table
 local function AddRowHover(row)
     row:EnableMouse(true)
@@ -171,22 +172,8 @@ local function AddRowHover(row)
     hover:SetAllPoints()
     hover:SetColorTexture(1, 1, 1, 0)
 
-    row:SetScript("OnEnter", function(self)
-        hover:SetColorTexture(1, 1, 1, ROW_HOVER_ALPHA)
-        if self.link then
-            self.link:SetAlpha(1)
-        end
-        if self.ShowTip then
-            self.ShowTip(self)
-        end
-    end)
-
-    row:SetScript("OnLeave", function(self)
-        -- A child of the row fires this too, and the link raises its own tooltip on
-        -- the way in. Clear only once the pointer has left the row.
-        if self:IsMouseOver() then
-            return
-        end
+    local function Clear(self)
+        self:SetScript("OnUpdate", nil)
         hover:SetColorTexture(1, 1, 1, 0)
         if self.link and not self.link.persistent then
             self.link:SetAlpha(0)
@@ -194,7 +181,38 @@ local function AddRowHover(row)
         if self.ShowTip then
             BR.HideTooltip()
         end
+    end
+
+    -- A child of the row takes the pointer and fires OnLeave on the row, and the
+    -- pointer can then leave the row straight from that child - the row never hears
+    -- a second OnLeave and stays lit. The watcher clears the row on its own, so the
+    -- strip and the link cannot survive the pointer. It stops on the frame it clears.
+    local function Watch(self)
+        if self:IsMouseOver() then
+            return
+        end
+        Clear(self)
+    end
+
+    function row.HoverIn(self)
+        hover:SetColorTexture(1, 1, 1, ROW_HOVER_ALPHA)
+        if self.link then
+            self.link:SetAlpha(1)
+        end
+        self:SetScript("OnUpdate", Watch)
+    end
+
+    row:SetScript("OnEnter", function(self)
+        self.HoverIn(self)
+        if self.ShowTip then
+            self.ShowTip(self)
+        end
     end)
+
+    row:SetScript("OnLeave", Watch)
+
+    -- A pooled row can be hidden under the pointer, which stops OnUpdate.
+    row:SetScript("OnHide", Clear)
 end
 
 ---A small text link. `SetFixedWidth` pins it to one width so a row can clamp its
@@ -259,6 +277,12 @@ local function CreateLink(parent, color, onClick)
 
     btn:SetScript("OnEnter", function(self)
         Tint(GLYPH_HOVER)
+        -- A link revealed on hover is still clickable while invisible, so the
+        -- pointer can reach it without crossing the row. Light the row from here.
+        local row = self:GetParent()
+        if row.HoverIn then
+            row.HoverIn(row)
+        end
         if self.tipTitle then
             BR.ShowTooltip(self, self.tipTitle, self.tipDesc, "ANCHOR_RIGHT")
         end
