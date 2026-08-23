@@ -78,7 +78,7 @@ BR.defaults = {
         spacing = 4, -- absolute px (Blizzard's elementSpacing), not an iconSize multiplier
         durationSize = 16, -- countdown text, centered on the icon
         showSwipe = true, -- radial sweep over the icon; it uncovers as the time runs out
-        growDirection = "RIGHT", -- "LEFT" or "RIGHT"; the flow layout has no centered growth
+        growDirection = "RIGHT", -- "LEFT", "RIGHT", "UP" or "DOWN"; the flow layout has no centered growth
         -- Mouse motion on the buttons. The game draws the tooltip, so it names the
         -- aura the addon cannot read. Off keeps the icons out of the mouse's way.
         showTooltips = false,

@@ -7,8 +7,8 @@ local _, BR = ...
 -- real category (no categorySettings entry, no State entries), so they get this
 -- standalone section instead of the _Template composition - none of the shared
 -- sections apply: visibility is Blizzard's call, click-to-cast is impossible on a
--- forbidden button, and growth is container-level flow-layout state with LEFT/RIGHT
--- only (the flow layout has no centered growth).
+-- forbidden button, and growth is container-level flow-layout state with four
+-- directions only (the flow layout has no centered growth).
 --
 -- Appearance keys follow the category convention: an Override checkbox gates them,
 -- and while it is off they inherit from the global defaults (BR.GetExternalSetting
@@ -240,6 +240,8 @@ local function Build(ctx, layout)
         options = {
             { label = L["Direction.Right"], value = "RIGHT" },
             { label = L["Direction.Left"], value = "LEFT" },
+            { label = L["Direction.Up"], value = "UP" },
+            { label = L["Direction.Down"], value = "DOWN" },
         },
         enabled = IsEnabled,
         disabledReason = L["Externals.NoneTracked"],

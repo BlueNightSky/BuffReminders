@@ -279,8 +279,8 @@ local function ResolveAnchor()
     return nil, nil
 end
 
----The corner of this display that meets the anchor frame's point. Growth is
----horizontal only, so only the LEFT and RIGHT rows of the map apply.
+---The corner of this display that meets the anchor frame's point. Growth has no
+---centered value, so the CENTER column of the map never applies.
 ---@param point string Anchor point on the anchor frame
 ---@return string
 local function SelfPoint(point)
@@ -360,6 +360,17 @@ local function UpdateMoverCaption()
     )
 end
 
+-- Flow-layout state per growth direction. `corner` is the fixed start point of the
+-- run. `vertical` puts the flow's primary axis on the vertical, which is what makes
+-- UP and DOWN stack a column. The cross-axis direction only picks the side a wrapped
+-- line goes to, and no maximum line size is set, so every icon stays on one line.
+local GROWTH = {
+    RIGHT = { corner = "TOPLEFT", h = "Right", v = "Down" },
+    LEFT = { corner = "TOPRIGHT", h = "Left", v = "Down" },
+    DOWN = { corner = "TOPLEFT", h = "Right", v = "Down", vertical = true },
+    UP = { corner = "BOTTOMLEFT", h = "Right", v = "Up", vertical = true },
+}
+
 ---Growth is container-level flow-layout state, public on the container (unlike
 ---per-button styling): SetFlowLayout* since 68914, SetAuraLayout* before - resolve
 ---per call so either API generation works. Direction values are
@@ -368,20 +379,26 @@ end
 ---independent of the container's own anchor - the same corner must feed both, or
 ---the first icon lands on the wrong side of the mover.
 local function ApplyGrowth(settings)
-    local corner = settings.growDirection == "LEFT" and "TOPRIGHT" or "TOPLEFT"
+    local growth = GROWTH[settings.growDirection or "RIGHT"] or GROWTH.RIGHT
     container:ClearAllPoints()
-    container:SetPoint(corner, anchorFrame, corner)
+    container:SetPoint(growth.corner, anchorFrame, growth.corner)
 
     local setAnchor = container.SetFlowLayoutAnchorPoint or container.SetAuraLayoutAnchorPoint
     if setAnchor then
-        setAnchor(container, corner)
+        setAnchor(container, growth.corner)
+    end
+
+    -- SetFlowLayoutAxis has no pre-68914 name. Without it the primary axis stays
+    -- horizontal, so UP and DOWN degrade to a row instead of faulting.
+    local axes = AnchorUtil and AnchorUtil.FlowLayoutAxis
+    if axes and container.SetFlowLayoutAxis then
+        container:SetFlowLayoutAxis(growth.vertical and axes.Vertical or axes.Horizontal)
     end
 
     local directions = AnchorUtil and AnchorUtil.FlowDirection
     local setGrowth = container.SetFlowLayoutGrowthDirection or container.SetAuraLayoutGrowthDirection
     if directions and setGrowth then
-        local growthH = settings.growDirection == "LEFT" and directions.Left or directions.Right
-        setGrowth(container, growthH, directions.Down)
+        setGrowth(container, directions[growth.h], directions[growth.v])
     end
 end
 

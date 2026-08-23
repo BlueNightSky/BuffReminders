@@ -141,7 +141,7 @@ local floor = math.floor
 -- Appearance keys that follow the global `defaults` table while
 -- externals.useCustomAppearance is off. durationSize and growDirection are
 -- absent on purpose: `defaults` has no countdown text, and its growDirection
--- values (CENTER/UP/DOWN) do not exist in the flow layout.
+-- allows CENTER, which the flow layout has no value for.
 local INHERITED_KEYS = {
     iconSize = true,
     iconWidth = true,
