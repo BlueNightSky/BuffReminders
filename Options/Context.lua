@@ -24,6 +24,7 @@ BR.Options.Constants = {
     COL_PADDING = 28,
     SECTION_SPACING = 12,
     ITEM_HEIGHT = 22,
+    ROW_HOVER_ALPHA = 0.04, -- white tint a list row paints under the pointer
     SCROLLBAR_WIDTH = 24,
     COMPONENT_GAP = 6, -- standard gap between components
     SECTION_GAP = 8, -- gap before/after section boundaries
@@ -332,7 +333,7 @@ end
 -- stays reachable no matter how long the list grows.
 
 local LIST_ADD_BUTTON_HEIGHT = 22
-local LIST_ROW_HOVER_ALPHA = 0.04
+local LIST_ROW_HOVER_ALPHA = BR.Options.Constants.ROW_HOVER_ALPHA
 
 -- Default row frame: a plain, full-width hover strip. Pages that need a richer
 -- row (persistent child widgets) pass their own config.createRow instead.

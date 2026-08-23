@@ -343,9 +343,11 @@ english["Externals.PageNote"] = "The game draws these icons, so they stay visibl
 english["Externals.NoneTracked"] = "Track at least one buff on the Buffs > External Buffs page first."
 english["Externals.Sound"] = "Sound alert"
 english["Externals.Sound.Tooltip"] =
-    "Every buff you track plays this sound when it lands on you. Select None for silence.|nTo give one buff its own sound, put the pointer on the glyph at the end of its row.|nA change during a boss fight applies when the fight ends."
+    "Every buff you track plays this sound when it lands on you. Select None for silence.|nTo give one buff its own sound, click the link at the end of its row.|nA change during a boss fight applies when the fight ends."
+english["Externals.Sound.Hint"] = "Each buff can override this from its row."
+english["Externals.Sound.Link"] = "Sound"
+english["Externals.Sound.Silent"] = "Silent"
 english["Externals.Sound.Change"] = "Click to change it."
-english["Externals.Sound.NeedsEntry"] = "Track this buff first."
 english["Externals.Sound.Plays"] = "The game plays %s when this buff lands on you."
 english["Externals.Sound.Silenced"] = "This buff plays no sound."
 english["Externals.Sound.SilentByDefault"] = "This buff lands too often for the shared sound. Override it to add one."

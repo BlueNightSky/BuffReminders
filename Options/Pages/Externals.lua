@@ -14,7 +14,9 @@ local _, BR = ...
 --
 -- The ticked set is the switch: no separate enable toggle, so a first tick starts
 -- the display. One sound serves every tracked entry, and a row can override it, so
--- the glyph column answers one question at a glance: which buffs make a sound.
+-- the glyph column answers one question at a glance: which buffs make a sound. The
+-- trailing link is the door that changes it, which is the grammar the All Buffs
+-- rows set - gold trailing text opens settings, slate glyphs only report.
 --
 -- Rows repaint through one page-wide function, not per widget: a section toggle and
 -- a row checkbox each change what the other must show.
@@ -49,16 +51,34 @@ local INTER_SECTION_GAP = 10
 local ICON_SIZE = 16
 local FALLBACK_ICON = 134400
 
--- Trailing sound glyph, tinted to match the All Buffs row glyphs.
+-- Slate tints shared by the state glyph, the trailing link and the section toggle,
+-- matching the All Buffs rows. GLYPH_UNSET marks a tracked row that stays silent
+-- and stays at full alpha: it already sits far enough under GLYPH_IDLE to read as
+-- off, and any dim on top of it drops the marker under the contrast a control needs.
 local GLYPH_IDLE = { 0.62, 0.70, 0.75 }
 local GLYPH_HOVER = { 0.85, 0.92, 0.97 }
 local GLYPH_UNSET = { 0.42, 0.42, 0.46 }
--- A silent row keeps a ghost of the glyph: it reads as absent across the column,
--- yet stays a target, so the drawer needs no second way in.
-local GLYPH_ALPHA_SILENT = 0.16
 local GLYPH_SIZE = 13
 local GLYPH_GAP = 6
 local SOUND_ATLAS = "chatframe-button-icon-voicechat"
+
+-- The state glyph holds the row's right edge, so the column of glyphs stays one
+-- clean scan line, and the link sits left of it. The link width is fixed, because a
+-- link that appears under the pointer must not move the buff name: the name is
+-- clamped against the reserve whether the link shows or not. The buff name wins the
+-- width it needs first, so the reserve stays narrow and a sound named wider than it
+-- is clipped; the tooltip carries the full name.
+local LINK_RESERVE = 66
+local LINK_HEIGHT = 14
+local GLYPH_TO_LINK_GAP = 7
+local LINK_IDLE = { 0.55, 0.55, 0.58 }
+local ROW_HOVER_ALPHA = BR.Options.Constants.ROW_HOVER_ALPHA
+
+-- Clickable-link marker. Plain ASCII ">" so it renders in every client font - the
+-- U+203A chevron is tofu in the bundled CJK faces. Kept in code so translators
+-- never carry a stray marker.
+local CHEVRON = " >"
+local CHEVRON_WIDTH = 10
 
 -- Section select-all, tinted like the row glyphs so the two read as one column set.
 local TOGGLE_GAP = 8
@@ -141,19 +161,134 @@ local function BuildSoundModel(GetEntry)
     }
 end
 
----Trailing sound glyph: reports whether the entry carries a sound, and opens the
----drawer that changes it. Reads its entry through a getter, because a pooled row
----serves a different entry on every render. `OnClick` replaces the sound-only
----drawer for entries whose card holds more. Exposes Update() so the row can
----repaint it.
+---Pointer feedback for one row: the faint strip the list-editor pages paint, plus
+---the reveal of a trailing link that only shows under the pointer. A row that wants
+---a tooltip of its own sets `row.ShowTip`.
+---@param row table
+local function AddRowHover(row)
+    row:EnableMouse(true)
+    local hover = row:CreateTexture(nil, "BACKGROUND")
+    hover:SetAllPoints()
+    hover:SetColorTexture(1, 1, 1, 0)
+
+    row:SetScript("OnEnter", function(self)
+        hover:SetColorTexture(1, 1, 1, ROW_HOVER_ALPHA)
+        if self.link then
+            self.link:SetAlpha(1)
+        end
+        if self.ShowTip then
+            self.ShowTip(self)
+        end
+    end)
+
+    row:SetScript("OnLeave", function(self)
+        -- A child of the row fires this too, and the link raises its own tooltip on
+        -- the way in. Clear only once the pointer has left the row.
+        if self:IsMouseOver() then
+            return
+        end
+        hover:SetColorTexture(1, 1, 1, 0)
+        if self.link and not self.link.persistent then
+            self.link:SetAlpha(0)
+        end
+        if self.ShowTip then
+            BR.HideTooltip()
+        end
+    end)
+end
+
+---A small text link. `SetFixedWidth` pins it to one width so a row can clamp its
+---label against the reserve whether the link shows or not; a link left unpinned
+---sizes to its text.
+---@param parent Frame
+---@param color number[]
+---@param onClick function
+local function CreateLink(parent, color, onClick)
+    local btn = CreateFrame("Button", nil, parent)
+    local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    -- The marker is a FontString of its own, not part of the label, so a label
+    -- clipped by the fixed width still ends in the marker instead of losing it.
+    local mark = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    mark:SetText(CHEVRON)
+    text:SetPoint("LEFT", 0, 0)
+    mark:SetPoint("LEFT", text, "RIGHT", 0, 0)
+    btn:SetFontString(text)
+    btn:SetHeight(LINK_HEIGHT)
+    btn.idle = color
+
+    local function Tint(c)
+        text:SetTextColor(c[1], c[2], c[3])
+        mark:SetTextColor(c[1], c[2], c[3])
+    end
+    Tint(color)
+
+    ---The marker's own width, floored: a FontString measures 0 until it has a font,
+    ---and the link is built before the panel's typeface sweep reaches it.
+    local function MarkWidth()
+        local w = mark:GetStringWidth()
+        return w > 0 and w or CHEVRON_WIDTH
+    end
+
+    function btn:SetFixedWidth(width)
+        self.fixedWidth = width
+        self:SetWidth(width)
+        mark:ClearAllPoints()
+        mark:SetPoint("RIGHT", 0, 0)
+        text:ClearAllPoints()
+        text:SetPoint("RIGHT", mark, "LEFT", 0, 0)
+        text:SetWidth(width - MarkWidth())
+        text:SetJustifyH("RIGHT")
+        text:SetWordWrap(false)
+    end
+
+    function btn:SetIdleColor(c)
+        self.idle = c
+        Tint(c)
+    end
+
+    function btn:SetLabel(label)
+        text:SetText(label)
+        if not self.fixedWidth then
+            self:SetWidth(text:GetStringWidth() + MarkWidth() + 2)
+        end
+    end
+
+    function btn:SetTooltip(title, desc)
+        self.tipTitle, self.tipDesc = title, desc
+    end
+
+    btn:SetScript("OnEnter", function(self)
+        Tint(GLYPH_HOVER)
+        if self.tipTitle then
+            BR.ShowTooltip(self, self.tipTitle, self.tipDesc, "ANCHOR_RIGHT")
+        end
+    end)
+    btn:SetScript("OnLeave", function(self)
+        Tint(self.idle)
+        if self.tipTitle then
+            BR.HideTooltip()
+        end
+    end)
+    btn:SetScript("OnClick", onClick)
+    return btn
+end
+
+---The sound controls for one row. The glyph reports state and takes no clicks; the
+---link is the door, matching the All Buffs rows where gold trailing text opens the
+---settings and slate glyphs only report. Both read the entry through a getter,
+---because a pooled row serves a different entry on every render. A row that already
+---carries a link of its own passes `withLink` false and keeps the glyph alone.
+---Returns the glyph, which exposes Update() to repaint the pair and holds the link
+---on `.link` for the row to anchor.
 ---@param row table
 ---@param GetEntry fun(): table?
----@param OnClick? fun(entry: table, glyph: table)
-local function CreateSoundGlyph(row, GetEntry, OnClick)
+---@param withLink? boolean
+---@return table glyph
+local function CreateSoundControls(row, GetEntry, withLink)
     local model = BuildSoundModel(GetEntry)
 
     -- A sound only means something for a buff the player tracks, so the row's own
-    -- checkbox gates the glyph.
+    -- checkbox gates both controls.
     local function IsTracked()
         local entry = GetEntry()
         if not entry then
@@ -173,33 +308,11 @@ local function CreateSoundGlyph(row, GetEntry, OnClick)
         return BR.Sounds.Label(BR.GetExternalEntrySound(entry))
     end
 
-    local btn = CreateFrame("Button", nil, row)
-    btn:SetSize(GLYPH_SIZE, GLYPH_SIZE)
-    local tex = btn:CreateTexture(nil, "ARTWORK")
-    tex:SetAllPoints()
-    tex:SetAtlas(SOUND_ATLAS)
-
-    local function Tint(color, alpha)
-        tex:SetVertexColor(color[1], color[2], color[3])
-        tex:SetAlpha(alpha)
-    end
-
-    function btn.Update()
-        if IsTracked() and PlayingLabel() then
-            Tint(GLYPH_IDLE, 1)
-        else
-            Tint(GLYPH_UNSET, GLYPH_ALPHA_SILENT)
-        end
-    end
-
     ---Why this row sounds the way it does, and what to do about it.
     local function Describe()
         local entry = GetEntry()
         if not entry then
             return ""
-        end
-        if not IsTracked() then
-            return L["Externals.Sound.NeedsEntry"]
         end
         local owner = BR.FindExternalSoundOwner(entry)
         if owner then
@@ -218,39 +331,66 @@ local function CreateSoundGlyph(row, GetEntry, OnClick)
         return L["Externals.Sound.NoAlert"]
     end
 
-    btn:SetScript("OnEnter", function(self)
-        if IsTracked() then
-            Tint(GLYPH_HOVER, 1)
-        end
-        BR.ShowTooltip(self, L["Externals.Sound"], Describe(), "ANCHOR_RIGHT")
-    end)
+    local glyph = CreateFrame("Frame", nil, row)
+    glyph:SetSize(GLYPH_SIZE, GLYPH_SIZE)
+    local tex = glyph:CreateTexture(nil, "ARTWORK")
+    tex:SetAllPoints()
+    tex:SetAtlas(SOUND_ATLAS)
 
-    btn:SetScript("OnLeave", function()
-        btn.Update()
-        BR.HideTooltip()
-    end)
+    local link
+    if withLink then
+        link = CreateLink(row, LINK_IDLE, function(self)
+            local entry = GetEntry()
+            if not entry or not IsTracked() then
+                return
+            end
+            BuffPanel.ShowSound({
+                title = BR.GetExternalLabel(entry),
+                icon = C_Spell.GetSpellTexture(entry.spellIDs[1]),
+                model = model,
+            }, self)
+        end)
+        link:SetFixedWidth(LINK_RESERVE)
+        glyph.link = link
+    end
 
-    btn:SetScript("OnClick", function(self)
-        local entry = GetEntry()
-        if not entry then
+    function glyph.Update()
+        local tracked = IsTracked()
+        local playing = tracked and PlayingLabel() or nil
+        -- An untracked row draws no marker at all: a control that does nothing must
+        -- not look like one.
+        tex:SetShown(tracked)
+        local tint = playing and GLYPH_IDLE or GLYPH_UNSET
+        tex:SetVertexColor(tint[1], tint[2], tint[3])
+
+        if not link then
             return
         end
-        if OnClick then
-            OnClick(entry, self)
+        link:SetShown(tracked)
+        if not tracked then
             return
         end
-        if not IsTracked() then
-            return
+        -- The link names what the row plays. Gold and always shown marks the row
+        -- that overrides the page sound; the muted one only reports what it
+        -- inherits, so it stays a hover reveal.
+        local overridden = BR.IsExternalSoundOverridden(GetEntry().key)
+        link.persistent = overridden
+        link:SetIdleColor(overridden and GOLD or LINK_IDLE)
+        if playing then
+            link:SetLabel(playing)
+        elseif overridden then
+            link:SetLabel(L["Externals.Sound.Silent"])
+        else
+            link:SetLabel(L["Externals.Sound.Link"])
         end
-        BuffPanel.ShowSound({
-            title = BR.GetExternalLabel(entry),
-            icon = C_Spell.GetSpellTexture(entry.spellIDs[1]),
-            model = model,
-        }, self)
-    end)
+        link:SetTooltip(L["Externals.Sound"], Describe())
+        -- A row that inherits the page sound shows its link under the pointer only.
+        -- Repaints run while the pointer sits on the row, so the hover state wins.
+        link:SetAlpha((overridden or row:IsMouseOver()) and 1 or 0)
+    end
 
-    btn.Update()
-    return btn
+    glyph.Update()
+    return glyph
 end
 
 ---Section select-all: one click tracks the whole group, the next clears it.
@@ -321,17 +461,20 @@ local function CreateSectionToggle(parent, entries)
     return btn
 end
 
----One row: enable checkbox, spell icon, name, sound glyph.
+---One row: enable checkbox, spell icon, name, sound glyph, sound link.
 local function RenderRow(parent, x, y, entry, rowWidth, ctx)
     local key = entry.key
     local row = CreateFrame("Frame", nil, parent)
     row:SetPoint("TOPLEFT", x, y)
     row:SetSize(rowWidth, ITEM_HEIGHT)
+    AddRowHover(row)
 
-    local soundGlyph = CreateSoundGlyph(row, function()
+    local soundGlyph = CreateSoundControls(row, function()
         return entry
-    end)
+    end, true)
+    row.link = soundGlyph.link
     soundGlyph:SetPoint("RIGHT", 0, 0)
+    row.link:SetPoint("RIGHT", soundGlyph, "LEFT", -GLYPH_TO_LINK_GAP, 0)
     ctx.updaters[#ctx.updaters + 1] = soundGlyph.Update
 
     -- holderWidth 18: the label is drawn separately, so the checkbox holder only
@@ -362,7 +505,7 @@ local function RenderRow(parent, x, y, entry, rowWidth, ctx)
 
     local label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     label:SetPoint("LEFT", icon, "RIGHT", 7, 0)
-    label:SetPoint("RIGHT", soundGlyph, "LEFT", -GLYPH_GAP, 0)
+    label:SetPoint("RIGHT", row.link, "LEFT", -GLYPH_GAP, 0)
     label:SetJustifyH("LEFT")
     label:SetWordWrap(false)
     label:SetText(BR.GetExternalLabel(entry))
@@ -430,7 +573,6 @@ local EDITOR_INPUT_WIDTH = 120
 local EDITOR_ROW_HEIGHT = 20
 local EDITOR_ROW_GAP = 6
 local ACTION_BUTTON_WIDTH = 48
-local LINK_HEIGHT = 14
 local DRAWER_BUTTON_HEIGHT = 22
 -- The card for one of the player's entries carries a row per spell ID, so it needs
 -- more width than the per-buff cards.
@@ -526,43 +668,6 @@ local function CollectNewPlayerBuffs()
         end
     end
     return list
-end
-
----A small text link, tinted like the row glyphs.
----@param parent Frame
----@param color number[]
----@param onClick function
-local function CreateLink(parent, color, onClick)
-    local btn = CreateFrame("Button", nil, parent)
-    local text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    text:SetPoint("LEFT", 0, 0)
-    btn:SetFontString(text)
-    btn:SetHeight(LINK_HEIGHT)
-    text:SetTextColor(color[1], color[2], color[3])
-
-    function btn:SetLabel(label)
-        text:SetText(label)
-        self:SetWidth(text:GetStringWidth() + 2)
-    end
-
-    function btn:SetTooltip(title, desc)
-        self.tipTitle, self.tipDesc = title, desc
-    end
-
-    btn:SetScript("OnEnter", function(self)
-        text:SetTextColor(GLYPH_HOVER[1], GLYPH_HOVER[2], GLYPH_HOVER[3])
-        if self.tipTitle then
-            BR.ShowTooltip(self, self.tipTitle, self.tipDesc, "ANCHOR_RIGHT")
-        end
-    end)
-    btn:SetScript("OnLeave", function(self)
-        text:SetTextColor(color[1], color[2], color[3])
-        if self.tipTitle then
-            BR.HideTooltip()
-        end
-    end)
-    btn:SetScript("OnClick", onClick)
-    return btn
 end
 
 ---The spell ID a dragged cursor carries, or nil when the cursor holds anything else.
@@ -995,26 +1100,23 @@ local function CreateCustomSection(parent, x, topY, colWidth, ctx)
     local function CreateEntryRow()
         local row = CreateFrame("Frame", nil, frame)
         row:SetSize(rowWidth, ITEM_HEIGHT)
-        row:EnableMouse(true)
+        AddRowHover(row)
 
-        -- The glyph and the link open the same card, so one entry has one surface.
-        local function OpenCard(entry, widget)
-            OpenEntryDrawer(entry.key, widget, EntriesChanged)
-        end
-
-        local glyph = CreateSoundGlyph(row, function()
+        -- The card holds the name, the spell IDs and the sound, so the sound has no
+        -- link of its own here: Edit is the row's one door.
+        local glyph = CreateSoundControls(row, function()
             return row.entry
-        end, OpenCard)
-        glyph:SetPoint("RIGHT", 0, 0)
+        end)
         row.glyph = glyph
 
         local editLink = CreateLink(row, GOLD, function(self)
             if row.entry then
-                OpenCard(row.entry, self)
+                OpenEntryDrawer(row.entry.key, self, EntriesChanged)
             end
         end)
         editLink:SetLabel(L["Externals.Custom.Edit"])
-        editLink:SetPoint("RIGHT", glyph, "LEFT", -GLYPH_GAP, 0)
+        glyph:SetPoint("RIGHT", 0, 0)
+        editLink:SetPoint("RIGHT", glyph, "LEFT", -GLYPH_TO_LINK_GAP, 0)
 
         local checkbox = Components.Checkbox(row, {
             label = "",
@@ -1053,7 +1155,7 @@ local function CreateCustomSection(parent, x, topY, colWidth, ctx)
         label:SetJustifyH("LEFT")
         label:SetWordWrap(false)
 
-        row:SetScript("OnEnter", function(self)
+        function row.ShowTip(self)
             local entry = self.entry
             if not entry then
                 return
@@ -1064,14 +1166,7 @@ local function CreateCustomSection(parent, x, topY, colWidth, ctx)
                 format(L["Externals.Custom.RowTooltip"], tconcat(entry.spellIDs, ", ")),
                 "ANCHOR_RIGHT"
             )
-        end)
-        row:SetScript("OnLeave", function(self)
-            -- A child of the row fires this too, and the glyph raises its own
-            -- tooltip on the way in. Hide only once the pointer has left the row.
-            if not self:IsMouseOver() then
-                BR.HideTooltip()
-            end
-        end)
+        end
 
         function row.Fill(entry)
             row.entry = entry
@@ -1262,6 +1357,14 @@ local function Build(content, scrollFrame)
         return Settings().sound
     end)
     preview:SetPoint("LEFT", soundDrop, "RIGHT", 8, 0)
+
+    -- The one place the page announces that a row can override this sound.
+    local soundHint = soundRow:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    soundHint:SetPoint("LEFT", preview, "RIGHT", 10, 0)
+    soundHint:SetPoint("RIGHT", 0, 0)
+    soundHint:SetJustifyH("LEFT")
+    soundHint:SetWordWrap(false)
+    soundHint:SetText(L["Externals.Sound.Hint"])
 
     layout:Add(soundRow, 26, 16)
 
