@@ -13,7 +13,8 @@ local _, BR = ...
 -- Appearance keys follow the category convention: an Override checkbox gates them,
 -- and while it is off they inherit from the global defaults (BR.GetExternalSetting
 -- resolves the gate) and render dimmed with the live inherited values. Countdown
--- size and direction have no `defaults` counterpart, so they ignore the override.
+-- size, direction and the tooltip toggle have no `defaults` counterpart, so they
+-- ignore the override.
 --
 -- Like CustomAppearance, this section is terminal: it owns the tab frame's height.
 
@@ -250,6 +251,20 @@ local function Build(ctx, layout)
         end,
     })
     layout:Add(dirHolder, nil, COMPONENT_GAP + DROPDOWN_EXTRA)
+
+    local tooltipHolder = Components.Checkbox(parent, {
+        label = L["Externals.ShowTooltips"],
+        tooltip = { title = L["Externals.ShowTooltips"], desc = L["Externals.ShowTooltips.Desc"] },
+        enabled = IsEnabled,
+        disabledReason = L["Externals.NoneTracked"],
+        get = function()
+            return Setting("showTooltips") == true
+        end,
+        onChange = function(checked)
+            BR.Config.Set("externals.showTooltips", checked)
+        end,
+    })
+    layout:Add(tooltipHolder, nil, COMPONENT_GAP)
 
     LayoutSectionNote(layout, parent, L["Externals.MasqueNote"])
 

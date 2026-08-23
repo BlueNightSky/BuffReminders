@@ -78,6 +78,9 @@ BR.defaults = {
         spacing = 4, -- absolute px (Blizzard's elementSpacing), not an iconSize multiplier
         durationSize = 16, -- countdown text, centered on the icon
         growDirection = "RIGHT", -- "LEFT" or "RIGHT"; the flow layout has no centered growth
+        -- Mouse motion on the buttons. The game draws the tooltip, so it names the
+        -- aura the addon cannot read. Off keeps the icons out of the mouse's way.
+        showTooltips = false,
         -- The tracked set doubles as the on switch: empty means the display is off.
         entries = {}, -- [Data/Externals.lua key] = true
         -- sound: deliberately absent - nil means no sound. One value for every

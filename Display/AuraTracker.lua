@@ -180,6 +180,13 @@ local function StyleButton(button)
     else
         regions.border:Hide()
     end
+
+    -- Last, because these are the calls most likely to be denied: a denial must not
+    -- cost the styling above. The engine draws the tooltip for an aura the addon
+    -- cannot read, and it needs mouse motion on the button. Clicks stay off in both
+    -- states, so the icons never take a click away from what is under them.
+    button:SetMouseClickEnabled(false)
+    button:SetMouseMotionEnabled(Setting("showTooltips") == true)
 end
 
 ---The one window where addon code may decorate a button: the frame provider calls
@@ -187,8 +194,6 @@ end
 local function InitializeButton(button)
     local regions = {}
     buttonRegions[button] = regions
-
-    button:EnableMouse(false)
 
     regions.border = button:CreateTexture(nil, "BACKGROUND")
     regions.border:SetColorTexture(0, 0, 0, 1)
