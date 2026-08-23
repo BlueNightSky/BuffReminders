@@ -374,6 +374,9 @@ english["Externals.DurationSize"] = "Countdown size"
 english["Externals.Appearance"] = "Appearance"
 english["Externals.AppearanceNote"] =
     "While these buffs are secret the game forbids restyling their icons, so changes made in combat apply as soon as you leave it. Unlock the frames to drag the row."
+english["Externals.ShowSwipe"] = "Show duration swipe"
+english["Externals.ShowSwipe.Desc"] =
+    "Draw a dark sweep over the icon. The sweep uncovers the icon as the buff runs out."
 english["Externals.ShowTooltips"] = "Show tooltips"
 english["Externals.ShowTooltips.Desc"] =
     "Show the game's buff tooltip when the mouse is on an icon. The icons never take clicks, only mouse movement."

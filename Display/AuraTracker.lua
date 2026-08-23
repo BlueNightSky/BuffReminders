@@ -170,6 +170,15 @@ local function StyleButton(button)
     -- retry.
     BR.DisplayFonts.Apply(regions.duration, Setting("durationSize") or 16)
 
+    -- SetDrawSwipe, not Hide: Blizzard calls SetCooldown on this frame on every
+    -- aura refresh, and that call re-shows the frame. Swipe drawing is persistent
+    -- cooldown style instead, which SetCooldown leaves alone. The frame must also
+    -- stay registered - it is the button's duration SOURCE, so unregistering it
+    -- takes the countdown text away with the swipe.
+    if regions.cooldown.SetDrawSwipe then
+        regions.cooldown:SetDrawSwipe(Setting("showSwipe") ~= false)
+    end
+
     -- Border protrudes past the button's bounds, same as the reminder icons.
     -- Regions may extend outside a button; only their parentage is constrained.
     if borderSize > 0 then
@@ -202,6 +211,27 @@ local function InitializeButton(button)
     regions.icon:SetAllPoints(button)
     button:SetIcon(regions.icon)
 
+    -- The radial sweep over the icon. CooldownFrameTemplate carries the swipe
+    -- texture - a bare Cooldown frame draws nothing. Blizzard calls SetCooldown on
+    -- it from the aura's own duration, so the sweep runs for auras the addon cannot
+    -- read. Reverse: the swipe UNCOVERS the icon as the time runs out.
+    regions.cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+    regions.cooldown:SetAllPoints(button)
+    regions.cooldown:SetDrawEdge(false)
+    regions.cooldown:SetReverse(true)
+    -- The countdown text below is ours; the swipe must not print a second one.
+    regions.cooldown:SetHideCountdownNumbers(true)
+    button:SetDurationCooldown(regions.cooldown)
+
+    -- The swipe is a child FRAME, so it draws over every region of the button
+    -- itself. Text goes on a carrier above it, or the sweep covers the countdown.
+    regions.textHost = CreateFrame("Frame", nil, button)
+    regions.textHost:SetAllPoints(button)
+    regions.textHost:SetFrameLevel(regions.cooldown:GetFrameLevel() + 1)
+    -- The button owns the mouse for the tooltip. A carrier that takes motion sits
+    -- between the cursor and the button and eats it.
+    regions.textHost:EnableMouse(false)
+
     -- SetDurationText stamps SecretAspect.Text/Alpha/VertexColor on this
     -- fontstring: Blizzard writes and counts it down, we must never read it back.
     -- That timer is the one piece of data we could not obtain ourselves in a
@@ -210,7 +240,7 @@ local function InitializeButton(button)
     -- Placement and font are ours; only the string is Blizzard's, and the
     -- `textFormatter` option decides how it is rendered. Falls back to the stock
     -- "42 s" formatter if the formatter or the option is rejected.
-    regions.duration = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    regions.duration = regions.textHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     regions.duration:SetPoint("CENTER", button, "CENTER", 0, 0)
     regions.duration:SetJustifyH("CENTER")
 
@@ -228,7 +258,7 @@ local function InitializeButton(button)
         button:SetDurationText(regions.duration)
     end
 
-    regions.count = button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    regions.count = regions.textHost:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
     regions.count:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -1, 1)
     button:SetApplicationCount(regions.count)
 
