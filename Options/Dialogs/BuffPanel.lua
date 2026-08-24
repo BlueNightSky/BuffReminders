@@ -3,26 +3,14 @@ local _, BR = ...
 -- ============================================================================
 -- PER-BUFF SETTINGS: DRAWER + EDITOR
 -- ============================================================================
--- Opened from every All Buffs row link. Two surfaces, split by weight:
---
---   * DRAWER - a light popover anchored beside the row. Holds the universal
---     knobs (Sound, Detach, and Show where it applies) plus this buff's small
---     special controls inline. This is the whole interaction for most buffs.
---     Enable is NOT here - the row's own checkbox owns it. ShowSound opens the
---     same popover with the sound row alone, for the Externals rows.
---   * EDITOR - a focused panel opened from the drawer's "Edit X" door, for the
---     two buffs whose special section is a real editor (poison priority columns,
---     runeforge-per-spec tabs). Single-purpose: just that editor.
---
--- Both are built once (chrome) and rebuilt per open (body); holders created in
--- the body are unregistered on teardown. The drawer dismisses on click-away
--- (catcher), ESC, or its close button. (Chat request messages live on their own
--- page: Alerts > Chat Requests.)
---
--- Healthstone and Soulstone fold their old three-value visibility dropdowns
--- (readyCheck / casterOnly / always) into the same Show toggle everything
--- else uses, plus a "Warlocks always see it" checkbox for the casterOnly
--- middle state.
+-- Opened from an All Buffs row link. There are two surfaces.
+--   * DRAWER - a popover anchored beside the row. It holds Sound, Detach, Show
+--     where it applies, plus the buff's small special controls inline.
+--   * EDITOR - a focused panel for the two buffs whose special section is a
+--     full editor (poison priority columns, runeforge-per-spec tabs).
+-- Enable is on neither surface: the All Buffs row checkbox owns it.
+-- Chrome is built once, the body per open. Teardown must unregister every
+-- holder that the body created. The drawer dismisses on click-away or ESC.
 
 local L = BR.L
 local Components = BR.Components
@@ -32,17 +20,14 @@ local Sounds = BR.Sounds
 local COMPONENT_GAP = BR.Options.Constants.COMPONENT_GAP
 
 local tinsert = table.insert
-local tconcat = table.concat
 local format = string.format
 local abs = math.abs
 local wipe = wipe
 
--- Focused-editor default width; poison / runeforge override it (SPECIAL_WIDTH).
+-- Focused-editor default width.
 local PANEL_W = 420
 
--- Buffs whose special section is a full editor (poison columns / runeforge tab
--- strip) - too big for the drawer, so the drawer shows a door to a focused
--- editor panel sized to the buff instead of inline controls.
+-- Editor width per buff. The two full editors need more room than PANEL_W.
 local SPECIAL_WIDTH = {
     roguePoisons = 520,
     dkRunes = 560,
@@ -50,14 +35,10 @@ local SPECIAL_WIDTH = {
 
 BR.Options.Dialogs = BR.Options.Dialogs or {}
 
--- drawer = the quick-settings popover anchored beside a row; editor = the
--- focused per-buff panel opened from the drawer's "Edit" door; catcher = the
--- click-away dismiss layer under the drawer.
 local drawer, drawerBody, drawerIcon, drawerTitle, catcher
 local editor, editorBody, editorIcon, editorTitle
--- Active build surface: pointed at the drawer or editor body (and its holder
--- list / content width) before a build, so the shared AddSpecialCheckbox /
--- AddInlineEditor helpers write to the right one.
+-- Active build surface. A build must first point body, bodyW and bodyHolders at
+-- the drawer body or at the editor body. The shared row helpers write to these.
 local body
 local bodyW = 0
 local bodyHolders = {}
@@ -79,9 +60,8 @@ local function MakeOverrideShowModel(key)
             return not overrides or overrides[key] ~= false
         end,
         setReadyCheck = function(checked)
-            -- checked -> ready-check-only (clear the override); unchecked -> always (false).
-            -- Can't fold this into `checked and nil or false`: that idiom always yields
-            -- false because the true-branch value (nil) is itself falsy.
+            -- `checked and nil or false` cannot replace this branch: the idiom always
+            -- yields false, because the true-branch value (nil) is itself falsy.
             local override
             if not checked then
                 override = false
@@ -127,7 +107,7 @@ local SHOW_MODELS = {
     end,
 }
 
--- Drawer / editor geometry (shared by the buff sections and the row builders).
+-- Drawer / editor geometry.
 local DRAWER_W = 300
 local DRAWER_BODY_X = 14
 local DRAWER_BODY_TOP = 40
@@ -139,8 +119,7 @@ local EDITOR_BODY_TOP = 44
 -- ============================================================================
 -- BUFF-SPECIFIC SECTIONS
 -- ============================================================================
--- Each builder appends this buff's extra controls to the body layout. The
--- simple checkbox rows share one small factory.
+-- Each builder appends this buff's extra controls to the body layout.
 
 local function AddSpecialCheckbox(layout, opts)
     local holder = Components.Checkbox(body, {
@@ -154,9 +133,9 @@ local function AddSpecialCheckbox(layout, opts)
     return holder
 end
 
--- Render a buff's inline editor (poison / runeforge) into the panel body at the
--- layout's current cursor, then advance the layout past it. The editor parents
--- its frames to `body` and registers its checkbox holders for teardown.
+-- Render a buff's inline editor at the layout cursor, then advance the layout
+-- past it. The builder parents its frames to `body` and registers its holders
+-- for teardown.
 local function AddInlineEditor(layout, builder)
     local height = builder(body, {
         x = 0,
@@ -170,82 +149,31 @@ local function AddInlineEditor(layout, builder)
 end
 
 -- ============================================================================
--- ROW CAPTION HELPERS
+-- ROW WARNING
 -- ============================================================================
--- The All Buffs row for each special buff carries a second line naming its
--- option and showing the current value (see _BuffRow). These helpers build
--- that value text. Each `caption()` returns (text, isWarning): isWarning flips
--- the line to the orange "needs setup" state for genuinely unset selections.
 
--- First enabled poison name per category, joined "Lethal + Non-lethal".
--- Warns when a whole category has nothing enabled (the reminder can't fire).
-local function PoisonCaption()
+-- True when neither poison category has an enabled entry, so no reminder can
+-- fire. GetSpecialState colors the All Buffs row link orange for it.
+local function PoisonNeedsSetup()
     local prefs = BR.profile.roguePoisonPreferences
-    local function firstEnabled(cat)
+    local function noneEnabled(cat)
         local list = prefs and prefs[cat]
         if not list then
-            return nil
+            return true
         end
         for _, entry in ipairs(list) do
             if entry.enabled and entry.spellID then
-                return BR.GetSpellName(entry.spellID)
+                return false
             end
         end
-        return nil
+        return true
     end
-    local lethal = firstEnabled("lethal")
-    local nonLethal = firstEnabled("nonLethal")
-    if not lethal and not nonLethal then
-        return L["BuffRow.Caption.PoisonsUnset"], true
-    end
-    local parts = {}
-    if lethal then
-        tinsert(parts, lethal)
-    end
-    if nonLethal then
-        tinsert(parts, nonLethal)
-    end
-    return format(L["BuffRow.Caption.Poisons"], tconcat(parts, " + ")), false
+    return noneEnabled("lethal") and noneEnabled("nonLethal")
 end
 
--- Runeforge choice for the player's current spec (only meaningful for DKs, and
--- only once a spec exists). Falls back to the generic "set per spec" prompt for
--- non-DKs and unconfigured DK specs, so the row still advertises the feature.
-local function RuneforgeCaption()
-    local specId = BR.StateHelpers.GetPlayerSpecId()
-    local specPrefs = specId and BR.profile.dkRunePreferences and BR.profile.dkRunePreferences[specId]
-    if specPrefs then
-        local isDW = BR.BuffState.HasOffHandWeapon()
-        local accepted = specPrefs[isDW and "dw_mainhand" or "mainhand"]
-        if accepted then
-            for _, rune in ipairs(BR.DK_RUNEFORGES) do
-                if accepted[rune.enchantID] then
-                    return format(L["BuffRow.Caption.Runeforge"], BR.GetSpellName(rune.spellID) or rune.key), false
-                end
-            end
-        end
-    end
-    return L["BuffRow.Caption.RuneforgeUnset"], false
-end
-
--- Two-state description for a boolean toggle: on -> onKey, off -> offKey.
-local function ToggleCaption(getter, onKey, offKey)
-    return function()
-        return getter() and L[onKey] or L[offKey], false
-    end
-end
-
--- Each entry: `caption()` returns (text, isWarning) for the All Buffs row's
--- second line (see _BuffRow); `build(layout)` appends this buff's extra
--- controls to the panel body.
+-- `build(layout)` appends this buff's extra controls to the panel body.
 local SPECIAL_SECTIONS = {
     healthstone = {
-        caption = function()
-            if not BR.Config.Get("defaults.healthstoneLowStock") then
-                return L["BuffRow.Caption.HealthstoneOff"], false
-            end
-            return format(L["BuffRow.Caption.Healthstone"], BR.Config.Get("defaults.healthstoneThreshold") or 1), false
-        end,
         build = function(layout)
             AddSpecialCheckbox(layout, {
                 label = L["Options.Healthstone.LowStock"],
@@ -282,9 +210,6 @@ local SPECIAL_SECTIONS = {
     },
 
     repairGear = {
-        caption = function()
-            return format(L["BuffRow.Caption.Repair"], BR.Config.Get("defaults.repairThreshold") or 20), false
-        end,
         build = function(layout)
             local thresholdHolder = Components.Slider(body, {
                 label = L["Options.Repair.Threshold"],
@@ -317,15 +242,6 @@ local SPECIAL_SECTIONS = {
     },
 
     soulstone = {
-        caption = function()
-            local pinned = BR.Config.Get("defaults.soulstonePinnedTarget")
-            if pinned and pinned ~= "" then
-                return format(L["BuffRow.Caption.SoulstonePinned"], pinned), false
-            end
-            return BR.Config.Get("defaults.soulstoneHideCooldown") and L["BuffRow.Caption.SoulstoneHidden"]
-                or L["BuffRow.Caption.SoulstoneShown"],
-                false
-        end,
         build = function(layout)
             AddSpecialCheckbox(layout, {
                 label = L["Options.Soulstone.HideCooldown"],
@@ -361,9 +277,6 @@ local SPECIAL_SECTIONS = {
     },
 
     bronze = {
-        caption = ToggleCaption(function()
-            return BR.profile.bronzeHideInCombat == true
-        end, "BuffRow.Caption.BronzeHidden", "BuffRow.Caption.BronzeShown"),
         build = function(layout)
             AddSpecialCheckbox(layout, {
                 label = L["Options.BronzeHideInCombat"],
@@ -379,9 +292,6 @@ local SPECIAL_SECTIONS = {
     },
 
     druidWrongForm = {
-        caption = ToggleCaption(function()
-            return BR.profile.druidIgnoreTravelForm ~= false
-        end, "BuffRow.Caption.TravelIgnored", "BuffRow.Caption.TravelCounts"),
         build = function(layout)
             AddSpecialCheckbox(layout, {
                 label = L["Options.DruidIgnoreTravelForm"],
@@ -400,9 +310,6 @@ local SPECIAL_SECTIONS = {
     },
 
     petPassive = {
-        caption = ToggleCaption(function()
-            return BR.profile.petPassiveOnlyInCombat == true
-        end, "BuffRow.Caption.PetPassiveCombat", "BuffRow.Caption.PetPassiveAlways"),
         build = function(layout)
             AddSpecialCheckbox(layout, {
                 label = L["Options.PetPassiveCombat"],
@@ -418,9 +325,6 @@ local SPECIAL_SECTIONS = {
     },
 
     pets = {
-        caption = ToggleCaption(function()
-            return BR.Config.Get("defaults.useFelDomination")
-        end, "BuffRow.Caption.FelOn", "BuffRow.Caption.FelOff"),
         build = function(layout)
             AddSpecialCheckbox(layout, {
                 label = L["Options.FelDomination"],
@@ -436,9 +340,6 @@ local SPECIAL_SECTIONS = {
     },
 
     delveFood = {
-        caption = ToggleCaption(function()
-            return BR.Config.Get("defaults.delveFoodTimer") == true
-        end, "BuffRow.Caption.FoodTimerOn", "BuffRow.Caption.FoodTimerOff"),
         build = function(layout)
             AddSpecialCheckbox(layout, {
                 label = L["Options.DelveFoodTimer"],
@@ -454,15 +355,6 @@ local SPECIAL_SECTIONS = {
     },
 
     mageFood = {
-        caption = function()
-            local filter = BR.Config.Get("defaults.mageFoodContent", "all")
-            if filter == "dungeon" then
-                return L["BuffRow.Caption.MageFoodDungeon"], false
-            elseif filter == "raid" then
-                return L["BuffRow.Caption.MageFoodRaid"], false
-            end
-            return L["BuffRow.Caption.MageFoodAll"], false
-        end,
         build = function(layout)
             local drop = Components.Dropdown(body, {
                 label = L["BuffPanel.MageFoodContent"],
@@ -487,23 +379,20 @@ local SPECIAL_SECTIONS = {
     },
 
     dkRunes = {
-        caption = RuneforgeCaption,
         build = function(layout)
             AddInlineEditor(layout, BR.Options.Dialogs.Runeforge.BuildInline)
         end,
     },
 
     roguePoisons = {
-        caption = PoisonCaption,
+        warn = PoisonNeedsSetup,
         build = function(layout)
             AddInlineEditor(layout, BR.Options.Dialogs.RoguePoison.BuildInline)
         end,
     },
 }
 
--- Editor names for the drawer's "Edit X" door. Only the two rich editors are
--- named; every other special buff shows the generic gold "Extras" link on the
--- row and its small controls inline in the drawer (no per-buff name needed).
+-- Editor names for the drawer's "Edit X" door. Only the two full editors need one.
 local SPECIAL_LABELS = {
     dkRunes = L["BuffRow.Option.Runeforge"],
     roguePoisons = L["BuffRow.Option.Poisons"],
@@ -512,13 +401,9 @@ local SPECIAL_LABELS = {
 -- ============================================================================
 -- DRAWER + EDITOR
 -- ============================================================================
--- The row link opens a light popover DRAWER anchored beside the row: Sound +
--- Detach (+ Show), plus this buff's small special controls inline - or, for the
--- two rich editors (poison / runeforge), an "Edit X" door to a focused EDITOR
--- panel. Enable is NOT here; the All Buffs row checkbox owns it.
 
--- Buffs whose special section is a full editor -> the drawer shows a door to
--- the focused editor instead of rendering the controls inline.
+-- The special section of these buffs is too big for the drawer. The drawer
+-- shows a door to the focused editor instead of the controls inline.
 local HAS_EDITOR = {
     roguePoisons = true,
     dkRunes = true,
@@ -705,8 +590,8 @@ local function EnsureEditor()
     end
     editor = BR.CreatePanel("BuffRemindersBuffEditor", PANEL_W, 200, { dialog = true, level = 220 })
 
-    -- 18px icon centered in the 32px header strip so it clears the -32 title
-    -- separator (the old 22px icon at -12 overlapped it).
+    -- 18px icon centered in the 32px header strip, so it clears the -32 title
+    -- separator.
     editorIcon = BR.CreateBuffIcon(editor, 18)
     editorIcon:SetPoint("TOPLEFT", EDITOR_BODY_X, -7)
     editorTitle = editor:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -742,7 +627,6 @@ local function OpenEditor(info)
     local panelW = SPECIAL_WIDTH[key] or PANEL_W
     editor:SetWidth(panelW)
 
-    -- Point the shared build surface at the editor body.
     bodyW = panelW - EDITOR_BODY_X * 2
     editorBody = CreateFrame("Frame", nil, editor)
     editorBody:SetPoint("TOPLEFT", EDITOR_BODY_X, -EDITOR_BODY_TOP)
@@ -783,9 +667,6 @@ local function EnsureDrawer()
     catcher:Hide()
     catcher:SetScript("OnMouseDown", HideDrawer)
 
-    -- A drawer, not a dialog: a lightweight bordered card with a gold left-edge
-    -- stripe - no title bar, no close button, no drag. It slides in from the
-    -- anchor and dismisses on click-away or ESC.
     drawer = CreateFrame("Frame", "BuffRemindersBuffDrawer", UIParent, "BackdropTemplate")
     drawer:SetSize(DRAWER_W, 100)
     drawer:SetFrameStrata("FULLSCREEN_DIALOG")
@@ -800,7 +681,6 @@ local function EnsureDrawer()
     drawer:SetBackdropColor(0.10, 0.10, 0.122, 0.98)
     drawer:SetBackdropBorderColor(unpack(BR.Colors.Border))
 
-    -- Soft shadow so the drawer lifts off the list beneath it.
     for i = 1, 4 do
         local outset = 5 - i
         local shadow = drawer:CreateTexture(nil, "BACKGROUND", nil, -8 + i)
@@ -809,8 +689,6 @@ local function EnsureDrawer()
         shadow:SetColorTexture(0, 0, 0, 0.05 + (i - 1) * 0.05)
     end
 
-    -- Gold left-edge accent stripe: marks this as a contextual drawer belonging
-    -- to the row that opened it, not a free-floating dialog.
     local stripe = drawer:CreateTexture(nil, "ARTWORK")
     stripe:SetPoint("TOPLEFT", 1, -1)
     stripe:SetPoint("BOTTOMLEFT", 1, 1)
@@ -824,14 +702,14 @@ local function EnsureDrawer()
     drawerTitle:SetJustifyH("LEFT")
     drawerTitle:SetWordWrap(false)
 
-    -- Thin header separator.
     local headSep = drawer:CreateTexture(nil, "ARTWORK")
     headSep:SetHeight(1)
     headSep:SetPoint("TOPLEFT", DRAWER_BODY_X, -30)
     headSep:SetPoint("TOPRIGHT", -10, -30)
     headSep:SetColorTexture(0.4, 0.32, 0.05, 0.45)
 
-    -- Modeless ESC-to-dismiss (propagate other keys so it doesn't eat input).
+    -- Modeless ESC-to-dismiss. Other keys propagate, so the drawer does not
+    -- block keyboard input.
     drawer:EnableKeyboard(true)
     drawer:SetScript("OnKeyDown", function(self, keyPressed)
         if keyPressed == "ESCAPE" then
@@ -873,25 +751,22 @@ local function OpenDrawer(title, icon, anchor, fill, width)
     EnsureDrawer()
     TearDownDrawerBody()
 
-    -- The card covers the widget that opened it, so that widget never gets its
-    -- OnLeave and its tooltip would hang over the card until the pointer crosses
-    -- the row again.
+    -- The drawer covers the widget that opened it. That widget gets no OnLeave,
+    -- so its tooltip stays over the drawer until the pointer crosses the row.
     BR.HideTooltip()
 
     drawer:SetWidth(width or DRAWER_W)
 
     drawerTitle:SetText("|cffffcc00" .. title .. "|r")
 
-    -- A card about one buff wears its icon. A card about a list has none to wear, so
-    -- the title takes the icon's place instead of standing beside a placeholder.
-    -- -17 is the header strip's midpoint, which is where the icon centers.
+    -- With no icon, the title moves into the icon position. -17 is the header
+    -- strip midpoint, where the icon centers.
     drawerIcon:SetShown(icon ~= nil)
     drawerTitle:SetPoint("LEFT", drawer, "TOPLEFT", icon and DRAWER_BODY_X + 23 or DRAWER_BODY_X, -17)
     if icon then
         drawerIcon:SetTexture(icon)
     end
 
-    -- Point the shared build surface at the drawer body.
     bodyW = (width or DRAWER_W) - DRAWER_BODY_X * 2
     drawerBody = CreateFrame("Frame", nil, drawer)
     drawerBody:SetPoint("TOPLEFT", DRAWER_BODY_X, -DRAWER_BODY_TOP)
@@ -911,8 +786,6 @@ local function OpenDrawer(title, icon, anchor, fill, width)
     drawer:Show()
 
     if anchor then
-        -- Slide in from the anchor: the card eases the last few px to the right
-        -- while fading up.
         local restX, dy = 8, 8
         local elapsed = 0
         drawer:SetAlpha(0)
@@ -945,8 +818,6 @@ end
 local function Show(info, anchor)
     local key = info.key
     OpenDrawer(info.displayName or key, info.icons and info.icons[1], anchor, function(layout)
-        -- Special section first (the buff's own knobs): a door to the focused
-        -- editor for the rich ones, the small controls inline for the rest.
         local special = SPECIAL_SECTIONS[key]
         if special then
             if HAS_EDITOR[key] then
@@ -992,7 +863,7 @@ BR.Options.Dialogs.BuffPanel = {
     Show = Show,
     ShowSound = ShowSound,
     ---Open the drawer with a body of the caller's own. The Externals page uses this
-    ---for its custom entries, whose card holds more than a sound.
+    ---for its custom entries, whose drawer holds more than a sound.
     OpenDrawer = OpenDrawer,
     HideDrawer = HideDrawer,
     ---Add the shared sound row to a drawer body. Valid only inside an OpenDrawer
@@ -1002,17 +873,15 @@ BR.Options.Dialogs.BuffPanel = {
     LABEL_WIDTH = DRAWER_LABEL_W,
     FIELD_WIDTH = DRAWER_FIELD_W,
     ---Whether a buff has its own options (a special section), and whether that
-    ---option still needs setup. Drives the All Buffs row's trailing link: a gold
-    ---"Extras" (orange when isWarning) vs the plain gray "Settings". Warning is
-    ---sourced from the same caption() the drawer uses (only poisons warn today).
+    ---option still needs setup. Drives the All Buffs row trailing link: a gold
+    ---"Extras" (orange when isWarning) against the plain gray "Settings".
     ---@return boolean isSpecial, boolean? isWarning
     GetSpecialState = function(key)
         local special = SPECIAL_SECTIONS[key]
         if not special then
             return false
         end
-        local _, warn = special.caption()
-        return true, warn
+        return true, special.warn ~= nil and special.warn()
     end,
     Hide = function()
         if drawer then
