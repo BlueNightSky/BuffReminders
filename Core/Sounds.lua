@@ -77,8 +77,8 @@ function Sounds.Label(value)
 end
 
 ---Dropdown options: no sound, then the shared media names, then the client's own
----alert library by category. A row this client cannot name is left out, which is
----how a sound that a patch removes leaves the list.
+---alert library by category. The list omits a row this client cannot name, so a
+---sound that a patch removes disappears from the list.
 ---@return table[]
 function Sounds.BuildOptions()
     local options = { { label = L["BuffPanel.Sound.None"], value = NO_SOUND } }

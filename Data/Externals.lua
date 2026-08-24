@@ -15,7 +15,6 @@ local _, BR = ...
 -- needed when one entry spans spells with different names, since single-name entries
 -- take their label from the spell itself and localize for free. `labelSpellID` names
 -- an entry after the ability that grants the aura, for auras whose own name misleads.
--- A migrated entry of the player's own can carry labelSpellID too.
 
 ---Display groupings, in the order the options page renders them.
 BR.EXTERNAL_SECTIONS = {
@@ -114,8 +113,8 @@ BR.EXTERNALS = {
     { key = "misdirection", section = "aggro", spellIDs = { 34477 }, defaultSound = false }, -- Hunter
     { key = "tricksOfTheTrade", section = "aggro", spellIDs = { 57934 }, defaultSound = false }, -- Rogue
 
-    -- De-whitelisted in 12.1, so the reminder pipeline can no longer see these in
-    -- combat - a container still can.
+    -- Not whitelisted since 12.1, so the reminder pipeline cannot see these in combat.
+    -- A container still can.
     { key = "blisteringScales", section = "augmentation", spellIDs = { 360827 }, defaultSound = false }, -- Evoker
     { key = "ebonMight", section = "augmentation", spellIDs = { 395152, 395296 }, defaultSound = false }, -- Evoker
     { key = "prescience", section = "augmentation", spellIDs = { 410089 }, defaultSound = false }, -- Evoker
@@ -163,7 +162,7 @@ function BR.GetExternalSetting(key)
     local defaults = BR.profile and BR.profile.defaults or BR.defaults.defaults
     if key == "spacing" then
         -- defaults.spacing is a size multiplier; the flow layout wants absolute px.
-        -- Same math as the reminder rows' horizontal gap: floor(mainAxisWidth * spacing).
+        -- Same math as the reminder rows' horizontal gap.
         local width = defaults.iconWidth or defaults.iconSize or 64
         return floor((defaults.spacing or 0) * width)
     end
@@ -215,10 +214,13 @@ end
 -- ============================================================================
 -- THE PLAYER'S OWN ENTRIES
 -- ============================================================================
--- Stored under externals.custom as [key] = { spellIDs = {...}, name = string? },
--- which is the curated entry shape minus the fields only a curated entry needs.
--- They share the `entries` and `sounds` tables with the curated set, so a key must
--- never collide with a curated one.
+-- Stored under externals.custom. These entries share the `entries` and `sounds`
+-- tables with the curated set, so a key must never collide with a curated one.
+
+---@class ExternalCustomEntry
+---@field spellIDs number[]
+---@field name? string
+---@field labelSpellID? number
 
 local tsort = table.sort
 local type = type

@@ -1,17 +1,16 @@
 local _, BR = ...
 
--- The addon's entire default config. Pure data, consumed by the bootstrap (AceDB
--- seeding + migrations), the display layer, and the options panel. Exported as
--- BR.defaults - the single source; read it directly, no module-namespaced alias.
--- Note: enabledBuffs holds only explicit user choices; it ships empty. A buff's
+-- The addon's entire default config. Pure data, exported as BR.defaults - the
+-- single source; read it directly, no module-namespaced alias.
+-- enabledBuffs holds only explicit user choices; it ships empty. A buff's
 -- ship default is declared on the buff definition itself (`defaultEnabled = false`
 -- for opt-in buffs) and resolved at read time by StateHelpers.IsBuffEnabled - no
 -- migration and no per-profile seeding needed for new off-by-default buffs.
 
 BR.defaults = {
     enabledBuffs = {},
-    -- User-defined loadout reminders (talent / loadout / equipment-set mismatch).
-    -- Keyed by generated rule key; empty by default. See Options/Dialogs/LoadoutReminder.lua.
+    -- User-defined loadout reminders (talent / loadout / equipment-set mismatch),
+    -- keyed by generated rule key.
     loadoutReminders = {},
     showOnlyInGroup = false,
     hideWhileResting = false,
@@ -37,7 +36,7 @@ BR.defaults = {
     chatRequestCooldown = true,
     chatRequestMessages = {},
 
-    -- DK runeforge preferences: [specId] = { mainhand, dw_mainhand, dw_offhand }
+    -- DK runeforge preferences, keyed by spec ID.
     -- No runes selected = no reminder for that spec (implicit disable)
     dkRunePreferences = {
         [250] = { mainhand = { [6241] = true } }, -- Blood: Sanguination
@@ -92,8 +91,8 @@ BR.defaults = {
         -- replaces it, and the no-sound sentinel silences that entry alone.
         sounds = {},
         -- The player's own entries, keyed the same way as the curated ones so
-        -- `entries` and `sounds` address both sets. Shape:
-        -- [key] = { spellIDs = { number, ... }, name = string? }.
+        -- `entries` and `sounds` address both sets.
+        ---@type table<string, ExternalCustomEntry>
         custom = {},
     },
 
@@ -278,7 +277,7 @@ BR.defaults = {
     },
 
     ---@type AllCategorySettings
-    categorySettings = { -- Per-category settings
+    categorySettings = {
         main = {
             position = { point = "CENTER", x = 0, y = 200 },
             -- main frame always uses defaults for appearance/behavior

@@ -4,7 +4,7 @@ local _, BR = ...
 -- EXTERNALS: SOUND ALERTS
 -- ============================================================================
 -- Plays a sound when a tracked external lands on the player. These auras are
--- secret, so no Lua code can see one arrive: the trigger has to live in the
+-- secret, so no Lua code can see one arrive: the trigger must live in the
 -- engine. AddAuraSound registers a spell ID plus a file, and the client plays it.
 --
 -- AddAuraSound is refused while an addon restriction is active, so a denied
@@ -38,8 +38,11 @@ local Settings = BR.GetExternalSettings
 local Entries = BR.GetExternalEntries
 local EntrySound = BR.GetExternalEntrySound
 
--- Live registrations per entry key:
--- { sound = <path or file ID>, spellIDs = { id, ... }, ids = { handle, ... } }.
+---@class AuraSoundRegistration
+---@field sound string|number  -- file path or file ID
+---@field spellIDs number[]    -- the IDs this entry claimed
+---@field ids number[]         -- AddAuraSound handles, one per claimed ID
+---@type table<string, AuraSoundRegistration>
 local active = {}
 -- Set when a registration was refused, so the lift watcher retries.
 local pending = false
@@ -70,8 +73,8 @@ local function Remove(key)
     active[key] = nil
 end
 
----One handle per spell ID. A partial registration would read as complete on the
----next reconcile, so whatever landed is dropped and the whole entry waits.
+---One handle per spell ID. A partial registration reads as complete on the next
+---reconcile. If one call fails, Register drops the new handles and the entry waits.
 ---@param key string
 ---@param spellIDs number[]
 ---@param sound string|number A file path or a file ID

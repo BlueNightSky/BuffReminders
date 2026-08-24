@@ -4,11 +4,11 @@ local _, BR = ...
 -- BUFF PAGE SECTION: Appearance & Glow overrides
 -- ============================================================================
 -- Two independently-overridable sections, each headed by an Override checkbox
--- with a live state label ("Inherited from Defaults" / "Overriding defaults").
--- While inheriting, controls stay VISIBLE and show the live global default
--- values, dimmed - never blank, never stale. Flipping Override on snapshots
--- the current effective values into the category so nothing visually jumps;
--- flipping it off keeps the stored values dormant for a later re-enable.
+-- with a live state label. While a section inherits, its controls stay VISIBLE
+-- and show the live global default values, dimmed - never blank, never stale.
+-- If Override goes on, the addon snapshots the current effective values into
+-- the category, so the display does not jump. If Override goes off, the stored
+-- values stay dormant for a later re-enable.
 --
 -- Appearance override = useCustomAppearance; Glow override = useCustomGlow.
 -- The two flags are independent (Core.lua GetCategorySetting).
@@ -94,10 +94,9 @@ local function Build(ctx, layout)
         return (cs and cs.useCustomGlow == true) or false
     end
 
-    ---Effective value for a key: the category override when its section is
-    ---overriding, else the live global default (BR.Config.GetCategorySetting
-    ---resolves the gate). This is what makes inherited controls show real
-    ---values instead of blanks.
+    ---Effective value for a key: the category override when its section
+    ---overrides, else the live global default (BR.Config.GetCategorySetting
+    ---resolves the gate).
     local function getEffectiveValue(key, default)
         local val = BR.Config.GetCategorySetting(category, key)
         if val ~= nil then
@@ -116,8 +115,8 @@ local function Build(ctx, layout)
         desc = L["Options.Override.Appearance.Desc"],
         onChange = function(checked)
             if checked then
-                -- Snapshot current effective values so enabling the override
-                -- doesn't visually change anything.
+                -- Snapshot the current effective values, so the override does
+                -- not change the display.
                 local effective = GetCategorySettings(category)
                 if not db.categorySettings then
                     db.categorySettings = {}
@@ -217,8 +216,8 @@ local function Build(ctx, layout)
         desc = L["Options.Override.Glow.Desc"],
         onChange = function(checked)
             if checked then
-                -- Snapshot the effective glow config (enable flags + style)
-                -- so enabling the override doesn't visually change anything.
+                -- Snapshot the effective glow config (enable flags + style),
+                -- so the override does not change the display.
                 if not db.categorySettings then
                     db.categorySettings = {}
                 end
@@ -252,9 +251,9 @@ local function Build(ctx, layout)
         L["Options.GlowMissingPets"],
     }, "GameFontHighlightSmall", 0)
 
-    ---One glow row: enable checkbox + Customize button opening the Glow
-    ---dialog on that kind. Pet reminders have no expiration concept, so they
-    ---get only the missing row (with a pet-specific label).
+    ---One glow row: enable checkbox + Customize button that opens the Glow
+    ---dialog for that kind. Pet reminders have no expiration, so the pet
+    ---category gets only the missing row.
     local function AddGlowRow(labelText, enableKey, kind)
         local rowHolder = Components.Checkbox(parent, {
             label = labelText,

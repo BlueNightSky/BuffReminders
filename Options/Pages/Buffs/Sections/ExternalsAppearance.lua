@@ -4,19 +4,19 @@ local _, BR = ...
 -- BUFF PAGE SECTION: Externals Appearance
 -- ============================================================================
 -- The whole body of the Externals tab on the Categories page. Externals are not a
--- real category (no categorySettings entry, no State entries), so they get this
--- standalone section instead of the _Template composition - none of the shared
--- sections apply: visibility is Blizzard's call, click-to-cast is impossible on a
+-- real category: they have no categorySettings entry and no State entries. Thus
+-- this section is standalone, not a _Template composition. No shared section
+-- applies: Blizzard controls the visibility, click-to-cast is impossible on a
 -- forbidden button, and growth is container-level flow-layout state with four
 -- directions only (the flow layout has no centered growth).
 --
--- Appearance keys follow the category convention: an Override checkbox gates them,
--- and while it is off they inherit from the global defaults (BR.GetExternalSetting
--- resolves the gate) and render dimmed with the live inherited values. Countdown
--- size, direction, the swipe and the tooltip toggle have no `defaults` counterpart,
--- so they ignore the override.
+-- Appearance keys follow the category convention: an Override checkbox gates them.
+-- While the override is off, the keys inherit from the global defaults
+-- (BR.GetExternalSetting resolves the gate) and render dimmed with the live
+-- inherited values. Countdown size, direction, the swipe and the tooltip toggle
+-- have no `defaults` counterpart, so they ignore the override.
 --
--- Like CustomAppearance, this section is terminal: it owns the tab frame's height.
+-- This section is terminal: it owns the tab frame's height.
 
 local L = BR.L
 local Components = BR.Components
@@ -204,7 +204,7 @@ local function Build(ctx, layout)
     AddOverrideRow(parent, layout)
 
     -- One shared label column so the tracks line up: "Countdown size" is far wider
-    -- than "Zoom", and each slider would otherwise size its own label to fit.
+    -- than "Zoom". Without the shared width, each slider fits its label to its text.
     local labels = { L["Appearance.Width"] }
     for _, spec in ipairs(SLIDERS) do
         labels[#labels + 1] = L[spec.labelKey]

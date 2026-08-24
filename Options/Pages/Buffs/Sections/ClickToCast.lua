@@ -3,8 +3,7 @@ local _, BR = ...
 -- ============================================================================
 -- BUFF PAGE SECTION: Click-to-Cast
 -- ============================================================================
--- Click-to-cast + hover highlight. Pet-only adds the spec icon hover toggle;
--- Consumable-only adds the item-tooltips toggle.
+-- Click-to-cast + hover highlight, plus the per-category extras.
 
 local L = BR.L
 local Components = BR.Components
@@ -116,8 +115,8 @@ local function Build(ctx, layout)
     end
 
     if category == "raid" or category == "presence" then
-        -- Hover tooltip works on the icon frame itself (not the click overlay),
-        -- so it's intentionally not gated by isClickable.
+        -- The hover tooltip works on the icon frame itself, not on the click
+        -- overlay. Thus isClickable does not gate it.
         local showBuffTooltipsHolder = Components.Checkbox(parent, {
             label = L["Options.ShowBuffTooltips"],
             get = function()
@@ -131,7 +130,7 @@ local function Build(ctx, layout)
                 BR.Config.Set("defaults.showBuffTooltips", checked)
             end,
         })
-        -- One key shared by the raid AND presence pages: flag the blast radius.
+        -- The raid and presence pages write the same key, so the tag marks it global.
         BR.Options.Helpers.AttachGlobalTag(showBuffTooltipsHolder)
         layout:Add(showBuffTooltipsHolder, nil, COMPONENT_GAP)
     end

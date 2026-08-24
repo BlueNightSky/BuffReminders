@@ -3,20 +3,11 @@ local _, BR = ...
 -- ============================================================================
 -- EXTERNALS PAGE (selection)
 -- ============================================================================
--- "Which received buffs do I want to see" - the mirror of the Reminders page, and
--- laid out the same way: two columns of grouped sections, one fixed-height row per
--- entry. Appearance lives on the Externals tab of the Categories page, matching
--- every other category.
+-- "Which received buffs do I want to see". Appearance lives on the Externals tab of
+-- the Categories page, matching every other category.
 --
--- The curated set in Data/Externals.lua covers the buffs worth naming. The "Your
--- Buffs" section at the foot of the right column takes spell IDs for everything
--- else. Both halves render the same row, because both are the same entry shape.
---
--- The ticked set is the switch: no separate enable toggle, so a first tick starts
--- the display. One sound serves every tracked entry, and a row can override it, so
--- the glyph column answers one question at a glance: which buffs make a sound. The
--- trailing link is the door that changes it, which is the grammar the All Buffs
--- rows set - gold trailing text opens settings, slate glyphs only report.
+-- The ticked set is the switch: there is no separate enable toggle, so a first tick
+-- starts the display.
 --
 -- Rows repaint through one page-wide function, not per widget: a section toggle and
 -- a row checkbox each change what the other must show.
@@ -41,9 +32,9 @@ local tremove = table.remove
 
 local GOLD = { 1, 0.8, 0 }
 
--- Section rhythm, matched to the Reminders page so the two read as one system.
--- That page clears a note between header and rows; there is none here, so this is
--- its header-to-note gap plus enough for the header's own descenders.
+-- Section rhythm, matched to the Reminders page. That page clears a note between
+-- header and rows; there is none here, so this gap is its header-to-note gap plus
+-- room for the header's own descenders.
 local HEADER_TO_ROWS_GAP = 22
 local ROW_INDENT = 6
 local INTER_SECTION_GAP = 10
@@ -51,10 +42,9 @@ local INTER_SECTION_GAP = 10
 local ICON_SIZE = 16
 local FALLBACK_ICON = 134400
 
--- Slate tints shared by the state glyph, the trailing link and the section toggle,
--- matching the All Buffs rows. GLYPH_UNSET marks a tracked row that stays silent
--- and stays at full alpha: it already sits far enough under GLYPH_IDLE to read as
--- off, and any dim on top of it drops the marker under the contrast a control needs.
+-- Slate tints matching the All Buffs rows. GLYPH_UNSET marks a tracked row that
+-- stays silent. It stays at full alpha: a dim on top of it drops the marker under
+-- the contrast a control needs.
 local GLYPH_IDLE = { 0.62, 0.70, 0.75 }
 local GLYPH_HOVER = { 0.85, 0.92, 0.97 }
 local GLYPH_UNSET = { 0.42, 0.42, 0.46 }
@@ -62,12 +52,10 @@ local GLYPH_SIZE = 13
 local GLYPH_GAP = 6
 local SOUND_ATLAS = "chatframe-button-icon-voicechat"
 
--- The state glyph holds the row's right edge, so the column of glyphs stays one
--- clean scan line, and the link sits left of it. The link width is fixed, because a
--- link that appears under the pointer must not move the buff name: the name is
--- clamped against the reserve whether the link shows or not. The buff name wins the
--- width it needs first, so the reserve stays narrow and a sound named wider than it
--- is clipped; the tooltip carries the full name.
+-- The link width is fixed: a link that appears under the pointer must not move the
+-- buff name, so the name is clamped against the reserve whether the link shows or
+-- not. The reserve stays narrow, so a longer sound name is clipped and the tooltip
+-- carries the full name.
 local LINK_RESERVE = 66
 local LINK_HEIGHT = 14
 local GLYPH_TO_LINK_GAP = 7
@@ -80,7 +68,6 @@ local ROW_HOVER_ALPHA = BR.Options.Constants.ROW_HOVER_ALPHA
 local CHEVRON = " >"
 local CHEVRON_WIDTH = 10
 
--- Section select-all, tinted like the row glyphs so the two read as one column set.
 local TOGGLE_GAP = 8
 local TOGGLE_HEIGHT = 14
 
@@ -146,8 +133,8 @@ local function BuildSoundModel(GetEntry)
                     BR.Config.Set(Path(entry), nil)
                     return
                 end
-                -- Snapshot what the row plays today, so turning the override on
-                -- changes nothing until the player picks another sound.
+                -- Snapshot what the row plays today: the override then changes
+                -- nothing until the player picks another sound.
                 BR.Config.Set(Path(entry), BR.GetExternalEntrySound(entry) or BR.Sounds.NO_SOUND)
             end,
             effective = function()
@@ -185,8 +172,7 @@ local function AddRowHover(row)
 
     -- A child of the row takes the pointer and fires OnLeave on the row, and the
     -- pointer can then leave the row straight from that child - the row never hears
-    -- a second OnLeave and stays lit. The watcher clears the row on its own, so the
-    -- strip and the link cannot survive the pointer. It stops on the frame it clears.
+    -- a second OnLeave and stays lit. The watcher clears the row on its own.
     local function Watch(self)
         if self:IsMouseOver() then
             return
@@ -394,9 +380,8 @@ local function CreateSoundControls(row, GetEntry, withLink)
         if not tracked then
             return
         end
-        -- The link names what the row plays. Gold and always shown marks the row
-        -- that overrides the page sound; the muted one only reports what it
-        -- inherits, so it stays a hover reveal.
+        -- Gold and always shown marks the row that overrides the page sound; the
+        -- muted one only reports what it inherits, so it stays a hover reveal.
         local overridden = BR.IsExternalSoundOverridden(GetEntry().key)
         link.persistent = overridden
         link:SetIdleColor(overridden and GOLD or LINK_IDLE)
@@ -408,7 +393,6 @@ local function CreateSoundControls(row, GetEntry, withLink)
             link:SetLabel(L["Externals.Sound.Link"])
         end
         link:SetTooltip(L["Externals.Sound"], Describe())
-        -- A row that inherits the page sound shows its link under the pointer only.
         -- Repaints run while the pointer sits on the row, so the hover state wins.
         link:SetAlpha((overridden or row:IsMouseOver()) and 1 or 0)
     end
@@ -501,8 +485,8 @@ local function RenderRow(parent, x, y, entry, rowWidth, ctx)
     row.link:SetPoint("RIGHT", soundGlyph, "LEFT", -GLYPH_TO_LINK_GAP, 0)
     ctx.updaters[#ctx.updaters + 1] = soundGlyph.Update
 
-    -- holderWidth 18: the label is drawn separately, so the checkbox holder only
-    -- needs to cover the box itself or it would push the icon far to the right.
+    -- holderWidth 18: the label is drawn separately, so the checkbox holder covers
+    -- the box alone. A wider holder pushes the icon far to the right.
     local checkbox = Components.Checkbox(row, {
         label = "",
         holderWidth = 18,
@@ -571,15 +555,11 @@ end
 -- ============================================================================
 -- THE PLAYER'S OWN ENTRIES
 -- ============================================================================
--- One editor serves the whole section: the field adds a buff, and a row's Edit link
--- loads that buff back into the same field.
+-- The buff shortcut list reads the player's auras, which return nothing during a
+-- restricted context, so its empty state names that cause as well as the plain one.
 --
--- The shortcut list reads nothing during a restricted context, so its empty state
--- names that cause as well as the plain one.
---
--- A duplicate spell ID is allowed. The engine packs duplicates away by itself, the
--- sound engine gives each ID to one entry, and the editor names the entry that
--- already holds it.
+-- A duplicate spell ID is allowed. The display packs duplicates into one icon, and
+-- the sound engine gives each ID to one entry.
 
 local CreateButton = BR.CreateButton
 local ValidateSpellID = BR.Helpers.ValidateSpellID
@@ -607,8 +587,6 @@ local REMOVE_SIZE = 14
 -- Inline icon markup for the readout line. The trailing crop numbers trim the icon
 -- border, the same slice TEXCOORD_INSET takes off a texture.
 local ICON_MARKUP = "|T%d:12:12:0:0:64:64:5:59:5:59|t "
--- Two spaces between resolved buffs. The icons already chunk the line, so a
--- punctuation separator on top of them reads as noise.
 local NAME_GAP = "  "
 -- The picker card sizes to its content, so past this many buffs the tail is counted
 -- rather than drawn.
@@ -1275,8 +1253,8 @@ local function CreateCustomSection(parent, x, topY, colWidth, ctx)
         end
     end
 
-    -- Shift-clicking a spell routes through the chat link path, which is how every
-    -- addon of this kind receives one. The hook only acts while the field has focus.
+    -- A shift-click on a spell routes through the chat link path, which is how the
+    -- client delivers the link.
     if not linkHooked and type(ChatEdit_InsertLink) == "function" then
         linkHooked = true
         hooksecurefunc("ChatEdit_InsertLink", function(link)
@@ -1382,7 +1360,6 @@ local function Build(content, scrollFrame)
     end)
     preview:SetPoint("LEFT", soundDrop, "RIGHT", 8, 0)
 
-    -- The one place the page announces that a row can override this sound.
     local soundHint = soundRow:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     soundHint:SetPoint("LEFT", preview, "RIGHT", 10, 0)
     soundHint:SetPoint("RIGHT", 0, 0)
@@ -1422,7 +1399,7 @@ local function Build(content, scrollFrame)
     local custom = CreateCustomSection(content, rightX, rightEndY - INTER_SECTION_GAP, colWidth, ctx)
 
     -- Persistent hook rather than per-widget `enabled`: a glyph is a plain button,
-    -- not a component holder, so RefreshAll would never reach it. Re-rendering the
+    -- not a component holder, so RefreshAll never reaches it. A re-render of the
     -- custom section here also picks up an entry list a profile switch replaced.
     tinsert(BR.RefreshableComponents, {
         Refresh = function()
@@ -1437,9 +1414,7 @@ BR.Options.Pages.externals = {
     Build = Build,
 }
 
--- Each cohort lights a notification dot on the sidebar button and bubbles up to the
--- Buffs group header until the panel is closed: 6.4.0 for the page itself, 6.7.0 for
--- the player's own entries. Static Register (not a provider) because nothing here
--- finishes populating later.
+-- Cohort 6.4.0 marks the page itself, 6.7.0 the player's own entries. Static
+-- Register (not a provider) because nothing here finishes populating later.
 BR.Options.WhatsNew.Register({ cohort = "6.4.0", pageId = "externals" })
 BR.Options.WhatsNew.Register({ cohort = "6.7.0", pageId = "externals" })

@@ -8,10 +8,10 @@ local _, BR = ...
 -- the reminder pipeline and shares nothing with State.lua - Blizzard's AuraContainer
 -- does the filtering and rendering, so it works for auras the addon cannot read.
 --
--- The constraints this module is shaped around (all verified):
+-- The constraints this module is shaped around:
 --
---   * Decoration is CREATION-WINDOW ONLY. The whole button subtree - our own
---     textures included - becomes forbidden while auras are secret. So every
+--   * Decoration is CREATION-WINDOW ONLY. The whole button subtree - the addon's
+--     own textures included - becomes forbidden while auras are secret. So every
 --     restyle is attempted, and on denial queued for the next restriction lift.
 --   * Never read geometry off a button. Its dimensions come back as secret numbers
 --     and any arithmetic on them throws. All sizes come from config.
@@ -25,9 +25,8 @@ local _, BR = ...
 --     cinematics and faction flips all drop assistability, so the display suppresses
 --     itself for those windows instead of showing the wrong set.
 --
--- One AuraGroup holds every enabled spell ID. Blizzard packs the visible buttons,
--- which is why enabling five buffs and having one active shows a tight row of one
--- rather than four gaps.
+-- One AuraGroup holds every enabled spell ID. Blizzard packs the visible buttons:
+-- with five buffs enabled and one active, the row shows one icon, not four gaps.
 
 local min = math.min
 local floor = math.floor
@@ -58,27 +57,27 @@ local MOVER_KEY = "externals"
 -- visible at once, not how many can be enabled.
 local MAX_FRAMES = 20
 -- Test mode cap: enough frames to judge spacing and growth direction, few enough
--- that a player carrying dozens of buffs doesn't preview a wall of icons.
+-- that a player with dozens of buffs does not preview a wall of icons.
 local TEST_MODE_CAP = 3
 -- Matches the category movers' label size in Movers.lua.
 local MOVER_LABEL_SIZE = 11
 
 local anchorFrame, container
--- Regions we created, per button. Weak keys: Blizzard owns the buttons' lifetime.
+-- Regions the addon creates, per button. Weak keys: Blizzard owns the buttons' lifetime.
 local buttonRegions = setmetatable({}, { __mode = "k" })
 -- Set when a reconfigure or restyle was denied, so the lift watcher retries.
 local applyPending = false
 -- Test mode previews through the REAL container: the spell-ID filter is dropped so
--- the player's current buffs render, capped low. Fake icons would have to emulate
--- Blizzard's packing, and button geometry is secret, so an emulation could never be
--- verified against the real layout.
+-- the player's current buffs render, capped low. Fake icons must emulate Blizzard's
+-- packing, and button geometry is secret, so no emulation can be verified against
+-- the real layout.
 local testMode = false
 
 ---Union of every enabled entry's spell IDs.
 ---
 ---The second return is the ENTRY count, not the spell-ID count: it sizes the frame
 ---pool, and an entry can carry several IDs that are mutually exclusive in practice
----(one Bloodlust variant at a time), so IDs would over-allocate.
+---(one Bloodlust variant at a time), so IDs over-allocate.
 ---@return table<number, boolean> map
 ---@return number entryCount
 local function BuildSpellIDMap()
@@ -141,8 +140,8 @@ end
 
 local durationFormatter
 
----Apply the configured look to one button. Called from initializeFrame (always
----legal) and from reconfigures (denied while auras are secret - callers pcall it).
+---Apply the configured look to one button. The call is legal at frame creation only.
+---A later call is denied while auras are secret, so callers pcall it.
 local function StyleButton(button)
     local regions = buttonRegions[button]
     if not regions then
@@ -152,7 +151,6 @@ local function StyleButton(button)
     local width, height = GetIconDimensions()
     local borderSize = Setting("borderSize") or 0
 
-    -- Size comes from config, never from button:GetWidth() - that returns a secret.
     button:SetSize(width, height)
 
     -- Base crop hides texture edge artifacts; iconZoom adds on top, and the insets
@@ -164,10 +162,8 @@ local function StyleButton(button)
     regions.icon:SetTexCoord(xInset, 1 - xInset, yInset, 1 - yInset)
     regions.icon:SetAlpha(Setting("iconAlpha") or 1)
 
-    -- Duration text: the addon places and fonts it, Blizzard writes it. The
-    -- call stores nothing on the region - per-button state on this subtree
-    -- goes forbidden. A denial throws, and the caller's pcall queues the
-    -- retry.
+    -- Duration text: the addon places and fonts it, Blizzard writes it. The call
+    -- stores nothing on the region - per-button state on this subtree goes forbidden.
     BR.DisplayFonts.Apply(regions.duration, Setting("durationSize") or 16)
 
     -- SetDrawSwipe, not Hide: Blizzard calls SetCooldown on this frame on every
@@ -180,7 +176,7 @@ local function StyleButton(button)
     end
 
     -- Border protrudes past the button's bounds, same as the reminder icons.
-    -- Regions may extend outside a button; only their parentage is constrained.
+    -- Regions can extend outside a button; only their parentage is constrained.
     if borderSize > 0 then
         regions.border:ClearAllPoints()
         regions.border:SetPoint("TOPLEFT", -borderSize, borderSize)
@@ -198,7 +194,7 @@ local function StyleButton(button)
     button:SetMouseMotionEnabled(Setting("showTooltips") == true)
 end
 
----The one window where addon code may decorate a button: the frame provider calls
+---The one window where addon code can decorate a button: the frame provider calls
 ---this before applying the access restriction that forbids the subtree.
 local function InitializeButton(button)
     local regions = {}
@@ -219,7 +215,7 @@ local function InitializeButton(button)
     regions.cooldown:SetAllPoints(button)
     regions.cooldown:SetDrawEdge(false)
     regions.cooldown:SetReverse(true)
-    -- The countdown text below is ours; the swipe must not print a second one.
+    -- The countdown text below belongs to the addon; the swipe must not print a second one.
     regions.cooldown:SetHideCountdownNumbers(true)
     button:SetDurationCooldown(regions.cooldown)
 
@@ -233,11 +229,11 @@ local function InitializeButton(button)
     regions.textHost:EnableMouse(false)
 
     -- SetDurationText stamps SecretAspect.Text/Alpha/VertexColor on this
-    -- fontstring: Blizzard writes and counts it down, we must never read it back.
-    -- That timer is the one piece of data we could not obtain ourselves in a
-    -- restricted context, which is why it is not optional.
+    -- fontstring: Blizzard writes and counts it down, the addon must never read it
+    -- back. That timer is the one piece of data the addon cannot obtain in a
+    -- restricted context, so it is not optional.
     --
-    -- Placement and font are ours; only the string is Blizzard's, and the
+    -- Placement and font belong to the addon; only the string is Blizzard's, and the
     -- `textFormatter` option decides how it is rendered. Falls back to the stock
     -- "42 s" formatter if the formatter or the option is rejected.
     regions.duration = regions.textHost:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -297,8 +293,8 @@ local function ComputeCoords()
         local selfPoint = SelfPoint(point)
         local x, y = BR.Movers.AnchoredOffsets(anchorFrame, selfPoint, parent, point)
         if not x or not y then
-            -- The anchor frame has no laid-out rect yet. Screen coordinates would be
-            -- saved against the anchor on the next refresh, which moves the display.
+            -- The anchor frame has no laid-out rect yet. The next refresh then saves
+            -- screen coordinates against the anchor, which moves the display.
             return nil
         end
         return x, y, selfPoint, parent, point
@@ -516,7 +512,7 @@ end
 
 ---The green drag box, matching the category movers in Movers.lua. A frame of its own
 ---rather than a texture on the anchor: it needs HIGH strata to sit above the icons,
----and setting that on the anchor would drag the container's whole subtree up with it.
+---and HIGH strata on the anchor drags the container's whole subtree up with it.
 local function CreateMover()
     local mover = CreateFrame("Frame", nil, anchorFrame)
     mover:SetAllPoints()
@@ -598,11 +594,11 @@ local function EnsureFrames()
     end
 
     -- Guarded separately from the container: if the container ever fails to build,
-    -- this is retried from the lift watcher and from VisualsRefresh, and re-creating
-    -- the anchor would orphan the previous one under the same global name (WoW frames
-    -- are never collected) along with its textures and fontstring.
+    -- this is retried from the lift watcher and from VisualsRefresh, and a second
+    -- anchor orphans the previous one under the same global name (WoW frames are
+    -- never collected) along with its textures and fontstring.
     if not anchorFrame then
-        -- The container's parent is a plain frame we own: the mover and any future
+        -- The container's parent is a plain frame the addon owns: the mover and any future
         -- animated chrome must live OUTSIDE the button subtree, and a frame anchored
         -- *to* a container inherits its layout restrictions.
         anchorFrame = CreateFrame("Frame", "BuffRemindersExternals", UIParent)
@@ -613,8 +609,8 @@ local function EnsureFrames()
     end
 
     -- Its own step, so a mover that failed to build is retried on the next refresh
-    -- instead of leaving the anchor permanently moverless (every later refresh would
-    -- then fault on it, and the display would be undraggable for the session).
+    -- instead of leaving the anchor permanently moverless (every later refresh then
+    -- faults on it, and the display stays undraggable for the session).
     if not anchorFrame.mover then
         anchorFrame.mover = CreateMover()
     end
@@ -643,8 +639,8 @@ end
 ---Show the mover with the global frame lock. Hidden, it takes no mouse input, so
 ---the display never eats clicks while locked.
 local function SetUnlocked(unlocked)
-    -- Called from the global frame lock, so it must not fault when the display has
-    -- not been built (or its mover failed to build) - the lock owns every category.
+    -- The frame lock owns every category, so this must not fault before the display
+    -- is built, or when its mover failed to build.
     local mover = anchorFrame and anchorFrame.mover
     if not mover then
         return
@@ -683,7 +679,7 @@ local function Refresh()
         WatchForSettle()
     end
     -- Re-sync the handle: the display can be created or enabled while the frames
-    -- are already unlocked, in which case SetFrameLocked has long since fired.
+    -- are already unlocked, in which case SetFrameLocked fired long before.
     SetUnlocked(not BR.Display.IsFrameLocked())
 end
 
@@ -709,7 +705,7 @@ function WatchForSettle()
 end
 
 ---Repair the display after a window that degraded the filters. Deferred one tick so
----the transition has finished, and coalesced so a start-and-end burst costs one pass.
+---the transition ends first, and coalesced so a start-and-end burst costs one pass.
 function ScheduleRecovery()
     if recoveryPending then
         return
@@ -828,8 +824,8 @@ BR.Movers.RegisterTarget(MOVER_KEY, {
 
 BR.CallbackRegistry:RegisterCallback("ExternalsRefresh", Refresh)
 -- The duration text uses the addon's global font face and outline, which live under
--- `defaults` and fire VisualsRefresh - so changing them has to restyle these buttons
--- too. Refresh no-ops while the display is disabled.
+-- `defaults` and fire VisualsRefresh. A change to them must restyle these buttons
+-- too. Refresh does nothing while the display is disabled.
 BR.CallbackRegistry:RegisterCallback("VisualsRefresh", Refresh)
 
 BR.AuraTracker = {
@@ -837,7 +833,7 @@ BR.AuraTracker = {
     SetUnlocked = SetUnlocked,
     SetTestMode = SetTestMode,
     BuildSpellIDMap = BuildSpellIDMap,
-    ---True when a reconfigure was denied and is waiting on a restriction lift.
+    ---True when a reconfigure was denied and waits for a restriction lift.
     IsApplyPending = function()
         return applyPending
     end,
