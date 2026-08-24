@@ -14,7 +14,7 @@ local Components = BR.Components
 local CreateButton = BR.CreateButton
 local Helpers = BR.Options.Helpers
 
-local LSM = BR.LSM
+local LSM = LibStub("LibSharedMedia-3.0")
 local IsFontPathValid = BR.DisplayFonts.IsFontPathValid
 local IsMasqueActive = BR.Masque and BR.Masque.IsActive or function()
     return false

@@ -203,12 +203,7 @@ local GetAspectCropInsets = BR.GetAspectCropInsets
 
 -- WoW API locals
 local PlaySoundFile = PlaySoundFile
-local ResolveSound = BR.Sounds.Resolve
 local IsInGroup = IsInGroup
-
--- Held only to export BR.LSM for the options font picker. Sound values resolve
--- through BR.Sounds, display fonts through Display/Fonts.lua.
-local LSM = LibStub("LibSharedMedia-3.0")
 
 -- Shared display font (Display/Fonts.lua), aliased for hot render paths
 local DisplayFonts = BR.DisplayFonts
@@ -709,10 +704,8 @@ local FormatRemainingTime = BR.StateHelpers.FormatRemainingTime
 local FormatEatingTime = BR.StateHelpers.FormatEatingTime
 
 -- Icon/texture resolution lives in Display/Icons.lua (BR.Icons); aliased here for hot-path call sites.
-local AsSpellList = BR.Icons.AsSpellList
 local GetBuffTexture = BR.Icons.GetBuffTexture
 local GetBuffIcons = BR.Icons.GetBuffIcons
-local PreFillIconCaches = BR.Icons.PreFillIconCaches
 local ResolveRoleTexture = BR.Icons.ResolveRoleTexture
 local ResolveFrameTexture = BR.Icons.ResolveFrameTexture
 
@@ -757,7 +750,7 @@ local glowSpellToBuff = {}
 
 --- Register a buff's spellID(s) in the glow fallback lookup table
 local function RegisterGlowBuff(buff, catName)
-    local ids = AsSpellList(buff.spellID)
+    local ids = BR.Icons.AsSpellList(buff.spellID)
     for _, id in ipairs(ids) do
         if id and id ~= 0 then
             glowSpellToBuff[id] = { buff = buff, category = catName }
@@ -2571,7 +2564,7 @@ local function TryPlayBuffSound(key, buffSounds)
     end
     local soundName = buffSounds[settingKey]
     if soundName then
-        local soundFile = ResolveSound(soundName)
+        local soundFile = BR.Sounds.Resolve(soundName)
         if soundFile then
             PlaySoundFile(soundFile, "Master")
         end
@@ -3480,9 +3473,6 @@ if masqueGroup then
     end)
 end
 
--- Export shared references for Options.lua
-BR.LSM = LSM
-
 -- Export helpers for Options.lua
 BR.Helpers = {
     GetBuffSettingKey = GetBuffSettingKey,
@@ -3498,7 +3488,7 @@ BR.Helpers = {
     GetBuffTexture = GetBuffTexture,
     GetBuffIcons = GetBuffIcons,
     ApplyDynamicIcon = BR.Icons.ApplyDynamicIcon,
-    PreFillIconCaches = PreFillIconCaches,
+    PreFillIconCaches = BR.Icons.PreFillIconCaches,
     DeepCopy = function(...)
         return BR.ImportExport.DeepCopy(...)
     end,
@@ -3922,7 +3912,7 @@ eventHandlers.PLAYER_ENTERING_WORLD = function()
     -- and warm up the static icon cache for every buff in one pass so the next menu
     -- open / detached-icons render hits the cached path.
     C_Timer.After(1.5, function()
-        PreFillIconCaches()
+        BR.Icons.PreFillIconCaches()
         for key, def in pairs(BR.profile.customBuffs or {}) do
             local frame = buffFrames[key]
             if frame and def.spellID then
