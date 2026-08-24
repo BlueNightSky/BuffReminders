@@ -146,6 +146,8 @@ BR.DK_RUNEFORGES = DK_RUNEFORGES
 ---@field buffIconID? number Detection-only: any aura whose icon matches counts as the buff (e.g., 136000 for food). Does not affect displayed icon.
 ---@field icons? IconSpec See "Icon fields" comment at end of self[]
 ---@field itemID? number|number[] Check if player has this item in inventory
+---@field itemHasCharges? boolean Count charges live: charges change with no bag event to invalidate a cache
+---@field itemMaxCharges? number Charges on a full item, for the low-stock count text
 ---@field readyCheckOnly? boolean Only show during ready checks
 ---@field casterClass? ClassName Require this class in group, but show reminder to everyone
 ---@field infoTooltip? TooltipText
@@ -1291,6 +1293,10 @@ BR.BUFF_TABLES = {
         -- Healthstone (checks inventory, free consumable for warlocks)
         {
             itemID = { 5512, 224464 }, -- Healthstone, Demonic Healthstone
+            -- Both stones hold 3 charges and are unique: a new cast refills the
+            -- stone in place, so the tracked number is charges, not stones.
+            itemHasCharges = true,
+            itemMaxCharges = 3,
             castSpellID = 29893, -- Create Soulwell
             key = "healthstone",
             name = L["Buff.Healthstone"],

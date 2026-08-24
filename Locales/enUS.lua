@@ -511,10 +511,10 @@ english["Options.Visibility"] = "Visibility"
 -- ============================================================================
 english["Options.Healthstone.LowStock"] = "Warn when low"
 english["Options.Healthstone.LowStock.Desc"] =
-    "Show a soft warning when you have healthstones but not enough. Missing healthstones (0) are always tracked regardless of this setting."
-english["Options.Healthstone.Threshold"] = "Warn when having"
+    "Show a soft warning when your healthstone has few charges left. A missing healthstone always shows. This setting does not change that."
+english["Options.Healthstone.Threshold"] = "Warn at charges"
 english["Options.Healthstone.Threshold.Desc"] =
-    "Show a low-stock warning when you have this many healthstones or fewer.\n\n|cffffcc001:|r Warn when you have exactly 1.\n|cffffcc002:|r Warn when you have 1 or 2."
+    "Show the low-stock warning when your healthstone has this many charges or fewer.\n\n|cffffcc001:|r Warn on the last charge.\n|cffffcc002:|r Warn on the last two charges."
 english["Options.Repair.Threshold"] = "Warn below"
 english["Options.Repair.Threshold.Desc"] =
     "Show the repair reminder when any equipped item's durability drops below this percentage."
@@ -754,7 +754,7 @@ english["BuffRow.Caption.Poisons"] = "Poisons: %s"
 english["BuffRow.Caption.PoisonsUnset"] = "Choose which poisons you use"
 english["BuffRow.Caption.Runeforge"] = "Runeforge: %s"
 english["BuffRow.Caption.RuneforgeUnset"] = "Set your runeforge per spec"
-english["BuffRow.Caption.Healthstone"] = "Low-stock alert: below %d"
+english["BuffRow.Caption.Healthstone"] = "Low-stock alert: %d charges or fewer"
 english["BuffRow.Caption.Repair"] = "Reminds below %d%% durability"
 english["BuffRow.Caption.HealthstoneOff"] = "Low-stock alert: off"
 english["BuffRow.Caption.SoulstoneHidden"] = "Hidden while on cooldown"
@@ -801,7 +801,7 @@ english["BuffPanel.Detached.Desc"] =
     "Pull this buff out of its category into its own independently positioned frame.\nPosition it from the Layout page or by unlocking frames."
 english["BuffPanel.CasterAlways"] = "Warlocks always see it"
 english["BuffPanel.CasterAlways.Desc"] =
-    "Warlocks (who provide this) always see the reminder; everyone else only on ready check."
+    "Warlocks always see the reminder; everyone else only on ready check."
 english["DisabledReason.NotDetached"] = "This buff isn't detached - it sits inside its category frame."
 english["DisabledReason.CasterAlways"] = 'Only applies in ready-check mode. Switch "Show" back to ready check first.'
 english["Options.DisplayOrder.Note"] =

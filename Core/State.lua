@@ -648,22 +648,30 @@ local function HasItemByMode(itemID, mode)
 end
 
 -- Item count cache (charges included), invalidated together with cachedItemOwnership
--- on BAG_UPDATE_DELAYED / PLAYER_EQUIPMENT_CHANGED. Counts only change on bag
--- updates, so re-querying C_Item.GetItemCount every refresh is wasted work.
+-- on BAG_UPDATE_DELAYED / PLAYER_EQUIPMENT_CHANGED. Item counts only change on bag
+-- updates, so re-querying C_Item.GetItemCount every refresh is wasted work. Charge
+-- counts do change without a bag event, so they stay out of this cache.
 ---@type table<number, number>
 local cachedItemCounts = {}
 
----Get the player's item count including charges (cached)
+---Get the player's item count including charges.
+---No bag event fires when an item keeps its slot and only its charges change,
+---so a charge-bearing item must read live (see `itemHasCharges` in Buffs.lua).
 ---@param itemID number
+---@param live? boolean skip the cache
 ---@return number
-local function GetItemCountCached(itemID)
-    local count = cachedItemCounts[itemID]
-    if count ~= nil then
-        return count
+local function GetItemCountCached(itemID, live)
+    if not live then
+        local count = cachedItemCounts[itemID]
+        if count ~= nil then
+            return count
+        end
     end
     local ok, c = pcall(C_Item.GetItemCount, itemID, false, true)
     if ok and c then
-        cachedItemCounts[itemID] = c
+        if not live then
+            cachedItemCounts[itemID] = c
+        end
         return c
     end
     -- Failed/nil read: don't cache, so the next refresh retries instead of
@@ -1941,14 +1949,15 @@ local function ShouldShowConsumableBuff(buff)
     -- Check inventory for item (counts cached, invalidated on bag/equipment events)
     if buff.itemID then
         local itemID = buff.itemID
+        local live = buff.itemHasCharges
         local totalCount
         if type(itemID) == "table" then
             totalCount = 0
             for _, id in ipairs(itemID) do
-                totalCount = totalCount + GetItemCountCached(id)
+                totalCount = totalCount + GetItemCountCached(id, live)
             end
         else
-            totalCount = GetItemCountCached(itemID)
+            totalCount = GetItemCountCached(itemID, live)
         end
         if totalCount > 0 then
             return false, nil, nil, totalCount -- Has the item in inventory
@@ -2084,9 +2093,9 @@ local function GetCategoryGlowSettings(cat)
     return expiringGlow, missingGlow, threshold
 end
 
--- Seconds until the earliest display change caused by time alone: countdown
--- text ticking a minute, remaining time crossing the expiration threshold, or
--- an expiring buff running out (weapon enchant expiry fires no event).
+-- Seconds until the earliest display change no event announces: countdown text
+-- ticking a minute, remaining time crossing the expiration threshold, an expiring
+-- buff running out, or item charges changing.
 -- Accumulated per refresh; Display arms one timer for it instead of polling.
 local nextTimedChangeIn = nil
 
@@ -2109,6 +2118,17 @@ local function NoteTimedChange(remaining, threshold)
     end
     if not nextTimedChangeIn or candidate < nextTimedChangeIn then
         nextTimedChangeIn = candidate
+    end
+end
+
+-- Item charges change with no event of their own, so the low-stock warning looks
+-- again on this cadence while it shows. It sits on BuffState, which Refresh already
+-- reads, because Refresh is at Lua 5.1's 60-upvalue ceiling.
+local CHARGE_RECHECK = 3
+
+function BuffState.NoteChargeRecheck()
+    if not nextTimedChangeIn or CHARGE_RECHECK < nextTimedChangeIn then
+        nextTimedChangeIn = CHARGE_RECHECK
     end
 end
 
@@ -2626,11 +2646,19 @@ function BuffState.Refresh(refreshMode)
                                 and db.defaults
                                 and db.defaults.healthstoneLowStock
                             then
-                                -- Healthstone low-stock check: show with expiring glow when at or below threshold
+                                -- Healthstone low-stock check: charges left over a full
+                                -- stone, with the expiring glow, when at or below threshold
                                 local hsThreshold = db.defaults.healthstoneThreshold or 1
                                 if itemCount <= hsThreshold then
-                                    SetEntryText(entry, tostring(itemCount), consMissGlow)
+                                    entry.visible = true
+                                    entry.displayType = "count"
+                                    entry.countText = buff.itemMaxCharges and (itemCount .. "/" .. buff.itemMaxCharges)
+                                        or tostring(itemCount)
+                                    entry.shouldGlow = consMissGlow
                                     entry.glowKindOverride = "expiring"
+                                    -- A refill keeps the stone in its slot and fires no
+                                    -- event, so the warning looks again while it shows.
+                                    BuffState.NoteChargeRecheck()
                                 end
                             elseif not buff.noExpirationGlow and not hideExpiring then
                                 if TrySetEntryExpiring(entry, remainingTime, consThreshold, consExGlow) then
