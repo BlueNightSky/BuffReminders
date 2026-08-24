@@ -3,14 +3,9 @@ local _, BR = ...
 -- ============================================================================
 -- LOCALIZATION (English - Default)
 -- ============================================================================
--- This file defines all user-facing strings for BuffReminders.
--- Keys use PascalCase dot notation: "Section.SubSection.Key"
--- Missing translations fall back to English automatically.
 
--- English strings (used as fallback for missing translations)
 local english = {}
 
--- L reads from the main table first, falls back to english table
 local L = setmetatable({}, {
     __index = english,
 })
@@ -75,8 +70,6 @@ english["Loadout.CombatBlocked"] = "Can't change gear or talents in combat."
 english["Loadout.Instances"] = "%d instances"
 english["Loadout.LimitRaids"] = "Only specific raids"
 english["Loadout.LimitDungeons"] = "Only specific dungeons"
--- Content scope (you can't swap gear/talents once a key or match starts, so the
--- rule only needs the content you're in - no per-difficulty granularity).
 english["Loadout.Scope.OpenWorld"] = "Open World"
 english["Loadout.Scope.Raid"] = "Raid"
 english["Loadout.Scope.Dungeon"] = "Dungeon"
@@ -87,8 +80,6 @@ english["Loadout.Scope.Battleground"] = "Battleground"
 english["Loadout.SpecClass"] = "%s %s"
 english["Loadout.Require.Gear"] = "Equipment set"
 english["Loadout.Require.Talent"] = "Talent"
--- Requirement dropdown only. The check asks whether the player knows the spell,
--- so it also covers granted passives. "Talent" above stays short for the rule list.
 english["Loadout.Require.TalentOption"] = "Talent or known spell"
 english["Loadout.Require.Loadout"] = "Talent loadout"
 -- On-icon "what's wrong" tags (newline wraps them to two lines on the icon)
@@ -182,7 +173,7 @@ english["Badge.Hearty"] = "H"
 english["Badge.Fleeting"] = "F"
 
 -- ============================================================================
--- BUFF NAMES (used in Options panel checkboxes and sound notification list)
+-- BUFF NAMES
 -- ============================================================================
 -- Raid
 english["Buff.ArcaneIntellect"] = "Arcane Intellect"
@@ -364,11 +355,8 @@ english["Externals.GroupBuffs"] = "Group Buffs"
 english["Externals.Movement"] = "Movement"
 english["Externals.Aggro"] = "Threat Redirects"
 english["Externals.Augmentation"] = "Augmentation"
--- Groups Bloodlust/Heroism/Time Warp/Fury of the Aspects/Primal Rage/Ancient Hysteria
 english["Externals.Bloodlust"] = "Bloodlust"
--- Groups the three barriers Mass Barrier casts on allies (Ice/Blazing/Prismatic)
 english["Externals.MassBarrier"] = "Mass Barrier"
--- Groups Blessing of Summer/Autumn/Winter/Spring
 english["Externals.BlessingOfSeasons"] = "Blessing of the Seasons"
 english["Externals.DurationSize"] = "Countdown size"
 english["Externals.Appearance"] = "Appearance"
@@ -426,9 +414,6 @@ english["DisabledReason.PvPDisabled"] = "This category is hidden in PvP entirely
 -- ============================================================================
 -- OPTIONS: SOUND ALERTS
 -- ============================================================================
--- Sound alerts are set per buff in the buff panel (BuffPanel); the sound
--- dropdown + Preview button live there. The old standalone Sounds page and
--- add/edit dialog were retired, so only the in-panel labels remain.
 english["Options.Sound.Preview"] = "Preview"
 english["Options.Preview"] = "Preview"
 
@@ -596,7 +581,7 @@ english["Options.ChatRequest.Cooldown.Desc"] =
 english["Options.ChatRequest.Cooldown.Hint"] = "Requests not showing up in chat? Turn this off."
 english["Options.ChatRequest.ResetAll"] = "Reset All"
 english["ChatRequests.PerBuffMessages"] = "Per-buff messages"
--- Chat request messages (keyed by buff.key, sent as-is via SendChatMessage)
+-- Chat request messages
 -- EU/US translators: leave untranslated so chat messages stay in English.
 -- Asian translators: translate these so chat messages match your locale.
 english["ChatRequest.intellect"] = "Arcane Intellect buff pls"
@@ -731,8 +716,6 @@ english["Options.Layout"] = "Layout"
 english["Options.SplitFrame"] = "Split into separate frame"
 english["Options.SplitFrame.Desc"] = "Display this category's buffs in a separate, independently movable frame"
 
--- Stacking Order section (Layout page): one ordered list across all non-split
--- categories, driving each category's priority field.
 english["Options.DisplayOrder"] = "Stacking Order"
 
 -- Layout page
@@ -742,28 +725,20 @@ english["Layout.NoDetached"] =
 english["Layout.FrameNotFound"] =
     "This frame doesn't currently exist in-game.\nIt will appear in anchor dropdowns once its addon creates it."
 
--- Buff panel (uniform per-buff settings dialog)
+-- Buff panel
 english["BuffPanel.SettingsLink"] = "Settings"
 english["BuffRow.SettingsLink.Tooltip"] = "Sound alert, show mode, and detach options for this buff."
--- Row captions: the gold "option: value" line under buffs with their own
--- options (All Buffs page). %s is the current value. The trailing "clickable
--- link" chevron is appended in code (_BuffRow.lua), not stored here, so
--- translators never handle the raw escape.
--- Trailing link on the All Buffs row: a gold "Extras" for any buff with its own
--- options (vs the gray "Settings" for the rest); the specific option is named
--- inside the drawer. The two rich editors keep their name for the drawer's
--- "Edit X" door.
 english["BuffRow.Extras"] = "Extras"
 english["BuffRow.Option.Poisons"] = "Poisons"
 english["BuffRow.Option.Runeforge"] = "Runeforge"
--- Row state glyph tooltips (the small sound / pin markers left of the link).
+-- Row state glyphs
 english["BuffRow.Glyph.Sound"] = "Sound alert"
 english["BuffRow.Glyph.Detached"] = "Detached icon"
 english["BuffRow.Glyph.Detached.Desc"] =
     "This icon is placed freely on screen. Manage it in the buff's Settings or on the Layout page."
 english["BuffRow.Glyph.New"] = "New buff"
 english["BuffRow.Glyph.New.Desc"] = "Added in the latest update."
--- Drawer door to a buff's focused editor (poison/runeforge). %s = option name.
+-- %s is the option name
 english["BuffPanel.EditOption"] = "Edit %s"
 english["BuffPanel.Show"] = "Show"
 english["BuffPanel.MageFoodContent"] = "Where"
@@ -783,7 +758,7 @@ english["DisabledReason.CasterAlways"] = 'Only applies in ready-check mode. Swit
 english["Options.DisplayOrder.Note"] =
     "How categories stack inside the combined frame, from top to bottom. Split categories live in their own frames and don't participate."
 
--- Detached Icons (inline manager on the Layout page).
+-- Detached Icons
 english["DetachedIcons.Reattach"] = "Return to category"
 english["DetachedIcons.ResetPos"] = "Reset position"
 
@@ -1112,7 +1087,7 @@ english["Options.GlobalTag.Title"] = "Applies everywhere"
 english["Options.GlobalTag.Desc"] =
     "This setting is stored once for the whole addon.\nChanging it here changes it for every category, not just this one."
 
--- Disabled-control explanations (shown on hover while the control is disabled)
+-- Disabled-control explanations
 english["Component.DisabledReason.Title"] = "Why is this disabled?"
 english["DisabledReason.GrowDirection"] =
     'Grow direction needs this category in its own frame.\nEnable "Split into separate frame" in the Layout section first.'

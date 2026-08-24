@@ -65,8 +65,6 @@ L["Loadout.CombatBlocked"] = "전투 중에는 장비나 특성을 바꿀 수 �
 L["Loadout.Instances"] = "인스턴스 %d개"
 L["Loadout.LimitRaids"] = "특정 레이드만"
 L["Loadout.LimitDungeons"] = "특정 던전만"
--- Content scope (you can't swap gear/talents once a key or match starts, so the
--- rule only needs the content you're in - no per-difficulty granularity).
 L["Loadout.Scope.OpenWorld"] = "야외"
 L["Loadout.Scope.Raid"] = "레이드"
 L["Loadout.Scope.Dungeon"] = "던전"
@@ -76,8 +74,6 @@ L["Loadout.Scope.Battleground"] = "전장"
 -- Binding label: spec + class, e.g. "Protection Warrior" (reorder for your locale).
 L["Loadout.Require.Gear"] = "장비 구성"
 L["Loadout.Require.Talent"] = "특성"
--- Requirement dropdown only. The check asks whether the player knows the spell,
--- so it also covers granted passives. "Talent" above stays short for the rule list.
 L["Loadout.Require.TalentOption"] = "특성 또는 습득한 주문"
 L["Loadout.Require.Loadout"] = "특성 구성"
 -- On-icon "what's wrong" tags (newline wraps them to two lines on the icon)
@@ -171,7 +167,7 @@ L["Badge.Hearty"] = "든"
 L["Badge.Fleeting"] = "덧"
 
 -- ============================================================================
--- BUFF NAMES (used in Options panel checkboxes and sound notification list)
+-- BUFF NAMES
 -- ============================================================================
 -- Raid
 L["Buff.ArcaneIntellect"] = "신비한 지능"
@@ -333,11 +329,8 @@ L["Externals.GroupBuffs"] = "그룹 버프"
 L["Externals.Movement"] = "이동기"
 L["Externals.Aggro"] = "위협 수준 이전"
 L["Externals.Augmentation"] = "증강"
--- Groups Bloodlust/Heroism/Time Warp/Fury of the Aspects/Primal Rage/Ancient Hysteria
 L["Externals.Bloodlust"] = "피의 욕망"
--- Groups the three barriers Mass Barrier casts on allies (Ice/Blazing/Prismatic)
 L["Externals.MassBarrier"] = "단체 보호막"
--- Groups Blessing of Summer/Autumn/Winter/Spring
 L["Externals.BlessingOfSeasons"] = "계절의 축복"
 L["Externals.DurationSize"] = "초읽기 텍스트 크기"
 L["Externals.Appearance"] = "외형"
@@ -366,9 +359,6 @@ L["DisabledReason.PvPDisabled"] = "이 카테고리는 PvP에서 완전히 숨�
 -- ============================================================================
 -- OPTIONS: SOUND ALERTS
 -- ============================================================================
--- Sound alerts are set per buff in the buff panel (BuffPanel); the sound
--- dropdown + Preview button live there. The old standalone Sounds page and
--- add/edit dialog were retired, so only the in-panel labels remain.
 L["Options.Sound.Preview"] = "미리듣기"
 L["Options.Preview"] = "미리보기"
 
@@ -531,7 +521,7 @@ L["Options.ChatRequest.Cooldown.Desc"] =
 L["Options.ChatRequest.Cooldown.Hint"] = "채팅 요청이 나오지 않고 있나요? 이 옵션을 끄세요."
 L["Options.ChatRequest.ResetAll"] = "모두 초기화"
 L["ChatRequests.PerBuffMessages"] = "버프별 메시지"
--- Chat request messages (keyed by buff.key, sent as-is via SendChatMessage)
+-- Chat request messages
 -- EU/US translators: leave untranslated so chat messages stay in English.
 -- Asian translators: translate these so chat messages match your locale.
 L["ChatRequest.intellect"] = "신비한 지능 버프 주세요"
@@ -667,8 +657,6 @@ L["Options.SplitFrame"] = "개별 프레임으로 분리"
 L["Options.SplitFrame.Desc"] =
     "이 카테고리의 버프를 독립적으로 이동 가능한 별도의 프레임에 표시합니다."
 
--- Stacking Order section (Layout page): one ordered list across all non-split
--- categories, driving each category's priority field.
 L["Options.DisplayOrder"] = "쌓이는 순서"
 
 -- Layout page
@@ -678,28 +666,20 @@ L["Layout.NoDetached"] =
 L["Layout.FrameNotFound"] =
     "이 프레임은 현재 게임 내에 존재하지 않습니다.\n관련 애드온이 프레임을 생성해야 앵커 드롭다운에 표시됩니다."
 
--- Buff panel (uniform per-buff settings dialog)
+-- Buff panel
 L["BuffPanel.SettingsLink"] = "설정"
 L["BuffRow.SettingsLink.Tooltip"] = "이 버프에 대한 소리 알림, 표시 모드 및 분리 옵션입니다."
--- Row captions: the gold "option: value" line under buffs with their own
--- options (All Buffs page). %s is the current value. The trailing "clickable
--- link" chevron is appended in code (_BuffRow.lua), not stored here, so
--- translators never handle the raw escape.
--- Trailing link on the All Buffs row: a gold "Extras" for any buff with its own
--- options (vs the gray "Settings" for the rest); the specific option is named
--- inside the drawer. The two rich editors keep their name for the drawer's
--- "Edit X" door.
 L["BuffRow.Extras"] = "추가 설정"
 L["BuffRow.Option.Poisons"] = "독"
 L["BuffRow.Option.Runeforge"] = "룬벼리기"
--- Row state glyph tooltips (the small sound / pin markers left of the link).
+-- Row state glyphs
 L["BuffRow.Glyph.Sound"] = "소리 알림"
 L["BuffRow.Glyph.Detached"] = "분리된 아이콘"
 L["BuffRow.Glyph.Detached.Desc"] =
     "이 아이콘은 화면에 자유롭게 배치됩니다. 버프 설정 또는 레이아웃 페이지에서 관리하세요."
 L["BuffRow.Glyph.New"] = "새 버프"
 L["BuffRow.Glyph.New.Desc"] = "최신 업데이트에 추가됐습니다."
--- Drawer door to a buff's focused editor (poison/runeforge). %s = option name.
+-- %s is the option name
 L["BuffPanel.EditOption"] = "%s 수정"
 L["BuffPanel.Show"] = "표시"
 L["BuffPanel.MageFoodContent"] = "위치"
@@ -719,7 +699,7 @@ L["DisabledReason.CasterAlways"] = '전투 준비 검사 모드에서만 적용�
 L["Options.DisplayOrder.Note"] =
     "조합된 프레임 내에서 카테고리들이 위에서 아래로 쌓이는 순서를 설정합니다. 분리한 카테고리는 별도의 프레임에 있으므로 여기엔 나오지 않습니다."
 
--- Detached Icons (inline manager on the Layout page).
+-- Detached Icons
 L["DetachedIcons.Reattach"] = "카테고리로 돌아가기"
 L["DetachedIcons.ResetPos"] = "위치 초기화"
 
@@ -1025,7 +1005,7 @@ L["Options.GlobalTag.Title"] = "모든 곳에 적용되는 설정"
 L["Options.GlobalTag.Desc"] =
     "설정이 애드온 전체적으로 일괄 저장됩니다.\n여기서 변경된 내역은 이 카테고리뿐만 아니라 모든 카테고리에 적용됩니다."
 
--- Disabled-control explanations (shown on hover while the control is disabled)
+-- Disabled-control explanations
 L["Component.DisabledReason.Title"] = "왜 비활성화가 됐나요?"
 L["DisabledReason.GrowDirection"] =
     '확장 방향은 이 카테고리가 자체 프레임에 있어야 합니다.\n먼저 레이아웃 섹션에서 "개별 프레임으로 분리"를 활성화하세요.'

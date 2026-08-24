@@ -65,8 +65,6 @@ L["Loadout.CombatBlocked"] = "無法在戰鬥中更換裝備或天賦。"
 L["Loadout.Instances"] = "%d 副本"
 L["Loadout.LimitRaids"] = "只有指定的團隊副本"
 L["Loadout.LimitDungeons"] = "只有指定的地下城"
--- Content scope (you can't swap gear/talents once a key or match starts, so the
--- rule only needs the content you're in - no per-difficulty granularity).
 L["Loadout.Scope.OpenWorld"] = "開放世界"
 L["Loadout.Scope.Raid"] = "團隊副本"
 L["Loadout.Scope.Dungeon"] = "地下城"
@@ -77,8 +75,6 @@ L["Loadout.Scope.Battleground"] = "戰場"
 L["Loadout.SpecClass"] = "%s %s"
 L["Loadout.Require.Gear"] = "裝備套裝"
 L["Loadout.Require.Talent"] = "天賦"
--- Requirement dropdown only. The check asks whether the player knows the spell,
--- so it also covers granted passives. "Talent" above stays short for the rule list.
 L["Loadout.Require.TalentOption"] = "天賦或已知法術"
 L["Loadout.Require.Loadout"] = "天賦構建"
 -- On-icon "what's wrong" tags (newline wraps them to two lines on the icon)
@@ -172,7 +168,7 @@ L["Badge.Hearty"] = "澎"
 L["Badge.Fleeting"] = "普"
 
 -- ============================================================================
--- BUFF NAMES (used in Options panel checkboxes and sound notification list)
+-- BUFF NAMES
 -- ============================================================================
 -- Raid
 L["Buff.ArcaneIntellect"] = "祕法智力"
@@ -349,11 +345,8 @@ L["Externals.GroupBuffs"] = "群體增益"
 L["Externals.Movement"] = "移動"
 L["Externals.Aggro"] = "威脅重定向"
 L["Externals.Augmentation"] = "強化"
--- Groups Bloodlust/Heroism/Time Warp/Fury of the Aspects/Primal Rage/Ancient Hysteria
 L["Externals.Bloodlust"] = "嗜血術"
--- Groups the three barriers Mass Barrier casts on allies (Ice/Blazing/Prismatic)
 L["Externals.MassBarrier"] = "群體屏障"
--- Groups Blessing of Summer/Autumn/Winter/Spring
 L["Externals.BlessingOfSeasons"] = "四季祝福"
 L["Externals.DurationSize"] = "倒數尺寸"
 L["Externals.Appearance"] = "外觀"
@@ -382,9 +375,6 @@ L["DisabledReason.PvPDisabled"] = "此類別在PvP中完全隱藏 (請看可見�
 -- ============================================================================
 -- OPTIONS: SOUND ALERTS
 -- ============================================================================
--- Sound alerts are set per buff in the buff panel (BuffPanel); the sound
--- dropdown + Preview button live there. The old standalone Sounds page and
--- add/edit dialog were retired, so only the in-panel labels remain.
 L["Options.Sound.Preview"] = "預覽"
 L["Options.Preview"] = "預覽"
 
@@ -549,7 +539,7 @@ L["Options.ChatRequest.Cooldown.Desc"] =
 L["Options.ChatRequest.Cooldown.Hint"] = "請求未顯示在聊天中？把它關掉。"
 L["Options.ChatRequest.ResetAll"] = "重置全部"
 L["ChatRequests.PerBuffMessages"] = "每個增益的訊息"
--- Chat request messages (keyed by buff.key, sent as-is via SendChatMessage)
+-- Chat request messages
 -- EU/US translators: leave untranslated so chat messages stay in L.
 -- Asian translators: translate these so chat messages match your locale.
 L["ChatRequest.intellect"] = "請補上祕法智力的增益"
@@ -682,8 +672,6 @@ L["Options.Layout"] = "佈局"
 L["Options.SplitFrame"] = "分離為獨立框架"
 L["Options.SplitFrame.Desc"] = "將此類別中的增益顯示在可獨立移動的單獨框架中。"
 
--- Stacking Order section (Layout page): one ordered list across all non-split
--- categories, driving each category's priority field.
 L["Options.DisplayOrder"] = "堆疊順序"
 
 -- Layout page
@@ -693,28 +681,20 @@ L["Layout.NoDetached"] =
 L["Layout.FrameNotFound"] =
     "該框架目前在遊戲中不存在。 \n一旦其插件創建它，它將出現在定位點下拉列表中。"
 
--- Buff panel (uniform per-buff settings dialog)
+-- Buff panel
 L["BuffPanel.SettingsLink"] = "設定"
 L["BuffRow.SettingsLink.Tooltip"] = "此增益的聲音警報、顯示模式和分離選項。"
--- Row captions: the gold "option: value" line under buffs with their own
--- options (All Buffs page). %s is the current value. The trailing "clickable
--- link" chevron is appended in code (_BuffRow.lua), not stored here, so
--- translators never handle the raw escape.
--- Trailing link on the All Buffs row: a gold "Extras" for any buff with its own
--- options (vs the gray "Settings" for the rest); the specific option is named
--- inside the drawer. The two rich editors keep their name for the drawer's
--- "Edit X" door.
 L["BuffRow.Extras"] = "附加功能"
 L["BuffRow.Option.Poisons"] = "毒藥"
 L["BuffRow.Option.Runeforge"] = "符文鎔鑄"
--- Row state glyph tooltips (the small sound / pin markers left of the link).
+-- Row state glyphs
 L["BuffRow.Glyph.Sound"] = "聲音警報"
 L["BuffRow.Glyph.Detached"] = "獨立的圖示"
 L["BuffRow.Glyph.Detached.Desc"] =
     "該圖示可以自由放置在螢幕上。在增益的設定或佈局頁面上進行管理。"
 L["BuffRow.Glyph.New"] = "新增益"
 L["BuffRow.Glyph.New.Desc"] = "在最後更新加入。"
--- Drawer door to a buff's focused editor (poison/runeforge). %s = option name.
+-- %s is the option name
 L["BuffPanel.EditOption"] = "編輯 %s"
 L["BuffPanel.Show"] = "顯示"
 L["BuffPanel.MageFoodContent"] = "何處"
@@ -733,7 +713,7 @@ L["DisabledReason.CasterAlways"] = "僅適用於準備確認模式。首先將�
 L["Options.DisplayOrder.Note"] =
     "類別如何在組合框架內從上到下堆疊。分離的類別存在於它們自己的框架中並不參與。"
 
--- Detached Icons (inline manager on the Layout page).
+-- Detached Icons
 L["DetachedIcons.Reattach"] = "返回到類別"
 L["DetachedIcons.ResetPos"] = "重置位置"
 
@@ -1053,13 +1033,13 @@ L["Component.AdjustValue"] = "調整數值"
 L["Component.AdjustValue.Desc"] = "點擊輸入或使用鼠標滾輪。"
 L["Component.AdjustValue.ClickHint"] = "點擊數字即可輸入具體數值"
 
--- Sciope tag for globally-stored controls on category pages
+-- Scope tag for globally-stored controls on category pages
 L["Options.GlobalTag"] = "全局"
 L["Options.GlobalTag.Title"] = "隨處套用"
 L["Options.GlobalTag.Desc"] =
     "此設定會為整個插件儲存一次。 \n在此處更改它會更改每個類別的設置，而不僅僅是此類。"
 
--- Disabled-control explanations (shown on hover while the control is disabled)
+-- Disabled-control explanations
 L["Component.DisabledReason.Title"] = "為什麼這個被禁用了？"
 L["DisabledReason.GrowDirection"] =
     '增長方向需要類別有自己的獨立框架。\n首先在佈局部分啟用"分離成單獨的框架"。'
