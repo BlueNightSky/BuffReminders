@@ -2179,7 +2179,10 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         end
     end
 
-    if entry.displayType ~= "text" and entry.displayType ~= "expiring" and not entry.isEating then
+    -- The variant icons fan out only when the buff is fully gone. An expiring buff, or
+    -- food that the player eats now, keeps one icon so the row width stays the same.
+    if entry.displayType ~= "text" or entry.isEating then
+        BR.SecureButtons.UpdateConsumableButtons(frame, nil)
         return
     end
     if not BUFF_KEY_TO_CATEGORY[frame.key] or not frame:IsShown() then
@@ -2263,10 +2266,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
         BR.SecureButtons.UpdateConsumableButtons(frame, nil)
         if displayMode == "expanded" and items and #items > 1 then
             local cachedGlow = entry.category
-                    and GetCachedGlowSettings(
-                        entry.category,
-                        entry.glowKindOverride or (entry.displayType == "expiring" and "expiring" or "missing")
-                    )
+                    and GetCachedGlowSettings(entry.category, entry.glowKindOverride or "missing")
                 or nil
             local expandedSize = frame:GetWidth()
             local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(expandedSize)
