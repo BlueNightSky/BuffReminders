@@ -13,7 +13,6 @@ local tinsert = table.insert
 
 local L = BR.L
 local Components = BR.Components
-local CreateButton = BR.CreateButton
 local CreatePanel = BR.CreatePanel
 
 local OPTIONS_BASE_SCALE = BR.OPTIONS_BASE_SCALE
@@ -381,11 +380,7 @@ local function CreateOptionsPanel()
         return floor((BR.profile.optionsPanelScale or BASE_SCALE) / BASE_SCALE * 100 + 0.5)
     end
 
-    local closeBtn = CreateButton(panel, "x", function()
-        panel:Hide()
-    end)
-    closeBtn:SetSize(22, 22)
-    closeBtn:SetPoint("TOPRIGHT", -5, -5)
+    local closeBtn = BR.Options.Helpers.AddCloseButton(panel)
 
     local scaleHolder = CreateFrame("Frame", nil, panel)
     scaleHolder:SetPoint("RIGHT", closeBtn, "LEFT", -8, 0)

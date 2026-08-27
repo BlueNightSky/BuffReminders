@@ -588,6 +588,21 @@ function Helpers.MakeDefaultsSetter(key)
     end
 end
 
+-- AddCloseButton draws the flat close-x every panel and dialog shares. Blizzard's
+-- UIPanelCloseButton does not match the addon chrome, so no frame uses it.
+---@param parent table
+---@param onClick? function defaults to parent:Hide()
+---@return table button
+function Helpers.AddCloseButton(parent, onClick)
+    local C = BR.Options.Constants
+    local btn = BR.CreateButton(parent, "x", onClick or function()
+        parent:Hide()
+    end)
+    btn:SetSize(C.DIALOG_CLOSE_SIZE, C.DIALOG_CLOSE_SIZE)
+    btn:SetPoint("TOPRIGHT", C.DIALOG_CLOSE_INSET, C.DIALOG_CLOSE_INSET)
+    return btn
+end
+
 -- ============================================================================
 -- DIALOG SHELL HELPERS
 -- ============================================================================
@@ -612,7 +627,6 @@ function Helpers.CreateDialogShell(name, titleKey, opts)
     opts = opts or {}
     local C = BR.Options.Constants
     local CreatePanel = BR.CreatePanel
-    local CreateButton = BR.CreateButton
 
     local dialog = CreatePanel(name, opts.width or C.DIALOG_WIDTH_NARROW, 1, {
         level = opts.level or C.DIALOG_LEVEL,
@@ -641,11 +655,7 @@ function Helpers.CreateDialogShell(name, titleKey, opts)
         title:SetPoint("TOP", 0, C.DIALOG_TITLE_TOP)
     end
 
-    local closeBtn = CreateButton(dialog, "x", function()
-        dialog:Hide()
-    end)
-    closeBtn:SetSize(C.DIALOG_CLOSE_SIZE, C.DIALOG_CLOSE_SIZE)
-    closeBtn:SetPoint("TOPRIGHT", C.DIALOG_CLOSE_INSET, C.DIALOG_CLOSE_INSET)
+    local closeBtn = Helpers.AddCloseButton(dialog)
 
     local layoutTop = opts.layoutY or C.DIALOG_LAYOUT_TOP
     local layout = BR.Components.VerticalLayout(dialog, {

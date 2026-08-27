@@ -380,11 +380,7 @@ local function BuildPanel()
     titleFS = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     titleFS:SetPoint("TOP", 0, -10)
 
-    local closeBtn = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
-    closeBtn:SetPoint("TOPRIGHT", -2, -2)
-    closeBtn:SetScript("OnClick", function()
-        panel:Hide()
-    end)
+    BR.Options.Helpers.AddCloseButton(panel)
 
     expiringTab = Components.Tab(panel, { label = L["Options.GlowKind.Expiring"] })
     expiringTab:SetPoint("TOPLEFT", MARGIN, -42)

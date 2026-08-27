@@ -861,7 +861,6 @@ L["CustomBuff.SpellIDs"] = "주문 ID:"
 L["CustomBuff.Lookup"] = "검색"
 L["CustomBuff.AddSpellID"] = "+ 주문 ID 추가"
 L["CustomBuff.Name"] = "이름:"
-L["CustomBuff.Text"] = "텍스트:"
 L["CustomBuff.LineBreakHint"] = "(\\n을 사용해서 줄바꿈)"
 L["CustomBuff.Appearance"] = "외형"
 L["CustomBuff.BuffTracking"] = "버프 추적"
@@ -893,7 +892,6 @@ L["Class.Warrior"] = "전사"
 -- Custom buff fields
 L["CustomBuff.Spec"] = "전문화:"
 L["CustomBuff.Class"] = "직업:"
-L["CustomBuff.RequireItem"] = "아이템 필요:"
 L["CustomBuff.RequireItem.EquippedBags"] = "착용 중/소지품"
 L["CustomBuff.RequireItem.Equipped"] = "착용 중"
 L["CustomBuff.RequireItem.InBags"] = "소지품"
@@ -932,7 +930,6 @@ L["CustomBuff.Action.MacroHint"] = "예: /사용 item:12345\n/사용 13"
 
 -- Save/Cancel/Delete
 L["CustomBuff.Save"] = "저장"
-L["CustomBuff.ValidateError"] = "유효한 주문 ID가 1개 이상 필요합니다"
 
 -- Custom buff status
 L["CustomBuff.InvalidID"] = "잘못된 ID"

@@ -930,7 +930,6 @@ L["CustomBuff.SpellIDs"] = "法術ID:"
 L["CustomBuff.Lookup"] = "查找"
 L["CustomBuff.AddSpellID"] = "+ 添加法術ID"
 L["CustomBuff.Name"] = "名稱:"
-L["CustomBuff.Text"] = "文字:"
 L["CustomBuff.LineBreakHint"] = "（使用 \\n 換行）"
 L["CustomBuff.Appearance"] = "外觀"
 L["CustomBuff.BuffTracking"] = "增益追蹤"
@@ -962,7 +961,6 @@ L["Class.Warrior"] = "戰士"
 -- Custom buff fields
 L["CustomBuff.Spec"] = "專精:"
 L["CustomBuff.Class"] = "職業:"
-L["CustomBuff.RequireItem"] = "需要物品:"
 L["CustomBuff.RequireItem.EquippedBags"] = "已裝備/背包中"
 L["CustomBuff.RequireItem.Equipped"] = "已裝備"
 L["CustomBuff.RequireItem.InBags"] = "背包中"
@@ -1001,7 +999,6 @@ L["CustomBuff.Action.MacroHint"] = "例：/use item:12345\n/use 13"
 
 -- Save/Cancel/Delete
 L["CustomBuff.Save"] = "保存"
-L["CustomBuff.ValidateError"] = "需要至少1個有效的法術ID"
 
 -- Custom buff status
 L["CustomBuff.InvalidID"] = "無效ID"

@@ -106,11 +106,7 @@ local function Show(existingKey, refreshPanelCallback)
     title:SetPoint("TOP", 0, -12)
     title:SetText(editingRule and L["Loadout.Edit"] or L["Loadout.Add"])
 
-    local closeBtn = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
-    closeBtn:SetPoint("TOPRIGHT", -2, -2)
-    closeBtn:SetScript("OnClick", function()
-        dialog:Hide()
-    end)
+    BR.Options.Helpers.AddCloseButton(dialog)
 
     -- ---- editable state (read on save) ----------------------------------
     local requireType = (editingRule and editingRule.require) or "gear"

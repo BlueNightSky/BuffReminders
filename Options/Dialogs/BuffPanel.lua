@@ -597,11 +597,7 @@ local function EnsureEditor()
     editorTitle = editor:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     editorTitle:SetPoint("LEFT", editorIcon, "RIGHT", 8, 0)
 
-    local closeBtn = CreateFrame("Button", nil, editor, "UIPanelCloseButton")
-    closeBtn:SetPoint("TOPRIGHT", -2, -2)
-    closeBtn:SetScript("OnClick", function()
-        editor:Hide()
-    end)
+    BR.Options.Helpers.AddCloseButton(editor)
 end
 
 local function TearDownEditorBody()

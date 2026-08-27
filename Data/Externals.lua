@@ -113,8 +113,6 @@ BR.EXTERNALS = {
     { key = "misdirection", section = "aggro", spellIDs = { 34477 }, defaultSound = false }, -- Hunter
     { key = "tricksOfTheTrade", section = "aggro", spellIDs = { 57934 }, defaultSound = false }, -- Rogue
 
-    -- Not whitelisted since 12.1, so the reminder pipeline cannot see these in combat.
-    -- A container still can.
     { key = "blisteringScales", section = "augmentation", spellIDs = { 360827 }, defaultSound = false }, -- Evoker
     { key = "ebonMight", section = "augmentation", spellIDs = { 395152, 395296 }, defaultSound = false }, -- Evoker
     { key = "prescience", section = "augmentation", spellIDs = { 410089 }, defaultSound = false }, -- Evoker
