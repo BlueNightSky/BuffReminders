@@ -29,20 +29,7 @@ local BUTTON_BAR = 40
 
 local loadoutDialog = nil
 
--- Player-facing content tiers. A key insert or a match start locks gear and
--- talents, so per-difficulty granularity adds nothing. Arena and Battleground are
--- separate tiers because their setups differ. Dungeon covers every difficulty,
--- including M+. Open World and Delve allow free swaps, so a reminder to restore
--- the everyday build stays usable there.
-local CONTENT_VALUES = { "openWorld", "dungeon", "delve", "raid", "arena", "battleground" }
-local SCOPE_LABEL = {
-    openWorld = "Loadout.Scope.OpenWorld",
-    raid = "Loadout.Scope.Raid",
-    dungeon = "Loadout.Scope.Dungeon",
-    delve = "Loadout.Scope.Delve",
-    arena = "Loadout.Scope.Arena",
-    battleground = "Loadout.Scope.Battleground",
-}
+local LOADOUT_SCOPES = BR.Options.LoadoutScopes
 
 -- Per-session counter in the key. time() has one-second resolution, so two rules
 -- of the same require type in the same second can collide without it.
@@ -321,8 +308,8 @@ local function Show(existingKey, refreshPanelCallback)
     local RenderDynamic, RecomputeHeight -- forward decls
 
     local contentOpts = {}
-    for _, v in ipairs(CONTENT_VALUES) do
-        contentOpts[#contentOpts + 1] = { value = v, label = L[SCOPE_LABEL[v]] }
+    for _, tier in ipairs(LOADOUT_SCOPES) do
+        contentOpts[#contentOpts + 1] = { value = tier.value, label = L[tier.labelKey] }
     end
     local contentDropdown = Components.Dropdown(dialog, {
         label = L["Loadout.Content"],

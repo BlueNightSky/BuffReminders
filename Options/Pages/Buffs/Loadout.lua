@@ -38,14 +38,7 @@ local REQUIRE_LABELS = {
     loadout = "Loadout.Require.Loadout",
 }
 
-local SCOPE_LABELS = {
-    openWorld = "Loadout.Scope.OpenWorld",
-    raid = "Loadout.Scope.Raid",
-    dungeon = "Loadout.Scope.Dungeon",
-    delve = "Loadout.Scope.Delve",
-    arena = "Loadout.Scope.Arena",
-    battleground = "Loadout.Scope.Battleground",
-}
+local SCOPE_LABELS = BR.Options.LoadoutScopeLabel
 
 ---One-line summary of a rule: requirement target + where it applies.
 local function FormatSummary(rule)

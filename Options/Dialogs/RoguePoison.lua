@@ -255,5 +255,8 @@ local function BuildInline(parent, opts)
     return y - finalY
 end
 
--- Width: two columns of poison rows, each an icon, a name and a checkbox.
-BR.Options.Dialogs.RoguePoison = { BuildInline = BuildInline, Width = 468 }
+BR.Options.Dialogs.RoguePoison = {
+    BuildInline = BuildInline,
+    Name = L["BuffRow.Option.Poisons"],
+    Width = 468,
+}

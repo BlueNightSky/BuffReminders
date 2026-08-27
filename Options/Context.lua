@@ -50,6 +50,33 @@ BR.Options.Constants = {
 }
 
 -- ============================================================================
+-- LOADOUT SCOPES
+-- ============================================================================
+
+-- Where a loadout rule applies, in the order the scope dropdown lists them.
+-- These are player-facing content tiers. A key insert or a match start locks
+-- gear and talents, so per-difficulty granularity adds nothing. Arena and
+-- Battleground are separate tiers because their setups differ. Dungeon covers
+-- every difficulty, including M+. Open World and Delve allow free swaps, so a
+-- reminder to restore the everyday build stays usable there.
+---@type { value: string, labelKey: string }[]
+BR.Options.LoadoutScopes = {
+    { value = "openWorld", labelKey = "Loadout.Scope.OpenWorld" },
+    { value = "dungeon", labelKey = "Loadout.Scope.Dungeon" },
+    { value = "delve", labelKey = "Loadout.Scope.Delve" },
+    { value = "raid", labelKey = "Loadout.Scope.Raid" },
+    { value = "arena", labelKey = "Loadout.Scope.Arena" },
+    { value = "battleground", labelKey = "Loadout.Scope.Battleground" },
+}
+
+-- Scope to locale key, for a summary line that names one scope.
+---@type table<string, string>
+BR.Options.LoadoutScopeLabel = {}
+for _, scope in ipairs(BR.Options.LoadoutScopes) do
+    BR.Options.LoadoutScopeLabel[scope.value] = scope.labelKey
+end
+
+-- ============================================================================
 -- SIDEBAR GROUPS / PAGE ORDER
 -- ============================================================================
 -- Declarative sidebar layout. Each entry: { id, titleKey, pages }.

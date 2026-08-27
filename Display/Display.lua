@@ -965,12 +965,18 @@ local function ResolveAnchorParent(catKey)
 end
 BR.Display.ResolveAnchorParent = ResolveAnchorParent
 
+-- Step per icon along a growth direction. The anchor comes from
+-- DIRECTION_ANCHORS. CENTER has no entry: it spreads icons around the middle
+-- and never steps from an edge. A caller branches on the nil.
 local DIRECTION_LAYOUT = {
-    LEFT = { anchor = "RIGHT", xMult = -1, yMult = 0 },
-    RIGHT = { anchor = "LEFT", xMult = 1, yMult = 0 },
-    UP = { anchor = "BOTTOM", xMult = 0, yMult = 1 },
-    DOWN = { anchor = "TOP", xMult = 0, yMult = -1 },
+    LEFT = { xMult = -1, yMult = 0 },
+    RIGHT = { xMult = 1, yMult = 0 },
+    UP = { xMult = 0, yMult = 1 },
+    DOWN = { xMult = 0, yMult = -1 },
 }
+for direction, layout in pairs(DIRECTION_LAYOUT) do
+    layout.anchor = DIRECTION_ANCHORS[direction]
+end
 
 local function CreateDetachedFrame(key)
     local pos = GetDetachedPosition(key)

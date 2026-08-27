@@ -804,7 +804,7 @@ end
 -- DIALOG SCALE
 -- ============================================================================
 -- Dialogs parent to UIParent, so they do not inherit the options panel scale.
--- They mirror it instead, reduced when the frame would run off the screen.
+-- They mirror it instead, reduced when the frame runs off the screen.
 -- A frame registered with a baseline divides that scale: pass
 -- OPTIONS_BASE_SCALE and the frame draws its authored pixel size at 100%,
 -- then tracks the stepper from there.
@@ -831,8 +831,7 @@ function BR.ApplyDialogScale(frame)
     frame:SetScale(max(scale, MIN_DIALOG_SCALE))
 end
 
----Register a frame that must follow the options panel scale. CreatePanel does
----this for every dialog; hand-rolled popovers call it themselves.
+---Register a frame that must follow the options panel scale.
 ---@param frame table
 ---@param baseline? number Scale the frame is authored for (default 1 = panel scale)
 function BR.RegisterScaledDialog(frame, baseline)

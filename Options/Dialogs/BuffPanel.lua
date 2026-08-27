@@ -386,8 +386,8 @@ local SPECIAL_SECTIONS = {
 }
 
 ---Editor module of a section, or nil when the section builds inline. The
----section names the module rather than holding it: both load before this file,
----but only the name survives a reorder.
+---section holds the module name, not the table, so a load-order change cannot
+---break the link.
 ---@param section table
 ---@return table? module
 local function EditorModule(section)
@@ -406,12 +406,6 @@ local function BuildSpecial(section, layout)
         section.build(layout)
     end
 end
-
--- Editor names for the drawer's "Edit X" door. Only the two full editors need one.
-local SPECIAL_LABELS = {
-    dkRunes = L["BuffRow.Option.Runeforge"],
-    roguePoisons = L["BuffRow.Option.Poisons"],
-}
 
 -- ============================================================================
 -- DRAWER + EDITOR
@@ -831,10 +825,11 @@ local function Show(info, anchor)
     OpenDrawer(info.displayName or key, info.icons and info.icons[1], anchor, function(layout)
         local special = SPECIAL_SECTIONS[key]
         if special then
-            if EditorModule(special) then
+            local module = EditorModule(special)
+            if module then
                 local editBtn = CreateButton(
                     drawerBody,
-                    format(L["BuffPanel.EditOption"], SPECIAL_LABELS[key] or key),
+                    format(L["BuffPanel.EditOption"], module.Name or key),
                     function()
                         HideDrawer()
                         OpenEditor(info)
