@@ -181,4 +181,5 @@ local function BuildInline(parent, opts)
     return y - finalY
 end
 
-BR.Options.Dialogs.Runeforge = { BuildInline = BuildInline }
+-- Width: two rune columns of six checkboxes, under one tab per spec.
+BR.Options.Dialogs.Runeforge = { BuildInline = BuildInline, Width = 504 }

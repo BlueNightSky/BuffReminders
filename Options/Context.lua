@@ -674,6 +674,7 @@ function Helpers.CreateDialogShell(name, titleKey, opts)
         local contentBottom = layout:GetY()
         local height = math.max(-contentBottom + pad, C.DIALOG_MIN_HEIGHT)
         dialog:SetHeight(height)
+        BR.ApplyDialogScale(dialog)
 
         -- Center the content in the body region: from the title separator down
         -- to the bottom edge. A single short control then sits in the middle of

@@ -410,6 +410,7 @@ local function CreateOptionsPanel()
         local newScale = newPct / 100 * BASE_SCALE
         BR.profile.optionsPanelScale = newScale
         panel:SetScale(newScale)
+        BR.RefreshDialogScales()
         UpdateScaleText()
     end
 

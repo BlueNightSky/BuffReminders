@@ -24,14 +24,9 @@ local format = string.format
 local abs = math.abs
 local wipe = wipe
 
--- Focused-editor default width.
-local PANEL_W = 420
-
--- Editor width per buff. The two full editors need more room than PANEL_W.
-local SPECIAL_WIDTH = {
-    roguePoisons = 520,
-    dkRunes = 560,
-}
+-- Focused-editor default width. A section that names an editor module gets the
+-- width that module declares instead.
+local PANEL_W = 378
 
 BR.Options.Dialogs = BR.Options.Dialogs or {}
 
@@ -171,7 +166,9 @@ local function PoisonNeedsSetup()
     return noneEnabled("lethal") and noneEnabled("nonLethal")
 end
 
--- `build(layout)` appends this buff's extra controls to the panel body.
+-- `build(layout)` appends this buff's extra controls to the panel body. A
+-- section too big for the drawer names an `editor` module instead: the drawer
+-- shows a door to the focused editor, which renders that module inline.
 local SPECIAL_SECTIONS = {
     healthstone = {
         build = function(layout)
@@ -359,7 +356,7 @@ local SPECIAL_SECTIONS = {
             local drop = Components.Dropdown(body, {
                 label = L["BuffPanel.MageFoodContent"],
                 labelWidth = DRAWER_LABEL_W,
-                width = 178,
+                width = DRAWER_FIELD_W,
                 options = {
                     { label = L["BuffPanel.MageFoodContent.All"], value = "all" },
                     { label = L["BuffPanel.MageFoodContent.Dungeon"], value = "dungeon" },
@@ -379,18 +376,36 @@ local SPECIAL_SECTIONS = {
     },
 
     dkRunes = {
-        build = function(layout)
-            AddInlineEditor(layout, BR.Options.Dialogs.Runeforge.BuildInline)
-        end,
+        editor = "Runeforge",
     },
 
     roguePoisons = {
         warn = PoisonNeedsSetup,
-        build = function(layout)
-            AddInlineEditor(layout, BR.Options.Dialogs.RoguePoison.BuildInline)
-        end,
+        editor = "RoguePoison",
     },
 }
+
+---Editor module of a section, or nil when the section builds inline. The
+---section names the module rather than holding it: both load before this file,
+---but only the name survives a reorder.
+---@param section table
+---@return table? module
+local function EditorModule(section)
+    return section.editor and BR.Options.Dialogs[section.editor] or nil
+end
+
+---Render a section into the current body: the module's editor, or the
+---section's own inline controls.
+---@param section table
+---@param layout table
+local function BuildSpecial(section, layout)
+    local module = EditorModule(section)
+    if module then
+        AddInlineEditor(layout, module.BuildInline)
+    else
+        section.build(layout)
+    end
+end
 
 -- Editor names for the drawer's "Edit X" door. Only the two full editors need one.
 local SPECIAL_LABELS = {
@@ -401,13 +416,6 @@ local SPECIAL_LABELS = {
 -- ============================================================================
 -- DRAWER + EDITOR
 -- ============================================================================
-
--- The special section of these buffs is too big for the drawer. The drawer
--- shows a door to the focused editor instead of the controls inline.
-local HAS_EDITOR = {
-    roguePoisons = true,
-    dkRunes = true,
-}
 
 -- ---- Shared row builders (write into the active `body` surface) ---------------
 
@@ -620,7 +628,9 @@ local function OpenEditor(info)
     editorTitle:SetText("|cffffcc00" .. (info.displayName or key) .. "|r")
     editorIcon:SetTexture(info.icons and info.icons[1] or 134400)
 
-    local panelW = SPECIAL_WIDTH[key] or PANEL_W
+    local section = SPECIAL_SECTIONS[key]
+    local module = EditorModule(section)
+    local panelW = module and module.Width or PANEL_W
     editor:SetWidth(panelW)
 
     bodyW = panelW - EDITOR_BODY_X * 2
@@ -631,11 +641,12 @@ local function OpenEditor(info)
     bodyHolders = editorHolders
 
     local layout = Components.VerticalLayout(editorBody, { x = 0, y = 0 })
-    SPECIAL_SECTIONS[key].build(layout)
+    BuildSpecial(section, layout)
 
     local h = abs(layout:GetY())
     editorBody:SetHeight(h)
     editor:SetHeight(EDITOR_BODY_TOP + h + 16)
+    BR.ApplyDialogScale(editor)
     editor:Show()
     Components.RefreshAll()
 end
@@ -676,6 +687,7 @@ local function EnsureDrawer()
     })
     drawer:SetBackdropColor(0.10, 0.10, 0.122, 0.98)
     drawer:SetBackdropBorderColor(unpack(BR.Colors.Border))
+    BR.RegisterScaledDialog(drawer, BR.OPTIONS_BASE_SCALE)
 
     for i = 1, 4 do
         local outset = 5 - i
@@ -776,6 +788,9 @@ local function OpenDrawer(title, icon, anchor, fill, width)
     local h = abs(layout:GetY())
     drawerBody:SetHeight(h)
     drawer:SetHeight(DRAWER_BODY_TOP + h + 12)
+    -- The height decides the scale clamp, and a reopen on an already-shown
+    -- drawer skips OnShow.
+    BR.ApplyDialogScale(drawer)
 
     drawer:ClearAllPoints()
     catcher:Show()
@@ -816,7 +831,7 @@ local function Show(info, anchor)
     OpenDrawer(info.displayName or key, info.icons and info.icons[1], anchor, function(layout)
         local special = SPECIAL_SECTIONS[key]
         if special then
-            if HAS_EDITOR[key] then
+            if EditorModule(special) then
                 local editBtn = CreateButton(
                     drawerBody,
                     format(L["BuffPanel.EditOption"], SPECIAL_LABELS[key] or key),
@@ -828,7 +843,7 @@ local function Show(info, anchor)
                 editBtn:SetSize(bodyW, 24)
                 layout:Add(editBtn, 24, COMPONENT_GAP)
             else
-                special.build(layout)
+                BuildSpecial(special, layout)
             end
             layout:Space(4)
             local sep = drawerBody:CreateTexture(nil, "ARTWORK")

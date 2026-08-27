@@ -801,6 +801,59 @@ function BR.Config.HasCustomGlow(category)
 end
 
 -- ============================================================================
+-- DIALOG SCALE
+-- ============================================================================
+-- Dialogs parent to UIParent, so they do not inherit the options panel scale.
+-- They mirror it instead, reduced when the frame would run off the screen.
+-- A frame registered with a baseline divides that scale: pass
+-- OPTIONS_BASE_SCALE and the frame draws its authored pixel size at 100%,
+-- then tracks the stepper from there.
+
+local min, max = math.min, math.max
+-- Weak keys: a dialog that rebuilds its panel per open drops out of the set
+-- with the panel it replaced.
+local scaledDialogs = setmetatable({}, { __mode = "k" })
+local SCREEN_MARGIN = 40
+local MIN_DIALOG_SCALE = 0.5
+
+---Match one dialog to the options panel scale. Safe to call on every open.
+---@param frame table
+function BR.ApplyDialogScale(frame)
+    local panelScale = (BR.profile and BR.profile.optionsPanelScale) or BR.OPTIONS_BASE_SCALE
+    local scale = panelScale / (scaledDialogs[frame] or 1)
+    local w, h = frame:GetWidth(), frame:GetHeight()
+    if h and h > 0 then
+        scale = min(scale, (UIParent:GetHeight() - SCREEN_MARGIN) / h)
+    end
+    if w and w > 0 then
+        scale = min(scale, (UIParent:GetWidth() - SCREEN_MARGIN) / w)
+    end
+    frame:SetScale(max(scale, MIN_DIALOG_SCALE))
+end
+
+---Register a frame that must follow the options panel scale. CreatePanel does
+---this for every dialog; hand-rolled popovers call it themselves.
+---@param frame table
+---@param baseline? number Scale the frame is authored for (default 1 = panel scale)
+function BR.RegisterScaledDialog(frame, baseline)
+    scaledDialogs[frame] = baseline or 1
+    frame:HookScript("OnShow", BR.ApplyDialogScale)
+    -- CreateFrame returns a shown frame, so the first Show() is a no-op and
+    -- fires no OnShow. Scale it here instead.
+    BR.ApplyDialogScale(frame)
+end
+
+---Re-apply the scale to every open dialog. The scale stepper stays clickable
+---while a dialog is open.
+function BR.RefreshDialogScales()
+    for frame in pairs(scaledDialogs) do
+        if frame:IsShown() then
+            BR.ApplyDialogScale(frame)
+        end
+    end
+end
+
+-- ============================================================================
 -- SHARED UI FACTORIES
 -- ============================================================================
 
@@ -884,6 +937,8 @@ function BR.CreatePanel(name, width, height, options)
         panel:HookScript("OnShow", function(self)
             UIFrameFadeIn(self, 0.12, 0, 1)
         end)
+
+        BR.RegisterScaledDialog(panel)
     elseif options.escClose and name then
         tinsert(UISpecialFrames, name)
     end

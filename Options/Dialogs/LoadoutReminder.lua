@@ -16,16 +16,16 @@ local BORDER_R, BORDER_G, BORDER_B = unpack(BR.Colors.Border)
 
 local wipe = wipe
 
-local DIALOG_WIDTH = 440
-local CONTENT_LEFT = 20
+local DIALOG_WIDTH = 396
+local CONTENT_LEFT = 18
 local CONTENT_W = DIALOG_WIDTH - CONTENT_LEFT * 2
 -- Shared label column so every labeled row lines its control up at the same x.
-local LABEL_W = 110
-local DROPDOWN_W = 200
+local LABEL_W = 100
+local DROPDOWN_W = 180
 -- Fixed-height slot that holds all three requirement targets (gear / talent /
 -- loadout); only one is shown at a time, so the form below it never reflows.
 local TARGET_SLOT_H = 44
-local BUTTON_BAR = 44
+local BUTTON_BAR = 40
 
 local loadoutDialog = nil
 
@@ -446,6 +446,7 @@ local function Show(existingKey, refreshPanelCallback)
 
     RecomputeHeight = function()
         dialog:SetHeight(-dynTopY + (dynFrame.consumedHeight or 0) + SECTION_GAP + READY_H + BUTTON_BAR)
+        BR.ApplyDialogScale(dialog)
     end
 
     RenderDynamic()

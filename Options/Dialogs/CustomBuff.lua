@@ -40,8 +40,8 @@ local AFTER_HEADER_GAP = 8
 
 -- Shell metrics. CreatePanel draws its title separator at -32, so the body
 -- starts one pixel below that.
-local DIALOG_W = 560
-local DIALOG_H = 452
+local DIALOG_W = 432
+local DIALOG_H = 408
 local TITLE_H = 33
 local HEADER_H = 58
 local TAB_STRIP_H = 26
@@ -56,13 +56,13 @@ local BODY_H = DIALOG_H - TITLE_H - HEADER_H - TAB_STRIP_H - FOOTER_H
 -- Slider, Dropdown and TextInput all place their field at `label RIGHT + 5`.
 -- Their holders disagree on height (Dropdown 26, the rest 20), so AddControl
 -- centres each one in a ROW_H slot instead of stacking raw holder heights.
-local LABEL_W = 88
+local LABEL_W = 82
 local FIELD_GAP = 5
 local FIELD_X = LABEL_W + FIELD_GAP
-local FIELD_W = 150
+local FIELD_W = 136
 local FIELD_H = 18
 local ID_FIELD_W = 70
-local SPEC_LABEL_W = 40
+local SPEC_LABEL_W = 34
 local LABEL_H = 12
 local ICON_SIZE = 18
 local ICON_GAP = 8
@@ -525,7 +525,7 @@ local function BuildRulesTab(ctx, frame)
             Components.Dropdown(classRow, {
                 label = L["CustomBuff.Spec"],
                 labelWidth = SPEC_LABEL_W,
-                width = CONTENT_W - FIELD_X - FIELD_W - SPEC_LABEL_W - 20,
+                width = CONTENT_W - FIELD_X - FIELD_W - SPEC_LABEL_W - 8,
                 options = specOptions,
                 get = function()
                     return draft.specId
@@ -1198,7 +1198,7 @@ local function Show(existingKey, refreshPanelCallback)
 
     local saveHint = dialog:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     saveHint:SetPoint("RIGHT", cancelBtn, "LEFT", -10, 0)
-    saveHint:SetWidth(260)
+    saveHint:SetWidth(210)
     saveHint:SetJustifyH("RIGHT")
     saveHint:SetWordWrap(false)
     saveHint:SetTextColor(0.85, 0.64, 0.31)
