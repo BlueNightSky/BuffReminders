@@ -22,7 +22,7 @@ local max = math.max
 
 BR.Migrations = {}
 
-BR.Migrations.DB_VERSION = 51
+BR.Migrations.DB_VERSION = 52
 
 -- Run pending migrations against the profile `db`, using code `defaults` for
 -- fallbacks. `ctx` carries the Display.lua file-scope values the migrations
@@ -1034,6 +1034,24 @@ function BR.Migrations.Run(db, defaults, ctx)
             if sounds and sounds.forgottenQueen ~= nil then
                 sounds[key] = sounds.forgottenQueen
                 sounds.forgottenQueen = nil
+            end
+        end,
+        -- [52] The options panel zoom replaces a raw frame scale that held
+        -- PANEL_DENSITY at 100%. This pass covers every profile, not only `db`:
+        -- migrations never run against an inactive profile, so a stale profile
+        -- keeps the dead key and falls back to 100%.
+        [52] = function()
+            local profiles = BR.aceDB and BR.aceDB.sv and BR.aceDB.sv.profiles
+            if not profiles then
+                return
+            end
+            for _, profile in pairs(profiles) do
+                if type(profile) == "table" then
+                    if type(profile.optionsPanelScale) == "number" then
+                        profile.optionsPanelZoom = BR.ZoomFromLegacyScale(profile.optionsPanelScale)
+                    end
+                    profile.optionsPanelScale = nil
+                end
             end
         end,
     }

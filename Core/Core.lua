@@ -69,7 +69,11 @@ BR.RefreshableComponents = {}
 BR.TEXCOORD_INSET = 0.08
 BR.DEFAULT_BORDER_SIZE = 2
 BR.DEFAULT_ICON_ZOOM = 0 -- percentage; base crop (TEXCOORD_INSET) is always applied separately
-BR.OPTIONS_BASE_SCALE = 1.2
+
+-- Screen pixels per authored unit at 100% zoom: the options panel renders
+-- larger than the numbers its constants use.
+BR.PANEL_DENSITY = 1.2
+BR.PANEL_ZOOM = { MIN = 80, MAX = 150, STEP = 10, DEFAULT = 100 }
 
 BR.Colors = {
     Border = { 0.27, 0.27, 0.32, 1 },
@@ -801,26 +805,46 @@ function BR.Config.HasCustomGlow(category)
 end
 
 -- ============================================================================
--- DIALOG SCALE
+-- PANEL SCALE
 -- ============================================================================
 -- Dialogs parent to UIParent, so they do not inherit the options panel scale.
--- They mirror it instead, reduced when the frame runs off the screen.
--- A frame registered with a baseline divides that scale: pass
--- OPTIONS_BASE_SCALE and the frame draws its authored pixel size at 100%,
--- then tracks the stepper from there.
+-- They mirror it instead.
 
-local min, max = math.min, math.max
+local floor, min, max = math.floor, math.min, math.max
 -- Weak keys: a dialog that rebuilds its panel per open drops out of the set
 -- with the panel it replaced.
 local scaledDialogs = setmetatable({}, { __mode = "k" })
 local SCREEN_MARGIN = 40
 local MIN_DIALOG_SCALE = 0.5
 
+---Zoom the user picked, in percent.
+---@return number
+function BR.GetPanelZoom()
+    return (BR.profile and BR.profile.optionsPanelZoom) or BR.PANEL_ZOOM.DEFAULT
+end
+
+---Frame scale for one member of the options panel family.
+---@param density? number Screen pixels per authored unit at 100% zoom
+---@return number
+function BR.PanelScale(density)
+    return (density or BR.PANEL_DENSITY) * BR.GetPanelZoom() / 100
+end
+
+---Zoom percent of a raw frame scale, the form older SavedVariables hold. The
+---result snaps to a step, because the stepper cannot leave a value it cannot
+---reach.
+---@param scale number
+---@return number
+function BR.ZoomFromLegacyScale(scale)
+    local zoom = BR.PANEL_ZOOM
+    local percent = floor(scale / BR.PANEL_DENSITY * 100 / zoom.STEP + 0.5) * zoom.STEP
+    return min(zoom.MAX, max(zoom.MIN, percent))
+end
+
 ---Match one dialog to the options panel scale. Safe to call on every open.
 ---@param frame table
 function BR.ApplyDialogScale(frame)
-    local panelScale = (BR.profile and BR.profile.optionsPanelScale) or BR.OPTIONS_BASE_SCALE
-    local scale = panelScale / (scaledDialogs[frame] or 1)
+    local scale = BR.PanelScale(scaledDialogs[frame])
     local w, h = frame:GetWidth(), frame:GetHeight()
     if h and h > 0 then
         scale = min(scale, (UIParent:GetHeight() - SCREEN_MARGIN) / h)
@@ -833,9 +857,9 @@ end
 
 ---Register a frame that must follow the options panel scale.
 ---@param frame table
----@param baseline? number Scale the frame is authored for (default 1 = panel scale)
-function BR.RegisterScaledDialog(frame, baseline)
-    scaledDialogs[frame] = baseline or 1
+---@param density? number Screen pixels per authored unit at 100% zoom
+function BR.RegisterScaledDialog(frame, density)
+    scaledDialogs[frame] = density or BR.PANEL_DENSITY
     frame:HookScript("OnShow", BR.ApplyDialogScale)
     -- CreateFrame returns a shown frame, so the first Show() is a no-op and
     -- fires no OnShow. Scale it here instead.

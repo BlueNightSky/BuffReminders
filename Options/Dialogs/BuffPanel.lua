@@ -681,7 +681,8 @@ local function EnsureDrawer()
     })
     drawer:SetBackdropColor(0.10, 0.10, 0.122, 0.98)
     drawer:SetBackdropBorderColor(unpack(BR.Colors.Border))
-    BR.RegisterScaledDialog(drawer, BR.OPTIONS_BASE_SCALE)
+    -- The drawer constants are written in screen pixels, not in panel units.
+    BR.RegisterScaledDialog(drawer, 1)
 
     for i = 1, 4 do
         local outset = 5 - i
