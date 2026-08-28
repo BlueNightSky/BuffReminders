@@ -662,6 +662,7 @@ BR.BUFF_TABLES = {
             groupId = "beacons",
             requireSpecId = 65, -- Holy only
             glowDetectable = true,
+            excludeSpellID = 200025, -- Hide when Beacon of Virtue is known
             clickMacro = TargetedClickMacro("beaconOfFaith"),
         },
         {

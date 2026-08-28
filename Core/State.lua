@@ -2123,22 +2123,31 @@ end
 local cachedIsSpellGlowing = nil
 
 ---Check if any of a buff's spell IDs are glowing on the action bar (via Display layer)
+---This path replaces ShouldShow* in restricted contexts, so it repeats the spec
+---and spell-known gates. Without them a glow flag for an uncastable spell shows
+---a reminder.
 ---@param buff table Buff entry with spellID field
 ---@return boolean
 local function IsAnySpellGlowing(buff)
     if not cachedIsSpellGlowing then
         return false
     end
+    if buff.requireSpecId and GetPlayerSpecId() ~= buff.requireSpecId then
+        return false
+    end
     local spellID = buff.spellID
+    if not spellID then
+        return false
+    end
     if type(spellID) == "table" then
         for _, id in ipairs(spellID) do
-            if cachedIsSpellGlowing(id) then
+            if IsPlayerSpellCached(id) and cachedIsSpellGlowing(id) then
                 return true
             end
         end
         return false
     end
-    return cachedIsSpellGlowing(spellID)
+    return IsPlayerSpellCached(spellID) and cachedIsSpellGlowing(spellID)
 end
 
 -- Coverage category: the reminder counts how many group members miss the buff.

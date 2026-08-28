@@ -781,6 +781,17 @@ local function SeedGlowingSpells()
     end
 end
 
+-- A talent swap can drop a spell while its glow is up. The matching
+-- SPELL_ACTIVATION_OVERLAY_GLOW_HIDE never arrives, so the flag outlives the
+-- spell and would fire again if the talent returns.
+local function PruneGlowingSpells()
+    for spellID in pairs(glowingSpells) do
+        if not IsPlayerSpell(spellID) then
+            glowingSpells[spellID] = nil
+        end
+    end
+end
+
 -- Forward declarations
 local UpdateDisplay, ToggleTestMode
 -- TODO: Blizzard will re-restrict aura APIs in PvP; uncomment fallback display when that happens
@@ -4049,6 +4060,7 @@ eventHandlers.PLAYER_SPECIALIZATION_CHANGED = function(arg1)
     BR.BuffState.InvalidatePetCache()
     BR.BuffState.InvalidateStanceCache()
     BR.BuffState.InvalidateLoadoutCache()
+    PruneGlowingSpells()
 
     BR.PetHelpers.InvalidatePetActions()
     BR.SecureButtons.InvalidateConsumableCache()
@@ -4069,6 +4081,7 @@ eventHandlers.TRAIT_CONFIG_UPDATED = function()
     BR.BuffState.InvalidatePetCache()
     BR.BuffState.InvalidateStanceCache()
     BR.BuffState.InvalidateLoadoutCache()
+    PruneGlowingSpells()
     BR.PetHelpers.InvalidatePetActions()
     BR.SecureButtons.RefreshOverlaySpells()
     SetDirty()
