@@ -353,12 +353,6 @@ L["Externals.GroupBuffs"] = "群體增益"
 L["Externals.Movement"] = "移動"
 L["Externals.Aggro"] = "威脅重定向"
 L["Externals.Augmentation"] = "強化"
--- Groups Bloodlust/Heroism/Time Warp/Fury of the Aspects/Primal Rage/Ancient Hysteria
-L["Externals.Bloodlust"] = "嗜血術"
--- Groups the three barriers Mass Barrier casts on allies (Ice/Blazing/Prismatic)
-L["Externals.MassBarrier"] = "群體屏障"
--- Groups Blessing of Summer/Autumn/Winter/Spring
-L["Externals.BlessingOfSeasons"] = "四季祝福"
 L["Externals.DurationSize"] = "倒數尺寸"
 L["Externals.Appearance"] = "外觀"
 L["Externals.ShowSwipe"] = "顯示持續時間轉圈"

@@ -11,10 +11,10 @@ local _, BR = ...
 -- buffs on assistable units". A harmful aura on yourself can never be tracked, so
 -- this list is buffs-you-receive by construction.
 --
--- `section` buckets an entry under a heading in the options list. `labelKey` is only
--- needed when one entry spans spells with different names, since single-name entries
--- take their label from the spell itself and localize for free. `labelSpellID` names
--- an entry after the ability that grants the aura, for auras whose own name misleads.
+-- `section` buckets an entry under a heading in the options list. An entry is named
+-- after its first spell, so the label is the client's own. `labelSpellID` names it after
+-- the granting ability instead, when the aura's own name misleads. `labelSpellIDs` joins
+-- several names, for an effect the game names once per faction.
 
 ---Display groupings, in the order the options page renders them.
 BR.EXTERNAL_SECTIONS = {
@@ -44,7 +44,7 @@ BR.EXTERNALS = {
     {
         key = "massBarrier", -- Mage
         section = "defensives",
-        labelKey = "Externals.MassBarrier",
+        labelSpellID = 414660,
         spellIDs = {
             414661, -- Ice Barrier
             414662, -- Blazing Barrier
@@ -60,7 +60,7 @@ BR.EXTERNALS = {
         key = "blessingOfSeasons", -- Paladin
         defaultSound = false,
         section = "groupBuffs",
-        labelKey = "Externals.BlessingOfSeasons",
+        labelSpellID = 395355,
         spellIDs = {
             388007, -- Blessing of Summer
             388010, -- Blessing of Autumn
@@ -71,7 +71,7 @@ BR.EXTERNALS = {
     {
         key = "bloodlust", -- Shaman + the cross-class variants
         section = "groupBuffs",
-        labelKey = "Externals.Bloodlust",
+        labelSpellIDs = { 2825, 32182 },
         spellIDs = {
             2825, -- Bloodlust
             32182, -- Heroism
@@ -134,6 +134,7 @@ function BR.AreExternalsEnabled()
 end
 
 local floor = math.floor
+local tconcat = table.concat
 
 -- Appearance keys that follow the global `defaults` table while
 -- externals.useCustomAppearance is off. durationSize and growDirection are
@@ -193,17 +194,19 @@ function BR.IsExternalSoundOverridden(key)
     return sounds ~= nil and sounds[key] ~= nil
 end
 
----Display label for an entry: the player's own name when set, an explicit key when
----the entry spans differently-named spells, otherwise the (already localized) name
----of labelSpellID or the spell itself.
 ---@param entry table
 ---@return string
 function BR.GetExternalLabel(entry)
     if entry.name then
         return entry.name
     end
-    if entry.labelKey then
-        return BR.L[entry.labelKey] or entry.key
+    local ids = entry.labelSpellIDs
+    if ids then
+        local names = {}
+        for i = 1, #ids do
+            names[i] = BR.GetSpellName(ids[i]) or tostring(ids[i])
+        end
+        return tconcat(names, "/")
     end
     local spellID = entry.labelSpellID or entry.spellIDs[1]
     return BR.GetSpellName(spellID) or tostring(spellID)
