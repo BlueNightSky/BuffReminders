@@ -30,7 +30,6 @@ BR.EXTERNAL_SECTIONS = {
 BR.EXTERNALS = {
     { key = "ancestralProtection", section = "defensives", spellIDs = { 207498 } }, -- Shaman
     { key = "antiMagicZone", section = "defensives", spellIDs = { 145629 } }, -- Death Knight
-    { key = "auraMastery", section = "defensives", spellIDs = { 31821 } }, -- Paladin
     { key = "blessingOfProtection", section = "defensives", spellIDs = { 1022 } }, -- Paladin
     { key = "blessingOfSacrifice", section = "defensives", spellIDs = { 6940 } }, -- Paladin
     { key = "blessingOfSpellwarding", section = "defensives", spellIDs = { 204018 } }, -- Paladin

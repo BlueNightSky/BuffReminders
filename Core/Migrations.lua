@@ -22,7 +22,7 @@ local max = math.max
 
 BR.Migrations = {}
 
-BR.Migrations.DB_VERSION = 52
+BR.Migrations.DB_VERSION = 53
 
 -- Run pending migrations against the profile `db`, using code `defaults` for
 -- fallbacks. `ctx` carries the Display.lua file-scope values the migrations
@@ -1052,6 +1052,22 @@ function BR.Migrations.Run(db, defaults, ctx)
                     end
                     profile.optionsPanelScale = nil
                 end
+            end
+        end,
+        -- [53] Aura Mastery leaves the curated externals list: aura 31821 lands on
+        -- the paladin who casts it, not on the group, so the entry can never fire
+        -- for the player it was offered to. Nothing walks a tracked key without a
+        -- matching entry, so this pass only clears the dead saved keys.
+        [53] = function()
+            local externals = db.externals
+            if not externals then
+                return
+            end
+            if externals.entries then
+                externals.entries.auraMastery = nil
+            end
+            if externals.sounds then
+                externals.sounds.auraMastery = nil
             end
         end,
     }
