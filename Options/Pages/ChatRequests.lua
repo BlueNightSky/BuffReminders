@@ -123,6 +123,7 @@ local function Build(content, scrollFrame)
         end
         RefreshChatActions()
     end)
+    resetBtn:BindEnabled(isToggleOn)
     layout:Add(resetBtn, nil, COMPONENT_GAP)
 
     -- Checked = cooldown on, which is the default. A client bug drops the chat

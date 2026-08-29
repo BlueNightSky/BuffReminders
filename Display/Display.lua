@@ -3669,10 +3669,12 @@ eventHandlers.PLAYER_ENTERING_WORLD = function()
     DisplayFonts.Resolve()
     if not mainFrame then
         InitializeFrames()
-        -- Initialize action buttons for categories with clickable enabled
+        -- Wire the categories that can resolve a click action: click-to-cast on,
+        -- custom buffs with their own action, or a category that hosts a chat
+        -- request, which answers the Chat Requests toggle instead.
         for _, cat in ipairs(CATEGORIES) do
             local cs = BR.profile.categorySettings and BR.profile.categorySettings[cat]
-            if (cs and cs.clickable) or cat == "custom" then
+            if (cs and cs.clickable) or cat == "custom" or BR.ChatRequest.WantsCategory(cat) then
                 BR.SecureButtons.UpdateActionButtons(cat)
             end
         end

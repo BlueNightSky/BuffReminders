@@ -989,8 +989,12 @@ local function SyncSecureButtons()
                 and BR.profile.categorySettings
                 and BR.profile.categorySettings[frame.buffCategory]
             local clickable = cs and cs.clickable == true
-            if not clickable and frame.buffCategory == "custom" then
-                clickable = HasCustomClickAction(frame.buffDef)
+            -- Click to cast governs casting. A chat request answers its own toggle
+            -- on the Chat Requests page, and a custom buff its own click action, so
+            -- both stay clickable where the category turned click-to-cast off.
+            if not clickable then
+                clickable = overlay._br_chatRequestKey ~= nil
+                    or (frame.buffCategory == "custom" and HasCustomClickAction(frame.buffDef))
             end
             if frame:IsVisible() then
                 if not clickable or not overlay._br_has_action then
@@ -1534,11 +1538,23 @@ local function UpdateActionButtons(category)
     local enabled = cs and cs.clickable == true
     local showHighlight = enabled and (cs.clickableHighlight ~= false)
 
+    -- A category with click-to-cast off still resolves its frames when it can host
+    -- a chat request: only the resolver knows whether a given frame lands on one.
+    local mayOverride = enabled or category == "custom" or ChatRequest.WantsCategory(category)
+
     for _, frame in pairs(frames) do
         if frame.buffCategory == category then
+            local action, actionItems
+            if mayOverride then
+                action, actionItems = ResolveAction(frame, category, db)
+            end
+
             local frameEnabled = enabled
             local frameHighlight = showHighlight
-            if not frameEnabled and category == "custom" and HasCustomClickAction(frame.buffDef) then
+            -- Click to cast governs casting. A chat request answers its own toggle
+            -- on the Chat Requests page, and a custom buff its own click action, so
+            -- both stay clickable where the category turned click-to-cast off.
+            if not frameEnabled and action and (action.chatKey or category == "custom") then
                 frameEnabled = true
                 frameHighlight = true
             end
@@ -1546,7 +1562,6 @@ local function UpdateActionButtons(category)
             if not frameEnabled then
                 DisableFrameAndChildren(frame, db)
             else
-                local action, actionItems = ResolveAction(frame, category, db)
                 if action then
                     if not frame.clickOverlay then
                         CreateClickOverlay(frame)
@@ -1597,7 +1612,7 @@ local function RefreshOverlaySpells()
     local db = BR.profile
     for cat in pairs(framesByCategory) do
         local cs = db.categorySettings and db.categorySettings[cat]
-        if (cs and cs.clickable == true) or cat == "custom" then
+        if (cs and cs.clickable == true) or cat == "custom" or ChatRequest.WantsCategory(cat) then
             UpdateActionButtons(cat)
         end
     end
