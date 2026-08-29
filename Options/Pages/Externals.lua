@@ -71,10 +71,9 @@ local CHEVRON_WIDTH = 10
 local TOGGLE_GAP = 8
 local TOGGLE_HEIGHT = 14
 
--- Left column takes the longest section plus the shortest one. The right column
--- carries the rest and the player's own entries, which grow, so it starts lighter.
-local LEFT_SECTIONS = { "defensives", "aggro" }
-local RIGHT_SECTIONS = { "groupBuffs", "movement", "augmentation" }
+-- The right column carries the player's own entries, which grow, so it starts lighter.
+local LEFT_SECTIONS = { "personal", "groupDefensives", "minorGroupDefensives" }
+local RIGHT_SECTIONS = { "boosts", "movement", "aggro", "augmentation" }
 
 local Settings = BR.GetExternalSettings
 
