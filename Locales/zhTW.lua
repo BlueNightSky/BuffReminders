@@ -329,7 +329,6 @@ L["Sidebar.Display"] = "顯示"
 L["Sidebar.Alerts"] = "警告"
 -- Externals (present-based display)
 L["Externals.Title"] = "外來增益"
-L["Externals.PageNote"] = "遊戲繪製了這些圖示，因此它們在戰鬥中保持可見。只能顯示對你的增益效果。"
 L["Externals.NoneTracked"] = "首先在「增益」>「外來增益」頁面上追蹤至少一個增益。"
 L["Externals.Sound"] = "聲音警報"
 L["Externals.Sound.Tooltip"] =
@@ -362,15 +361,12 @@ L["Externals.MassBarrier"] = "群體屏障"
 L["Externals.BlessingOfSeasons"] = "四季祝福"
 L["Externals.DurationSize"] = "倒數尺寸"
 L["Externals.Appearance"] = "外觀"
-L["Externals.AppearanceNote"] =
-    "雖然這些增益是秘密的，但遊戲禁止重新設計它們的圖示，因此戰鬥中所做的更改一旦離開就會立即生效。解鎖框架以拖曳行。"
 L["Externals.ShowSwipe"] = "顯示持續時間轉圈"
 L["Externals.ShowSwipe.Desc"] =
     "在圖示上掃一條黑色的線。當增益耗盡時，轉圈會露出圖示。"
 L["Externals.ShowTooltips"] = "顯示工具提示"
 L["Externals.ShowTooltips.Desc"] =
     "當滑鼠位於圖示上時顯示遊戲的增益工具提示。這些圖示不需要點擊，只需要移動滑鼠。"
-L["Externals.MasqueNote"] = "Masque 無法對這些圖示進行皮膚處理：它們的大小會作為秘密值讀回。"
 L["Externals.Sound.Claimed"] = "%s 已經為此法術ID播放一個聲音。"
 -- Externals: the player's own entries
 L["Externals.Custom"] = "你的增益"

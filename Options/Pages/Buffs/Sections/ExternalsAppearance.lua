@@ -282,8 +282,6 @@ local function Build(ctx, layout)
     })
     layout:Add(tooltipHolder, nil, COMPONENT_GAP)
 
-    LayoutSectionNote(layout, parent, L["Externals.MasqueNote"])
-
     parent:SetHeight(abs(layout:GetY()) + (ctx.appearancePadding or 30))
     if ctx.onAppearanceResize then
         ctx.onAppearanceResize()

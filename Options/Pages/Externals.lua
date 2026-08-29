@@ -1334,8 +1334,6 @@ local function Build(content, scrollFrame)
     local contentWidth = scrollFrame:GetContentWidth()
     local layout = Components.VerticalLayout(content, { x = COL_PADDING, y = PAGE_TOP_PADDING })
 
-    BR.Options.Helpers.LayoutSectionNote(layout, content, L["Externals.PageNote"])
-
     local soundRow = CreateFrame("Frame", nil, content)
     soundRow:SetSize(contentWidth - COL_PADDING * 2, 26)
 
