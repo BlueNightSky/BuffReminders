@@ -1788,16 +1788,17 @@ local function GetEatingExpirationTime()
     return exp
 end
 
----Check if a consumable buff is free/reusable (freeConsumable flag or permanent rune in bags)
+---Check if a consumable buff is free/reusable (freeConsumable flag, or a permanent item of its category in bags)
 ---@param buff ConsumableBuff
 ---@return boolean
 local function IsFreeConsumable(buff)
     if buff.freeConsumable then
         return true
     end
-    if buff.permanentRuneItemIDs then
-        for _, itemID in ipairs(buff.permanentRuneItemIDs) do
-            if HasItemByMode(itemID) then
+    local items = buff.consumableCategory and BR.CONSUMABLE_ITEMS[buff.consumableCategory]
+    if items then
+        for itemID, entry in pairs(items) do
+            if type(entry) == "table" and entry.permanent and HasItemByMode(itemID) then
                 return true
             end
         end

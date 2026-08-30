@@ -704,6 +704,16 @@ BR.CallbackRegistry:RegisterCallback("SettingChanged", function(_, path)
     end
 end)
 
+---Stack count text for a bag item. A permanent item shows none.
+---@param item table?
+---@return string
+local function FormatStackCount(item)
+    if not item or item.permanent then
+        return ""
+    end
+    return tostring(item.count)
+end
+
 local function RefreshConsumableCache()
     if not consumableCacheDirty then
         return
@@ -776,6 +786,7 @@ local function RefreshConsumableCache()
         local allowedSet = itemSets[category]
         for itemID, item in pairs(entries) do
             local entry = allowedSet and allowedSet[itemID]
+            item.permanent = type(entry) == "table" and entry.permanent or nil
             if not (hideLegacy and type(entry) == "table" and entry.legacy) then
                 items[#items + 1] = item
             end
@@ -872,6 +883,7 @@ local function UpdateConsumableButtons(frame, actionItems, clickable, startIndex
         btn:EnableMouse(clickable == true)
         btn._br_visible = true
         btn._br_count = item.count
+        btn._br_permanent = item.permanent
         btn._br_qualityAtlas = item.qualityAtlas
         btn._br_badge = item.badge
         btn._br_needs_sync = true
@@ -1111,7 +1123,7 @@ local function SyncSecureButtons()
                                     btn._br_y = btnY
                                     btn._br_size = size
                                     btn.count:SetText(
-                                        btn._br_count and btn._br_count > 1 and tostring(btn._br_count) or ""
+                                        (btn._br_count and not btn._br_permanent) and tostring(btn._br_count) or ""
                                     )
                                     ApplyFont(btn.count, cFontSize)
                                     -- The holder sits at +10 to draw above borders and glows.
@@ -1630,6 +1642,7 @@ BR.SecureButtons = {
     HideSecureFramesForCatKey = HideSecureFramesForCatKey,
     ScheduleSecureSync = ScheduleSecureSync,
     ComputeConsumableFontSize = ComputeConsumableFontSize,
+    FormatStackCount = FormatStackCount,
     BADGE_COLORS = BADGE_COLORS,
     ReapplyPetSpecIconIfHovered = ReapplyPetSpecIconIfHovered,
 }
