@@ -1827,6 +1827,7 @@ end
 ---@field alignWidth? number Width of the Align dropdown (default 85)
 ---@field get fun(): string Returns current zone name
 ---@field enabled? fun(): boolean
+---@field disabledReason? string|fun(): string Hover text while `enabled` returns false
 ---@field onChange fun(zone: string)
 
 -- Each Dropdown holder reserves an extra 10px past its `width` for the
@@ -1939,6 +1940,10 @@ function Components.ZonePicker(parent, config)
 
     if config.get or config.enabled then
         tinsert(RefreshableComponents, holder)
+    end
+
+    if config.disabledReason and config.enabled then
+        Components.AttachDisabledReason(holder, config.enabled, config.disabledReason)
     end
 
     holder:Refresh()
@@ -2753,7 +2758,7 @@ end
 
 ---Create a compact numeric stepper with [-] value [+] buttons
 ---@param parent table Parent frame
----@param config table Configuration: label, min, max, step?, labelWidth?, get?, enabled?, onChange?
+---@param config table Configuration: label, min, max, step?, labelWidth?, get?, enabled?, onChange?, formatValue?
 ---@return table holder Frame with .SetValue(n), .GetValue(), .SetEnabled(bool), .Refresh()
 function Components.NumericStepper(parent, config)
     local step = config.step or 1
@@ -2768,10 +2773,12 @@ function Components.NumericStepper(parent, config)
         labelWidth = 70
     end
 
+    local displayText = config.formatValue or tostring
+
     -- Auto-grow value box: at the default font 4-digit numbers fit in 26px, at
     -- bigger fonts they do not. Measure the actual extents of min and max.
-    local minTxt = tostring(config.min or 0)
-    local maxTxt = tostring(config.max or 100)
+    local minTxt = displayText(config.min or 0)
+    local maxTxt = displayText(config.max or 100)
     local VALUE_WIDTH = max(
         26,
         max(MeasureTextWidth(minTxt, "GameFontHighlightSmall"), MeasureTextWidth(maxTxt, "GameFontHighlightSmall")) + 8
@@ -2806,7 +2813,7 @@ function Components.NumericStepper(parent, config)
     local UpdateButtonStates
 
     local function UpdateValueText()
-        valueText:SetText(tostring(currentValue))
+        valueText:SetText(displayText(currentValue))
         if UpdateButtonStates then
             UpdateButtonStates()
         end

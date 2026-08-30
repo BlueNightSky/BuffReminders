@@ -71,6 +71,7 @@ local _, BR = ...
 ---@field petLabelScale? number
 ---@field petSpecIconOnHover? boolean
 ---@field textPositions? table<string, {zone: string, offsetX: number, offsetY: number}>
+---@field textSizes? table<string, number>
 
 ---@class CategorySetting
 ---@field position CategoryPosition
@@ -1909,14 +1910,12 @@ local EATING_ICON = BR.EATING_AURA_ICON
 ---Apply consumable overlays (stat label top-left, badge/quality bottom-left) to a frame.
 ---@param frame table
 ---@param item table Bucket item with .statLabel, .badge, and .qualityAtlas fields
----@param fontSize number? Explicit font size (computed from icon width if nil)
-local function ApplyConsumableOverlays(frame, item, fontSize)
+---@param iconSize number? Icon width the overlay sizes derive from (frame width if nil)
+local function ApplyConsumableOverlays(frame, item, iconSize)
     if not item.statLabel and not item.badge and not item.qualityAtlas then
         return
     end
-    if not fontSize then
-        fontSize = BR.SecureButtons.ComputeConsumableFontSize(frame:GetWidth())
-    end
+    iconSize = iconSize or frame:GetWidth()
     local hideLabels = (BR.profile.defaults or {}).hideConsumableLabels
     if item.statLabel and not hideLabels then
         if not frame.statLabel then
@@ -1926,7 +1925,7 @@ local function ApplyConsumableOverlays(frame, item, fontSize)
             local sz, sx, sy = BR.TextPositions.Get("statLabel")
             BR.TextPositions.Apply(frame.statLabel, frame, sz, sx, sy)
         end
-        ApplyFont(frame.statLabel, fontSize)
+        ApplyFont(frame.statLabel, BR.SecureButtons.ComputeConsumableFontSize(iconSize, "statLabel"))
         frame.statLabel:SetTextColor(1, 1, 1, 1)
         frame.statLabel:SetText(item.statLabel)
         frame.statLabel:Show()
@@ -1941,7 +1940,6 @@ local function ApplyConsumableOverlays(frame, item, fontSize)
             holder:SetFrameLevel(frame:GetFrameLevel() + 10)
             frame.qualityIcon = holder:CreateTexture(nil, "OVERLAY", nil, 7)
         end
-        local iconSize = frame:GetWidth()
         local qOffset = -floor(iconSize * 0.125)
         local qSize = max(14, floor(iconSize * 0.45))
         frame.qualityIcon:ClearAllPoints()
@@ -1963,7 +1961,7 @@ local function ApplyConsumableOverlays(frame, item, fontSize)
                 local bz, bx, by = BR.TextPositions.Get("badge")
                 BR.TextPositions.Apply(frame.badgeLabel, frame, bz, bx, by)
             end
-            ApplyFont(frame.badgeLabel, fontSize)
+            ApplyFont(frame.badgeLabel, BR.SecureButtons.ComputeConsumableFontSize(iconSize, "badge"))
             frame.badgeLabel:SetTextColor(bc.r, bc.g, bc.b, 1)
             frame.badgeLabel:SetText(item.badge)
             frame.badgeLabel:Show()
@@ -2056,12 +2054,11 @@ local function ResolveConsumableFrame(frame)
         end
         SetIconDesaturated(frame.icon, false)
         local mainSize = frame:GetWidth()
-        local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(mainSize)
         frame.count:Hide()
-        ApplyFont(frame.stackCount, cFontSize)
+        ApplyFont(frame.stackCount, BR.SecureButtons.ComputeConsumableFontSize(mainSize, "stackCount"))
         frame.stackCount:SetText(BR.SecureButtons.FormatStackCount(items[1]))
         frame.stackCount:Show()
-        ApplyConsumableOverlays(frame, items[1], cFontSize)
+        ApplyConsumableOverlays(frame, items[1], mainSize)
         ApplyItemCooldown(frame, items[1])
         return "items"
     end
@@ -2258,7 +2255,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
             local itemCount = #items - 1
             local isSideways = subIconSide == "LEFT" or subIconSide == "RIGHT"
 
-            local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(iconSize)
+            local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(iconSize, "stackCount")
             for i = 2, #items do
                 local idx = i - 2
                 local extra = GetOrCreateExtraFrame(frame, i - 1)
@@ -2318,13 +2315,13 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                     and GetCachedGlowSettings(entry.category, entry.glowKindOverride or "missing")
                 or nil
             local expandedSize = frame:GetWidth()
-            local cFontSize = BR.SecureButtons.ComputeConsumableFontSize(expandedSize)
+            local stackFontSize = BR.SecureButtons.ComputeConsumableFontSize(expandedSize, "stackCount")
             for i = 2, #items do
                 local extra = GetOrCreateExtraFrame(frame, i - 1)
                 extra:SetParent(parentFrame)
                 extra:SetSize(expandedSize, frame:GetHeight())
                 extra.icon:SetTexture(items[i].icon)
-                ApplyFont(extra.stackCount, cFontSize)
+                ApplyFont(extra.stackCount, stackFontSize)
                 extra.stackCount:SetText(BR.SecureButtons.FormatStackCount(items[i]))
                 ApplyItemCooldown(extra, items[i])
                 extra.count:Hide()
@@ -2339,7 +2336,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 -- Apply consumable overlays (clear first to handle toggle-off)
                 ClearConsumableOverlays(extra)
                 if showText then
-                    ApplyConsumableOverlays(extra, items[i], cFontSize)
+                    ApplyConsumableOverlays(extra, items[i], expandedSize)
                 end
                 frameList[#frameList + 1] = extra
             end
@@ -3285,14 +3282,13 @@ local function UpdateVisuals()
 
         -- Consumable overlay font/size + reposition (per-category zones)
         if frame.statLabel or frame.badgeLabel or frame.qualityIcon then
-            local flSize = BR.SecureButtons.ComputeConsumableFontSize(size)
             if frame.statLabel then
-                ApplyFont(frame.statLabel, flSize)
+                ApplyFont(frame.statLabel, BR.SecureButtons.ComputeConsumableFontSize(size, "statLabel"))
                 local sz, sx, sy = BR.TextPositions.Get("statLabel")
                 BR.TextPositions.Apply(frame.statLabel, frame, sz, sx, sy)
             end
             if frame.badgeLabel then
-                ApplyFont(frame.badgeLabel, flSize)
+                ApplyFont(frame.badgeLabel, BR.SecureButtons.ComputeConsumableFontSize(size, "badge"))
                 local bz, bx, by = BR.TextPositions.Get("badge")
                 BR.TextPositions.Apply(frame.badgeLabel, frame, bz, bx, by)
             end

@@ -494,6 +494,10 @@ local function ValidatePath(segments)
         if segments[2] == "textPositions" and #segments == 4 then
             return true, "VisualsRefresh"
         end
+        -- defaults.textSizes.<item>; nil clears the override
+        if segments[2] == "textSizes" and #segments == 3 then
+            return true, "VisualsRefresh"
+        end
         return false, nil
     end
 

@@ -617,11 +617,10 @@ local BADGE_COLORS = {
 }
 
 ---@param mainIconSize number The consumable category's main icon size
+---@param item string? A BR.TextPositions.SizedItems key; nil uses the shared base
 ---@return number fontSize
-local function ComputeConsumableFontSize(mainIconSize)
-    local d = BR.profile and BR.profile.defaults
-    local scale = d and d.consumableTextScale or 25
-    return max(6, floor(mainIconSize * scale / 100))
+local function ComputeConsumableFontSize(mainIconSize, item)
+    return max(6, floor(mainIconSize * BR.TextPositions.GetSizePercent(item) / 100))
 end
 
 ---Parented to UIParent with NO anchor to a buff frame: an anchor taints it.
@@ -1104,7 +1103,9 @@ local function SyncSecureButtons()
                         end
                     end
                     if visibleCount > 0 then
-                        local cFontSize = ComputeConsumableFontSize(catSettings.iconSize or 64)
+                        local baseIconSize = catSettings.iconSize or 64
+                        local stackFontSize = ComputeConsumableFontSize(baseIconSize, "stackCount")
+                        local badgeFontSize = ComputeConsumableFontSize(baseIconSize, "badge")
                         local showSubIconBadge = BR.Config.Get("defaults.consumableBadgeOnSubIcons") == true
                         local idx = 0
                         for _, btn in ipairs(frame.actionButtons) do
@@ -1145,7 +1146,8 @@ local function SyncSecureButtons()
                                     or btn._br_x ~= btnX
                                     or btn._br_y ~= btnY
                                     or btn._br_size ~= size
-                                    or btn._br_font_size ~= cFontSize
+                                    or btn._br_font_size ~= stackFontSize
+                                    or btn._br_badge_font_size ~= badgeFontSize
                                     or btn._br_font_outline ~= outlineFlag
                                 if needsUpdate then
                                     btn:ClearAllPoints()
@@ -1159,7 +1161,7 @@ local function SyncSecureButtons()
                                     btn.count:SetText(
                                         (btn._br_count and not btn._br_permanent) and tostring(btn._br_count) or ""
                                     )
-                                    ApplyFont(btn.count, cFontSize)
+                                    ApplyFont(btn.count, stackFontSize)
                                     -- The holder sits at +10 to draw above borders and glows.
                                     if btn._br_qualityAtlas then
                                         if not btn._br_qualityIcon then
@@ -1185,14 +1187,15 @@ local function SyncSecureButtons()
                                         end
                                         btn._br_badgeLabel:ClearAllPoints()
                                         btn._br_badgeLabel:SetPoint("TOPLEFT", btn, "TOPLEFT", 1, -1)
-                                        ApplyFont(btn._br_badgeLabel, cFontSize)
+                                        ApplyFont(btn._br_badgeLabel, badgeFontSize)
                                         btn._br_badgeLabel:SetTextColor(bc.r, bc.g, bc.b, 1)
                                         btn._br_badgeLabel:SetText(btn._br_badge)
                                         btn._br_badgeLabel:Show()
                                     elseif btn._br_badgeLabel then
                                         btn._br_badgeLabel:Hide()
                                     end
-                                    btn._br_font_size = cFontSize
+                                    btn._br_font_size = stackFontSize
+                                    btn._br_badge_font_size = badgeFontSize
                                     btn._br_font_outline = outlineFlag
                                     btn._br_needs_sync = false
                                 end

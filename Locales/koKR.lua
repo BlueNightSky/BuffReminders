@@ -568,10 +568,6 @@ L["Options.PetLabels.SizePct"] = "크기 %"
 -- ============================================================================
 -- OPTIONS: CONSUMABLE DISPLAY
 -- ============================================================================
-L["Options.ConsumableTextScale"] = "텍스트 크기"
-L["Options.ConsumableTextScale.Title"] = "소모품 텍스트 크기"
-L["Options.ConsumableTextScale.Desc"] =
-    "아이콘 크기 대비 아이템 수량 및 등급(R1/R2/R3) 라벨의 폰트 크기 비율입니다."
 L["Options.ConsumableBadgeOnSubIcons"] = "하위 아이콘에 등급 표시"
 L["Options.ConsumableBadgeOnSubIcons.Title"] = "하위 아이콘 등급 표시"
 L["Options.ConsumableBadgeOnSubIcons.Desc"] =

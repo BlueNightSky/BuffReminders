@@ -629,9 +629,6 @@ L["Options.PetLabels.SizePct"] = "尺寸占比 %"
 -- ============================================================================
 -- OPTIONS: CONSUMABLE DISPLAY
 -- ============================================================================
-L["Options.ConsumableTextScale"] = "文字縮放"
-L["Options.ConsumableTextScale.Title"] = "消耗品文字大小"
-L["Options.ConsumableTextScale.Desc"] = "物品數量和品質標簽相對於圖示大小的字體縮放比例。"
 L["Options.ConsumableBadgeOnSubIcons"] = "在子圖示上顯示品質標記"
 L["Options.ConsumableBadgeOnSubIcons.Title"] = "品質標記在子圖示上"
 L["Options.ConsumableBadgeOnSubIcons.Desc"] =

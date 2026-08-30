@@ -561,9 +561,6 @@ L["Options.PetLabels.SizePct"] = "尺寸占比 %"
 -- ============================================================================
 -- OPTIONS: CONSUMABLE DISPLAY
 -- ============================================================================
-L["Options.ConsumableTextScale"] = "文本缩放"
-L["Options.ConsumableTextScale.Title"] = "消耗品文本大小"
-L["Options.ConsumableTextScale.Desc"] = "物品数量和品质（1星/2星/3星）标签相对于图标大小的字体缩放比例。"
 L["Options.ConsumableBadgeOnSubIcons"] = "在子图标上显示品质标签"
 L["Options.ConsumableBadgeOnSubIcons.Title"] = "子图标品质标签"
 L["Options.ConsumableBadgeOnSubIcons.Desc"] = "在每个子图标上也显示食物品质字母（例如“丰”代表丰盛，“飞”代表飞逝），而不仅在主图标上显示。"

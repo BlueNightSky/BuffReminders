@@ -541,12 +541,15 @@ english["Options.TextPositions"] = "Text"
 english["Options.TextPositions.Zone"] = "Position"
 english["Options.TextPositions.OffsetX.Short"] = "X"
 english["Options.TextPositions.OffsetY.Short"] = "Y"
+english["Options.TextPositions.Size"] = "Size"
 english["Options.TextPositions.MainText"] = "Main text"
 english["Options.TextPositions.MainText.Note"] =
     "Position of the big text on the icon - group counts like 17/20, countdowns, and labels like NO FLASK."
 english["Options.TextPositions.StackCount"] = "Stack count"
 english["Options.TextPositions.StatLabel"] = "Stat label"
 english["Options.TextPositions.Badge"] = "Badge (H / F)"
+english["Options.TextSizes.Note"] =
+    "Auto keeps the text at the base size. Set a value to size that text on its own, as a percentage of the icon."
 english["Options.TextPositions.Vertical.Above"] = "Above"
 english["Options.TextPositions.Vertical.InsideTop"] = "Top"
 english["Options.TextPositions.Vertical.InsideMiddle"] = "Center"
@@ -631,10 +634,10 @@ english["Options.PetLabels.SizePct"] = "Size %"
 -- ============================================================================
 -- OPTIONS: CONSUMABLE DISPLAY
 -- ============================================================================
-english["Options.ConsumableTextScale"] = "Text scale"
-english["Options.ConsumableTextScale.Title"] = "Consumable text scale"
+english["Options.ConsumableTextScale"] = "Base size"
+english["Options.ConsumableTextScale.Title"] = "Base text size"
 english["Options.ConsumableTextScale.Desc"] =
-    "Font size for item counts and quality (R1/R2/R3) labels as a percentage of icon size."
+    "Font size for stack counts, stat labels and badges, as a percentage of icon size. Each of the three can override it below."
 english["Options.ConsumableBadgeOnSubIcons"] = "Show quality badge on sub-icons"
 english["Options.ConsumableBadgeOnSubIcons.Title"] = "Quality badge on sub-icons"
 english["Options.ConsumableBadgeOnSubIcons.Desc"] =
@@ -1046,6 +1049,7 @@ english["Options.ResetToDefaults"] = "Reset to Defaults"
 -- OPTIONS: MISC
 -- ============================================================================
 english["Options.Off"] = "Off"
+english["Options.Auto"] = "Auto"
 english["Options.Always"] = "Always"
 english["Options.ReadyCheck"] = "Ready check"
 english["Options.Min"] = "min"
@@ -1121,6 +1125,7 @@ english["DisabledReason.ExpiringInCombat"] =
 english["DisabledReason.HealthstoneThreshold"] = 'Enable "Warn when low" first.'
 english["DisabledReason.ClickToCast"] = 'Turn on "Click to cast" first.'
 english["DisabledReason.UseDefaultThreshold"] = 'Uncheck "Use default threshold" to set a category-specific value.'
+english["DisabledReason.StatLabelsHidden"] = 'Uncheck "Hide stat labels" first.'
 
 -- Direction labels
 english["Direction.Left"] = "Left"
