@@ -673,6 +673,10 @@ english["Options.HideLegacyConsumables"] = "Hide legacy consumables"
 english["Options.HideLegacyConsumables.Title"] = "Hide legacy consumables"
 english["Options.HideLegacyConsumables.Desc"] =
     "When enabled, food, flasks, and runes from previous expansions are filtered out of the action buttons. Disable if you still use older consumables for Timewalking, old-raid farming, or undergeared alts."
+english["Options.PreferReusableRunes"] = "Prefer reusable augment runes"
+english["Options.PreferReusableRunes.Title"] = "Prefer reusable augment runes"
+english["Options.PreferReusableRunes.Desc"] =
+    "If you have a reusable augment rune, show only that one. If you have none, show the other runes."
 
 -- ============================================================================
 -- OPTIONS: DK RUNEFORGE PREFERENCES

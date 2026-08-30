@@ -399,6 +399,7 @@ local DefaultSettingKeys = {
     rightClickSnooze = "DisplayRefresh", -- Re-wires the consumable buttons' type2 attribute
     showBuffTooltips = "VisualsRefresh", -- Toggles raid/presence hover capture vs click-through
     hideLegacyConsumables = "DisplayRefresh",
+    preferReusableRunes = "DisplayRefresh",
     -- Pet display mode
     petDisplayMode = "DisplayRefresh",
     petLabels = "DisplayRefresh",

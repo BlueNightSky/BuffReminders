@@ -696,10 +696,10 @@ local function InvalidateConsumableCache()
     consumableCacheDirty = true
 end
 
--- hideLegacyConsumables changes the cached arrays, not the bag scan. Invalidate
--- them so the next render rebuilds them with the new filter.
+-- The item filters change the cached arrays, not the bag scan. Invalidate them so
+-- the next render rebuilds them with the new filter.
 BR.CallbackRegistry:RegisterCallback("SettingChanged", function(_, path)
-    if path == "defaults.hideLegacyConsumables" then
+    if path == "defaults.hideLegacyConsumables" or path == "defaults.preferReusableRunes" then
         consumableCacheDirty = true
     end
 end)
@@ -727,7 +727,9 @@ local function RefreshConsumableCache()
 
     local specId = BR.StateHelpers and BR.StateHelpers.GetPlayerSpecId()
     local itemSets = BR.CONSUMABLE_ITEMS or {}
-    local hideLegacy = (BR.profile and BR.profile.defaults or {}).hideLegacyConsumables ~= false
+    local defs = BR.profile and BR.profile.defaults or {}
+    local hideLegacy = defs.hideLegacyConsumables ~= false
+    local preferReusableRunes = defs.preferReusableRunes == true
     local buckets = {}
     local maxBags = NUM_BAG_SLOTS or 4
     for bag = 0, maxBags do
@@ -784,12 +786,22 @@ local function RefreshConsumableCache()
     for category, entries in pairs(buckets) do
         local items = {}
         local allowedSet = itemSets[category]
+        local runeFallback = preferReusableRunes and category == "rune" and {} or nil
         for itemID, item in pairs(entries) do
             local entry = allowedSet and allowedSet[itemID]
             item.permanent = type(entry) == "table" and entry.permanent or nil
             if not (hideLegacy and type(entry) == "table" and entry.legacy) then
-                items[#items + 1] = item
+                if runeFallback and not item.permanent then
+                    runeFallback[#runeFallback + 1] = item
+                else
+                    items[#items + 1] = item
+                end
             end
+        end
+        -- The preference must never leave the player with nothing to click. With no
+        -- reusable rune in the bags, the consumed runes come back.
+        if runeFallback and #items == 0 then
+            items = runeFallback
         end
         if #items > 0 then
             local rememberedSpell = BR.ConsumableMemory.GetRemembered(specId, category)

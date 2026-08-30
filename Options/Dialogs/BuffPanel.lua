@@ -206,6 +206,24 @@ local SPECIAL_SECTIONS = {
         end,
     },
 
+    rune = {
+        build = function(layout)
+            AddSpecialCheckbox(layout, {
+                label = L["Options.PreferReusableRunes"],
+                get = function()
+                    return BR.Config.Get("defaults.preferReusableRunes") == true
+                end,
+                tooltip = {
+                    title = L["Options.PreferReusableRunes.Title"],
+                    desc = L["Options.PreferReusableRunes.Desc"],
+                },
+                onChange = function(checked)
+                    BR.Config.Set("defaults.preferReusableRunes", checked)
+                end,
+            })
+        end,
+    },
+
     repairGear = {
         build = function(layout)
             local thresholdHolder = Components.Slider(body, {

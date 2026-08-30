@@ -148,6 +148,7 @@ BR.defaults = {
         rightClickSnooze = true,
         showBuffTooltips = false,
         hideLegacyConsumables = true,
+        preferReusableRunes = false,
         petDisplayMode = "generic", -- "generic" or "expanded"
         petLabels = true,
         petLabelScale = 100,
