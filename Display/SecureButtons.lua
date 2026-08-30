@@ -20,6 +20,7 @@ local IsCategorySplit = BR.Helpers.IsCategorySplit
 local ChatRequest = BR.ChatRequest
 
 local GetTime = GetTime
+local Plain = BR.Secret.Plain
 
 -- ============================================================================
 -- SPELL HELPERS
@@ -714,6 +715,27 @@ local function FormatStackCount(item)
     return tostring(item.count)
 end
 
+---Cooldown of a bag item, or nil when it has none. C_Item.GetItemCooldown throws
+---in a restricted context, and its returns can be secret values, so a failed or
+---secret read yields nil.
+---@param itemID number?
+---@return number? start
+---@return number? duration
+local function GetItemCooldown(itemID)
+    if not itemID then
+        return nil
+    end
+    local ok, start, duration = pcall(C_Item.GetItemCooldown, itemID)
+    if not ok then
+        return nil
+    end
+    start, duration = Plain(start), Plain(duration)
+    if not start or not duration or duration <= 0 then
+        return nil
+    end
+    return start, duration
+end
+
 local function RefreshConsumableCache()
     if not consumableCacheDirty then
         return
@@ -1173,6 +1195,24 @@ local function SyncSecureButtons()
                                     btn._br_font_size = cFontSize
                                     btn._br_font_outline = outlineFlag
                                     btn._br_needs_sync = false
+                                end
+                                do
+                                    local cdStart, cdDuration
+                                    if btn._br_permanent then
+                                        cdStart, cdDuration = GetItemCooldown(btn.itemID)
+                                    end
+                                    if cdStart then
+                                        if not btn._br_cooldown then
+                                            local cd = CreateFrame("Cooldown", nil, btn, "CooldownFrameTemplate")
+                                            cd:SetAllPoints()
+                                            cd:SetDrawEdge(true)
+                                            cd:EnableMouse(false)
+                                            btn._br_cooldown = cd
+                                        end
+                                        btn._br_cooldown:SetCooldown(cdStart, cdDuration)
+                                    elseif btn._br_cooldown then
+                                        btn._br_cooldown:Clear()
+                                    end
                                 end
                                 -- A new button starts on the "hide" driver.
                                 if not btn._br_driver_active then
@@ -1655,6 +1695,7 @@ BR.SecureButtons = {
     ScheduleSecureSync = ScheduleSecureSync,
     ComputeConsumableFontSize = ComputeConsumableFontSize,
     FormatStackCount = FormatStackCount,
+    GetItemCooldown = GetItemCooldown,
     BADGE_COLORS = BADGE_COLORS,
     ReapplyPetSpecIconIfHovered = ReapplyPetSpecIconIfHovered,
 }

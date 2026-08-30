@@ -1973,6 +1973,32 @@ local function ApplyConsumableOverlays(frame, item, fontSize)
     end
 end
 
+-- A permanent item is never consumed, so its icon carries its cooldown where a
+-- consumed item carries a stack count. The Cooldown frame is built on first use.
+---@param frame table
+---@param item table?
+local function ApplyItemCooldown(frame, item)
+    local start, duration
+    if item and item.permanent then
+        start, duration = BR.SecureButtons.GetItemCooldown(item.itemID)
+    end
+    if not start then
+        if frame.itemCooldown then
+            frame.itemCooldown:Clear()
+        end
+        return
+    end
+    if not frame.itemCooldown then
+        local cd = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
+        cd:SetAllPoints()
+        cd:SetFrameLevel(frame:GetFrameLevel() + 1)
+        cd:SetDrawEdge(true)
+        cd:EnableMouse(false)
+        frame.itemCooldown = cd
+    end
+    frame.itemCooldown:SetCooldown(start, duration)
+end
+
 ---Clear consumable overlays from a frame.
 ---@param frame table
 local function ClearConsumableOverlays(frame)
@@ -2036,9 +2062,11 @@ local function ResolveConsumableFrame(frame)
         frame.stackCount:SetText(BR.SecureButtons.FormatStackCount(items[1]))
         frame.stackCount:Show()
         ApplyConsumableOverlays(frame, items[1], cFontSize)
+        ApplyItemCooldown(frame, items[1])
         return "items"
     end
     RestoreFallbackIcon(frame)
+    ApplyItemCooldown(frame, nil)
     local defs = BR.profile.defaults or {}
     if defs.showConsumablesWithoutItems then
         if defs.showWithoutItemsOnlyOnReadyCheck and not BR.BuffState.GetReadyCheckState() then
@@ -2138,8 +2166,10 @@ local function RenderVisibleEntry(frame, entry)
                     frame.icon:SetTexture(items[1].icon)
                 end
                 ApplyConsumableOverlays(frame, items[1])
+                ApplyItemCooldown(frame, items[1])
             else
                 RestoreFallbackIcon(frame)
+                ApplyItemCooldown(frame, nil)
             end
         end
     else -- "text"
@@ -2237,6 +2267,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra.icon:SetTexture(items[i].icon)
                 ApplyFont(extra.stackCount, cFontSize)
                 extra.stackCount:SetText(BR.SecureButtons.FormatStackCount(items[i]))
+                ApplyItemCooldown(extra, items[i])
                 extra.stackCount:Show()
                 extra.count:Hide()
                 SetExpirationGlow(extra, false)
@@ -2295,6 +2326,7 @@ local function ApplyConsumableDisplayMode(frame, entry, frameList, parentFrame)
                 extra.icon:SetTexture(items[i].icon)
                 ApplyFont(extra.stackCount, cFontSize)
                 extra.stackCount:SetText(BR.SecureButtons.FormatStackCount(items[i]))
+                ApplyItemCooldown(extra, items[i])
                 extra.count:Hide()
                 local showText = ShouldShowText(frame.buffCategory)
                 if showText then
