@@ -72,8 +72,8 @@ local TOGGLE_GAP = 8
 local TOGGLE_HEIGHT = 14
 
 -- The right column carries the player's own entries, which grow, so it starts lighter.
-local LEFT_SECTIONS = { "personal", "groupDefensives", "minorGroupDefensives" }
-local RIGHT_SECTIONS = { "boosts", "movement", "aggro", "augmentation" }
+local LEFT_SECTIONS = { "personal", "groupDefensives", "minorGroupDefensives", "aggro" }
+local RIGHT_SECTIONS = { "boosts", "movement", "augmentation" }
 
 local Settings = BR.GetExternalSettings
 

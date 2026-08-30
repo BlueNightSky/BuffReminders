@@ -22,7 +22,7 @@ local max = math.max
 
 BR.Migrations = {}
 
-BR.Migrations.DB_VERSION = 53
+BR.Migrations.DB_VERSION = 54
 
 -- Run pending migrations against the profile `db`, using code `defaults` for
 -- fallbacks. `ctx` carries the Display.lua file-scope values the migrations
@@ -1068,6 +1068,24 @@ function BR.Migrations.Run(db, defaults, ctx)
             end
             if externals.sounds then
                 externals.sounds.auraMastery = nil
+            end
+        end,
+        -- [54] Luminous Barrier and Earthen Wall Totem leave the curated externals
+        -- list: the game removed both abilities, so auras 271466 and 201633 can never
+        -- apply. Nothing walks a tracked key without a matching entry, so this pass
+        -- only clears the dead saved keys.
+        [54] = function()
+            local externals = db.externals
+            if not externals then
+                return
+            end
+            if externals.entries then
+                externals.entries.luminousBarrier = nil
+                externals.entries.earthenWall = nil
+            end
+            if externals.sounds then
+                externals.sounds.luminousBarrier = nil
+                externals.sounds.earthenWall = nil
             end
         end,
     }

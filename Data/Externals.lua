@@ -43,11 +43,9 @@ BR.EXTERNALS = {
     { key = "ancestralProtection", section = "groupDefensives", spellIDs = { 207498 } }, -- Shaman
     { key = "antiMagicZone", section = "groupDefensives", spellIDs = { 145629 } }, -- Death Knight
     { key = "darkness", section = "groupDefensives", spellIDs = { 209426 } }, -- Demon Hunter
-    { key = "luminousBarrier", section = "groupDefensives", spellIDs = { 271466 } }, -- Priest
     { key = "powerWordBarrier", section = "groupDefensives", spellIDs = { 81782 } }, -- Priest
     { key = "rallyingCry", section = "groupDefensives", spellIDs = { 97463 } }, -- Warrior
 
-    { key = "earthenWall", section = "minorGroupDefensives", spellIDs = { 201633 } }, -- Shaman
     {
         key = "massBarrier", -- Mage
         section = "minorGroupDefensives",
