@@ -87,6 +87,7 @@ BR.EXTERNALS = {
     { key = "powerInfusion", section = "boosts", spellIDs = { 10060 } }, -- Priest
 
     { key = "blessingOfFreedom", section = "movement", spellIDs = { 1044 } }, -- Paladin
+    { key = "piercingHowl", section = "movement", spellIDs = { 1244157 } }, -- Warrior
     { key = "spatialParadox", section = "movement", spellIDs = { 406789 } }, -- Evoker
     { key = "stampedingRoar", section = "movement", spellIDs = { 106898, 77761, 77764 } }, -- Druid
     { key = "tigersLust", section = "movement", spellIDs = { 116841 } }, -- Monk
